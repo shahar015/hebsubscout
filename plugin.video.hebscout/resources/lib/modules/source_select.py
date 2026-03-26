@@ -103,7 +103,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         sort_labels = {
             'default': 'ברירת מחדל' if he else 'Default',
             'size': 'גודל' if he else 'Size',
-            'subs': '% כתוביות' if he else 'Sub %',
+            'subs': 'אחוזי התאמת כתוביות' if he else 'Sub Match %',
         }
         for btn_id, sort_val in SORT_BTNS.items():
             try:
