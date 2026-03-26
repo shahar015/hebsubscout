@@ -40,7 +40,11 @@
       "Bash(python3 -c \"import sys; data=sys.stdin.read\\(\\); print\\(data[-2000:]\\)\")",
       "Bash(curl -s -X POST -H \"Content-Type: application/json\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" -b \"ASP.NET_SessionId=yhl1vqbwd21gfj2zxngjktmi\" -d \"{\"\"FilmName\"\":\"\"The Shawshank Redemption\"\",\"\"Actors\"\":[],\"\"Studios\"\":null,\"\"Directors\"\":[],\"\"Genres\"\":[],\"\"Countries\"\":[],\"\"Languages\"\":[],\"\"Year\"\":\"\"1994\"\",\"\"Rating\"\":[],\"\"Page\"\":1,\"\"SearchType\"\":\"\"0\"\",\"\"WithSubsOnly\"\":false}\" \"https://www.ktuvit.me/Services/ContentProvider.svc/SearchPage_search\")",
       "Bash(python3 -c \"import sys,json; data=sys.stdin.read\\(\\); print\\(data[:3000]\\)\")",
-      "Bash(find repo/ -name \"*1.0.*\" ! -name \"*1.0.3*\" -delete)"
+      "Bash(find repo/ -name \"*1.0.*\" ! -name \"*1.0.3*\" -delete)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Bash(find repo/ -name \"*1.0.3*\" -delete)"
     ]
   }
 }
