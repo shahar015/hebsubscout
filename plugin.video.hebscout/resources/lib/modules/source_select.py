@@ -99,7 +99,9 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
 
     def _build_ui(self):
         """Build the full-screen UI."""
-        # Full-screen dark background
+        # Full-screen solid black background (fully opaque)
+        self.addControl(xbmcgui.ControlImage(0, 0, 1920, 1080, self.tex, colorDiffuse='FF000000'))
+        # Slightly lighter content area
         self.addControl(xbmcgui.ControlImage(0, 0, 1920, 1080, self.tex, colorDiffuse='FF0a0a1a'))
 
         # -- FILTER CHIPS --
@@ -113,13 +115,15 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
 
     def _build_filter_chips(self):
         """Build the 4 rows of filter chips."""
+        self._chip_controls = []  # Track for rebuild
+        self._chip_buttons = {}
         y_base = 20
         row_h = 42
         chip_h = 32
         chip_spacing = 8
 
         # Row 0: Quality filters (multi-select)
-        self._build_chip_label(40, y_base, t('quality'))
+        self._add_chip_label(40, y_base, t('quality'))
         x = 160
         for i, q in enumerate(['4K', '1080p', '720p', '480p', 'SD']):
             active = q in self._quality_filters
@@ -129,7 +133,7 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
 
         # Row 1: Subtitle filters (single-select)
         y = y_base + row_h
-        self._build_chip_label(40, y, t('subs_any') if t('subs_any') != 'subs_any' else 'Subs')
+        self._add_chip_label(40, y, 'Subs')
         x = 160
         for i, (label, val) in enumerate([('100%', '100'), ('>75%', '75'), ('>50%', '50'), ('All', 'All')]):
             active = self._subs_filter == val
@@ -139,7 +143,7 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
 
         # Row 2: Feature filters (multi-select)
         y = y_base + row_h * 2
-        self._build_chip_label(40, y, 'Features')
+        self._add_chip_label(40, y, 'Features')
         x = 160
         for i, feat in enumerate(ALL_FEATURES):
             active = feat in self._feature_filters
@@ -149,7 +153,7 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
 
         # Row 3: Sort by (single-select)
         y = y_base + row_h * 3
-        self._build_chip_label(40, y, 'Sort')
+        self._add_chip_label(40, y, 'Sort')
         x = 160
         for i, (label, val) in enumerate([('Size', 'size'), ('Sub %', 'subs'), ('Default', 'default')]):
             active = self._sort_by == val
@@ -157,38 +161,36 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
             self._chip_buttons[(3, i)] = btn
             x += 90 + chip_spacing
 
-    def _build_chip_label(self, x, y, text):
+    def _add_chip_label(self, x, y, text):
         label = xbmcgui.ControlLabel(x, y + 4, 110, 30, text, font='font12', textColor='FF888888')
         self.addControl(label)
+        self._chip_controls.append(label)
 
     def _make_chip(self, x, y, w, h, text, active, color):
-        """Create a filter chip button."""
+        """Create a filter chip as a colored label on a background."""
         if active:
-            label = '[COLOR {}]{}[/COLOR]'.format(color, text)
+            label_text = '[COLOR {}]{}[/COLOR]'.format(color, text)
             bg_color = 'FF222244'
+            border_color = color
         else:
-            label = '[COLOR FF666666]{}[/COLOR]'.format(text)
+            label_text = '[COLOR FF666666]{}[/COLOR]'.format(text)
             bg_color = 'FF151530'
+            border_color = 'FF333355'
 
-        # Background
+        # Single background (no layering issues)
         bg = xbmcgui.ControlImage(x, y, w, h, self.tex, colorDiffuse=bg_color)
         self.addControl(bg)
-
-        # Border
-        border = xbmcgui.ControlImage(x - 1, y - 1, w + 2, h + 2, self.tex,
-                                       colorDiffuse=color if active else 'FF333355')
-        self.addControl(border)
-        # Re-add bg on top of border
-        bg2 = xbmcgui.ControlImage(x, y, w, h, self.tex, colorDiffuse=bg_color)
-        self.addControl(bg2)
+        self._chip_controls.append(bg)
 
         # Text label centered
-        lbl = xbmcgui.ControlLabel(x, y + 2, w, h - 4, label, font='font12', alignment=0x00000002)
+        lbl = xbmcgui.ControlLabel(x, y + 2, w, h - 4, label_text, font='font12', alignment=0x00000002)
         self.addControl(lbl)
+        self._chip_controls.append(lbl)
 
         # Invisible button for focus
         btn = xbmcgui.ControlButton(x, y, w, h, '', focusTexture='', noFocusTexture='')
         self.addControl(btn)
+        self._chip_controls.append(btn)
 
         return btn
 
@@ -490,11 +492,15 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
         self._apply_filters()
 
     def _rebuild_chips(self):
-        """Rebuild filter chip visuals to reflect current state."""
-        # Remove old chip controls and rebuild
-        # For simplicity, we rebuild the chip labels by updating text
-        # This is a visual refresh — the buttons stay in place
-        pass  # Chip state is shown via _apply_filters → _render_cards redraw
+        """Remove old chip controls and rebuild with updated state."""
+        for ctrl in self._chip_controls:
+            try:
+                self.removeControl(ctrl)
+            except Exception:
+                pass
+        self._chip_controls = []
+        self._chip_buttons = {}
+        self._build_filter_chips()
 
     # =====================================================================
     # NAVIGATION
@@ -540,15 +546,15 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
                     self._filter_col = min(self._filter_col, self._get_filter_row_len(self._filter_row) - 1)
             else:
                 if self._focused_card > 0:
+                    old_offset = self._scroll_offset
                     self._focused_card -= 1
                     if self._focused_card < self._scroll_offset:
                         self._scroll_offset = self._focused_card
-                    self._render_cards()
+                    if self._scroll_offset != old_offset:
+                        self._render_cards()
                 else:
-                    # Jump back to filters
                     self._in_filters = True
                     self._filter_row = 3
-                    self._render_cards()
 
         elif action_id == 4:  # DOWN
             if self._in_filters:
@@ -556,16 +562,16 @@ class SourceSelectDialog(xbmcgui.WindowDialog):
                     self._filter_row += 1
                     self._filter_col = min(self._filter_col, self._get_filter_row_len(self._filter_row) - 1)
                 else:
-                    # Enter source cards
                     self._in_filters = False
                     self._focused_card = self._scroll_offset
-                    self._render_cards()
             else:
                 if self._focused_card < len(self.filtered_sources) - 1:
+                    old_offset = self._scroll_offset
                     self._focused_card += 1
                     if self._focused_card >= self._scroll_offset + MAX_VISIBLE_CARDS:
                         self._scroll_offset = self._focused_card - MAX_VISIBLE_CARDS + 1
-                    self._render_cards()
+                    if self._scroll_offset != old_offset:
+                        self._render_cards()
 
         elif action_id == 1:  # LEFT
             if self._in_filters and self._filter_col > 0:

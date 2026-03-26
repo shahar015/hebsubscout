@@ -303,22 +303,14 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         self.cancelled = False
         tex = _get_white_texture()
 
-        # Full-screen dimmer (blocks background content)
-        dimmer = xbmcgui.ControlImage(0, 0, 1920, 1080, tex, colorDiffuse='DD000000')
-        self.addControl(dimmer)
+        # Full-screen solid black background (fully opaque)
+        self.addControl(xbmcgui.ControlImage(0, 0, 1920, 1080, tex, colorDiffuse='FF000000'))
 
-        # Dialog dimensions (centered)
+        # Dialog panel (centered, slightly lighter)
         w, h = 700, 520
         x = (1920 - w) // 2
         y = (1080 - h) // 2
-
-        # Border (green outline)
-        border = xbmcgui.ControlImage(x - 3, y - 3, w + 6, h + 6, tex, colorDiffuse='FF00d4aa')
-        self.addControl(border)
-
-        # Background (solid dark)
-        bg = xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF111122')
-        self.addControl(bg)
+        self.addControl(xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF0f0f24'))
 
         # Heading
         self.addControl(xbmcgui.ControlLabel(
