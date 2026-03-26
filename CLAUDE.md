@@ -202,6 +202,9 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - No icon.png or fanart.jpg assets yet for the addons
 - Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
 - 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
+- Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
+- Kodi plugin scripts are short-lived — don't block with waitForAbort loops (causes loading spinner)
+- Dual XML skins: changes to source_select must be made in BOTH _rtl.xml and _ltr.xml
 
 ## Key UI Architecture
 
@@ -283,3 +286,9 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.0.15: Absolute texture paths for programmatic buttons
 - v1.0.16: 16x16 white.png (1x1 was too small for Kodi)
 - **v1.1.0: Complete source screen redesign** — cinematic dark theme, all XML buttons, clean architecture
+- v1.1.1: RTL filter layout, wider buttons (130/235px), quality badge 90px
+- v1.1.2: RTL text alignment in chips and right panel, Hebrew label updates
+- v1.1.3: Dual XML skins (source_select_rtl.xml / source_select_ltr.xml) for i18n
+- v1.1.4: Sub display "50% התאמה לכתוביות"
+- v1.1.5: Fixed player callbacks (script was exiting before onAVStarted), subtitle service now required dependency
+- v1.1.6: Removed waitForAbort loop that caused loading spinner during playback
