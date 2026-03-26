@@ -324,10 +324,11 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
         _play_source(best, imdb_id, tmdb_id, title, year, season, episode, media_type, poster, fanart)
         return
 
-    # Custom source selection screen (WindowXMLDialog with XML skin)
+    # Custom source selection screen (RTL/LTR XML based on language)
     from resources.lib.modules.source_select import SourceSelectDialog
     addon_path = xbmcaddon.Addon().getAddonInfo('path')
-    dialog = SourceSelectDialog('source_select.xml', addon_path, sources, metadata)
+    xml_file = 'source_select_rtl.xml' if is_hebrew() else 'source_select_ltr.xml'
+    dialog = SourceSelectDialog(xml_file, addon_path, sources, metadata)
     dialog.doModal()
     chosen = dialog.selected_source
     del dialog
