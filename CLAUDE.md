@@ -4,7 +4,18 @@
 **Every Claude Code session MUST update this file before ending.** Update:
 - The **Change Log** section with what was done this session
 - The **Current TODOs** section with completed/new items
-- Any architecture or file structure changes
+- Any architecture, API, or file structure changes
+- Update this file **incrementally throughout the session**, not just at the end
+
+## CRITICAL: Version & Release Workflow
+**NEVER push multiple code changes under the same version number.**
+- Bump the version ONCE at the very end, after ALL fixes are confirmed working
+- If the user needs to test mid-session, bump the version BEFORE pushing
+- Kodi caches repo addons.xml for up to 24 hours — same version = no update detected
+- The user should never have to uninstall+reinstall to get updates
+- Workflow: code → test locally if possible → bump ALL addon.xml versions → generate_repo.py → delete old zips → update index.html files → commit → push
+- Kodi source URL: `https://shahar015.github.io/hebsubscout/repo` (note the /repo)
+- Kodi log on this machine: `C:\Users\shaha\AppData\Roaming\Kodi\kodi.log`
 
 ---
 
@@ -89,36 +100,51 @@ hebsubscout/
 | Service | Base URL | Auth | Used For |
 |---------|----------|------|----------|
 | TMDB | `api.themoviedb.org/3` | API key in query param | Movie/show browsing, metadata, IMDB IDs |
-| Wizdom.xyz | `wizdom.xyz/api` | None | Hebrew subtitle search + download |
-| Ktuvit/ScrewZira | `api.screwzira.com` | None for search | Hebrew subtitle search + download |
+| Wizdom.xyz | `wizdom.xyz/api/search?action=by_id` | None | Hebrew subtitle search. Also `/api/releases/{imdb}` for fallback. TV shows: subs are nested `subs[season][episode]` |
+| Ktuvit.me | `www.ktuvit.me` | Cookie-based login (email + hashed password) | Hebrew subtitle search. Old `api.screwzira.com` is DEAD (bot wall). Uses HTML scraping. |
 | OpenSubtitles | `api.opensubtitles.com/api/v1` | API key header | Hebrew subtitle search (optional) |
-| Real Debrid | `api.real-debrid.com/rest/1.0` | Bearer token | Torrent cache check, link unrestrict, streaming |
-| Trakt | `api.trakt.tv` | Bearer token + Client ID | Scrobbling, watchlist, progress, history |
+| Real Debrid | `api.real-debrid.com/rest/1.0` | Bearer token | Torrent cache check, link unrestrict, streaming. OAuth token endpoint requires form-encoded POST (not JSON). Device auth returns `direct_verification_url` for QR codes. |
+| Trakt | `api.trakt.tv` | Bearer token + Client ID | Scrobbling, watchlist, progress, history. Device auth URL supports `trakt.tv/activate/{code}` for QR pre-fill. |
 | Torrentio | `torrentio.strem.fun` | None (public) | Source scraping (torrent search) |
-| MediaFusion | `mediafusion.elfhosted.com` | None (public) | Source scraping (torrent search) |
+| MediaFusion | `mediafusion.elfhosted.com` | May need auth (returns 403 currently) | Source scraping (torrent search) |
 
 ## Development Workflow
 
+### CRITICAL: Never push code changes without bumping the version
+Kodi caches zips by version. Same version = Kodi won't update even if zip contents changed.
+
 ### After modifying any addon code:
 ```bash
-# 1. Bump version in that addon's addon.xml (e.g. 1.0.0 → 1.0.1)
-# 2. Rebuild the repository:
-python3 generate_repo.py
-# 3. Commit and push - Kodi auto-updates within 24 hours
-git add .
-git commit -m "description of changes"
-git push
+# 1. Make all code changes
+# 2. Bump version in ALL 5 addon.xml files (use sed):
+for f in plugin.video.hebscout/addon.xml script.module.hebsubscout/addon.xml service.subtitles.hebsubscout/addon.xml context.hebsubscout/addon.xml repository.hebsubscout/addon.xml; do
+  sed -i 's/version="OLD"/version="NEW"/' "$f"
+done
+# 3. Rebuild the repository:
+python generate_repo.py
+# 4. Delete old version zips:
+find repo/ -name "*OLD*" -delete
+# 5. Update index.html files:
+sed -i 's/OLD/NEW/g' repo/index.html
+for dir in plugin.video.hebscout script.module.hebsubscout service.subtitles.hebsubscout context.hebsubscout repository.hebsubscout; do
+  cd "repo/$dir" && files="" && for f in $(ls -1 | grep -v index.html); do files="$files<a href=\"$f\">$f</a>\n"; done && printf "<html><body>\n$files</body></html>\n" > index.html && cd ../..
+done
+# 6. Commit and push
+git add -A && git commit -m "vX.Y.Z: description" && git push
 ```
 
 ### Testing in Kodi:
-- Kodi log location: `~/.kodi/temp/kodi.log` (Linux), `%APPDATA%\Kodi\temp\kodi.log` (Windows)
+- Kodi log on this PC: `C:\Users\shaha\AppData\Roaming\Kodi\kodi.log`
 - Search for `[HebScout]` and `[HebSubScout]` in logs
-- To force-reinstall during development: uninstall addon in Kodi, delete the zip from `repo/`, regenerate, push, reinstall
+- Kodi addon files cached at: `%APPDATA%\Kodi\addons\plugin.video.hebscout\`
+- If updates not showing: user must uninstall repo+addon, delete cached addon folders, restart Kodi, reinstall
+- To check installed version in log: grep for `plugin.video.hebscout v`
 
 ### GitHub Pages:
 - The `repo/` directory is served via GitHub Pages from `shahar015.github.io/hebsubscout`
 - Pages must be enabled: Settings → Pages → main branch, / (root)
-- Kodi source URL: `https://shahar015.github.io/hebsubscout`
+- Kodi source URL: `https://shahar015.github.io/hebsubscout/repo` (note: /repo at the end)
+- Each subdirectory in repo/ needs an index.html with `<a href>` links for Kodi to browse (GitHub Pages has no directory listing)
 
 ## Kodi Addon Conventions
 
@@ -153,14 +179,22 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 
 ## Current TODOs
 
-- [ ] Custom source selection screen with filter chips, source cards, movie info panel (`source_select.py`)
-- [ ] Subtitle search notifications during playback (search start/found/applied)
-- [ ] Subtitle picker OSD button during playback ("CC עב" button + T key interception)
-- [ ] Subtitle picker popup during playback (picker.py already exists, needs trigger)
-- Scraper APIs (Torrentio/MediaFusion) may need RD token in URL for cached-only results
-- Wizdom/Ktuvit download endpoints need live testing — response formats may differ from documentation
-- No external scraper module hot-loading yet (CocoScrapers integration is basic)
+### Needs testing (implemented but not verified in Kodi):
+- [ ] QR dialog: full-screen black background (was green/transparent) — verify with v1.0.4
+- [ ] RD QR: uses `direct_verification_url` for auto-authorize — verify code pre-fills
+- [ ] Trakt QR: URL includes device code (`trakt.tv/activate/{CODE}`) — verify
+- [ ] Source selection screen: filter chips toggle visually, scroll only re-renders on offset change
+- [ ] Wizdom API: fixed endpoints (`/api/search?action=by_id`), TV show nested parsing
+- [ ] Subtitle search notifications during playback (start/found/applied)
+- [ ] Subtitle picker OSD button ("CC עב") appears during playback
+
+### Known issues:
+- MediaFusion returns HTTP 403 — may need auth token in URL
+- Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
+- Wizdom/Ktuvit download endpoints need live testing with actual subtitle downloads
 - No icon.png or fanart.jpg assets yet for the addons
+- Source selection screen: focused card glow effect not fully implemented (only border changes)
+- Subtitle picker window (picker.py) trigger via OSD button needs testing
 
 ## Key UI Architecture
 
@@ -198,12 +232,15 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - Added Hebrew description to subtitle service addon.xml
 - Version bumped to 1.0.2
 
-### 2026-03-26 — Session 3: Major UI overhaul (in progress)
-- Fixed QR dialog visuals (dimmer layer, safe fonts)
-- Added device code to Trakt QR URL
-- Extended feature detection (DV, HDR10+)
-- Added cast/director to show_details()
-- NEW: Custom source selection screen (source_select.py)
+### 2026-03-26 — Session 3: Major UI overhaul + API fixes
+- v1.0.3: Custom source selection screen (source_select.py), QR dialogs, subtitle OSD
+- v1.0.3 (hotfix commits): Fixed QR background (full-screen black dimmer), scroll perf, chip toggle
+- v1.0.3 (hotfix commits): Fixed Wizdom API (new endpoints), rewrote Ktuvit provider (ktuvit.me direct)
+- v1.0.3 (hotfix commits): RD QR uses direct_verification_url for auto-authorize
+- v1.0.4: Version bump to force Kodi update (lesson learned: never push code under same version)
+- Extended feature detection: DV, HDR10+, HDR10, TrueHD, DTS-HD, AV1, AAC
+- Added cast/director to show_details() for TV shows
+- Added Ktuvit email/password settings
 - Added subtitle search notifications during playback
-- Added subtitle picker OSD button during playback
-- Version bumped to 1.0.3
+- Added subtitle picker OSD button ("CC עב") during playback
+- Updated CLAUDE.md with proper versioning workflow and API docs

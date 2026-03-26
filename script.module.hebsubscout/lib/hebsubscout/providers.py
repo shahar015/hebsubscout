@@ -38,7 +38,6 @@ except ImportError:
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode, quote
 from urllib.error import HTTPError, URLError
-    from urllib import urlencode, quote
 
 
 # =============================================================================
