@@ -2,15 +2,15 @@
 """
 Source Selection Screen (WindowXMLDialog)
 =========================================
-Full-screen source browser with XML skin layout.
-Uses Kodi's native ControlList for smooth scrolling and focus handling.
+Uses XML skin for ControlList (native scroll/focus) and right panel.
+Filter buttons are created dynamically by Python in onInit for proper sizing.
 """
 
 import xbmcgui
 import xbmcaddon
 
 from resources.lib.modules.utils import (
-    t, get_setting, set_setting, log
+    t, get_setting, set_setting, log, is_hebrew
 )
 
 QUALITY_COLORS = {
@@ -20,16 +20,21 @@ QUALITY_COLORS = {
     '480p': 'FFe74c3c',
     'SD': 'FF95a5a6',
 }
-
 QUALITY_ORDER = {'4K': 0, '1080p': 1, '720p': 2, '480p': 3, 'SD': 4}
 
-# Filter button IDs from XML
-QUALITY_BTNS = {3001: '4K', 3002: '1080p', 3003: '720p', 3004: '480p', 3005: 'SD'}
-SORT_BTNS = {3006: 'default', 3007: 'size', 3008: 'subs'}
-PROVIDER_BTNS = {3009: 'torrentio', 3010: 'mediafusion'}
+# Approximate character width for font12 (in 1080i pixels)
+CHAR_W = 11
+CHIP_H = 36
+CHIP_GAP = 8
+CHIP_PAD = 24  # padding inside button (left+right)
+ROW_H = 46
+LABEL_X = 40
+CHIP_START_X = 150
 
-# Row label IDs
-LABEL_IDS = {4001: 'quality', 4002: 'sort', 4003: 'source'}
+
+def _text_width(text):
+    """Estimate pixel width for a text string in font12."""
+    return len(text) * CHAR_W + CHIP_PAD
 
 
 def _parse_size_bytes(size_str):
@@ -47,7 +52,6 @@ def _parse_size_bytes(size_str):
 
 
 class SourceSelectDialog(xbmcgui.WindowXMLDialog):
-    """Source selection using XML skin for native focus/scroll handling."""
 
     def __new__(cls, xml_file, addon_path, sources, metadata):
         return super().__new__(cls, xml_file, addon_path, 'Default', '1080i')
@@ -59,75 +63,175 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self.metadata = metadata or {}
         self.selected_source = None
 
-        # Filter state: empty set = show all (no filter active)
-        saved_quality = get_setting('filter_quality') or ''
-        self._quality_filters = set(q for q in saved_quality.split('|') if q) if saved_quality else set()
+        # Filter state
+        saved_q = get_setting('filter_quality') or ''
+        self._quality_filters = set(q for q in saved_q.split('|') if q) if saved_q else set()
         self._sort_by = get_setting('filter_sort') or 'default'
-        saved_providers = get_setting('filter_providers') or ''
-        self._provider_filters = set(p for p in saved_providers.split('|') if p) if saved_providers else set()
+        saved_p = get_setting('filter_providers') or ''
+        self._provider_filters = set(p for p in saved_p.split('|') if p) if saved_p else set()
+
+        # Collect unique providers from sources
+        self._available_providers = sorted(set(
+            s.get('provider', '') for s in sources if s.get('provider')
+        ))
+
+        # Dynamic button tracking: {control_id: (type, value)}
+        self._btn_map = {}
+        self._btn_controls = []
+        self._label_controls = []
+        self._next_id = 5000  # Start above XML control IDs
 
     def onInit(self):
-        """Called when the dialog opens. Populate all controls."""
-        self._sync_filter_labels()
+        self._build_filter_rows()
         self._populate_info_panel()
         self._apply_filters()
 
-    def _sync_filter_labels(self):
-        """Update button labels to show selected state with color, and row labels."""
-        from resources.lib.modules.utils import is_hebrew
+    # ==================================================================
+    # DYNAMIC FILTER BUTTONS
+    # ==================================================================
 
-        # Row labels (translated)
+    def _build_filter_rows(self):
+        """Create all filter buttons dynamically with auto-sized widths."""
         he = is_hebrew()
+        y = 20
+        last_row_btns = []
+
+        # Row 1: Quality
+        row1_label = 'איכות' if he else 'Quality'
+        qualities = [('4K', '4K'), ('1080p', '1080p'), ('720p', '720p'), ('480p', '480p'), ('SD', 'SD')]
+        row1_btns = self._create_chip_row(y, row1_label, qualities, 'quality')
+        y += ROW_H
+
+        # Row 2: Sort
+        row2_label = 'מיון' if he else 'Sort'
+        sort_items = [
+            ('ברירת מחדל' if he else 'Default', 'default'),
+            ('גודל' if he else 'Size', 'size'),
+            ('כתוביות %' if he else 'Sub %', 'subs'),
+        ]
+        row2_btns = self._create_chip_row(y, row2_label, sort_items, 'sort')
+        y += ROW_H
+
+        # Row 3: Provider
+        row3_label = 'מקור' if he else 'Source'
+        prov_items = [(p.capitalize(), p) for p in self._available_providers]
+        row3_btns = self._create_chip_row(y, row3_label, prov_items, 'provider') if prov_items else []
+        if row3_btns:
+            last_row_btns = row3_btns
+            y += ROW_H
+        else:
+            last_row_btns = row2_btns
+
+        # Update source count + divider position
         try:
-            self.getControl(4001).setLabel('[COLOR FF888888]{}[/COLOR]'.format('איכות' if he else 'Quality'))
-            self.getControl(4002).setLabel('[COLOR FF888888]{}[/COLOR]'.format('מיון' if he else 'Sort'))
-            self.getControl(4003).setLabel('[COLOR FF888888]{}[/COLOR]'.format('מקור' if he else 'Source'))
-        except Exception:
-            pass
+            self.getControl(1001).setPosition(LABEL_X, y)
+            self.getControl(1002).setPosition(LABEL_X, y + 27)
+            self.getControl(1000).setPosition(LABEL_X, y + 35)
+            self.getControl(1000).setHeight(1080 - y - 45)
+        except Exception as e:
+            log('Filter layout error: {}'.format(e), 'ERROR')
 
-        # Quality chips
-        for btn_id, quality in QUALITY_BTNS.items():
-            try:
-                ctrl = self.getControl(btn_id)
-                color = QUALITY_COLORS.get(quality, 'FFcccccc')
-                if quality in self._quality_filters:
-                    ctrl.setLabel('[COLOR {}][B]{}[/B][/COLOR]'.format(color, quality))
-                else:
-                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(quality))
-            except Exception:
-                pass
+        # Set up/down navigation between rows
+        self._link_rows(row1_btns, row2_btns)
+        self._link_rows(row2_btns, row3_btns if row3_btns else None)
+        if row3_btns:
+            self._link_rows(row3_btns, None)
 
-        # Sort chips
+        # Link last filter row ↔ source list
+        list_ctrl = self.getControl(1000)
+        for btn in last_row_btns:
+            btn.controlDown(list_ctrl)
+
+        # Update visual state
+        self._update_chip_visuals()
+
+    def _create_chip_row(self, y, label_text, items, chip_type):
+        """Create a row label + buttons. Returns list of button controls."""
+        # Row label
+        lbl = xbmcgui.ControlLabel(LABEL_X, y + 5, 100, 30,
+                                    '[COLOR FF888888]{}[/COLOR]'.format(label_text),
+                                    font='font12')
+        self.addControl(lbl)
+        self._label_controls.append(lbl)
+
+        buttons = []
+        x = CHIP_START_X
+        for display_text, value in items:
+            w = _text_width(display_text)
+            btn = xbmcgui.ControlButton(
+                x, y, w, CHIP_H, display_text,
+                font='font12',
+                focusTexture='white.png', noFocusTexture='white.png',
+                focusedColor='FFffffff', textColor='FFcccccc',
+            )
+            self.addControl(btn)
+            btn_id = self._next_id
+            self._next_id += 1
+            self._btn_map[id(btn)] = (chip_type, value)
+            self._btn_controls.append(btn)
+            buttons.append(btn)
+            x += w + CHIP_GAP
+
+        # Link left/right within row
+        for i, btn in enumerate(buttons):
+            if i > 0:
+                btn.controlLeft(buttons[i - 1])
+            if i < len(buttons) - 1:
+                btn.controlRight(buttons[i + 1])
+
+        return buttons
+
+    def _link_rows(self, upper_btns, lower_btns):
+        """Link up/down navigation between two rows of buttons."""
+        if not upper_btns:
+            return
+        if lower_btns:
+            for btn in upper_btns:
+                btn.controlDown(lower_btns[0])
+            for btn in lower_btns:
+                btn.controlUp(upper_btns[0])
+
+    def _update_chip_visuals(self):
+        """Update all chip button labels to reflect selected state."""
+        he = is_hebrew()
         sort_labels = {
             'default': 'ברירת מחדל' if he else 'Default',
             'size': 'גודל' if he else 'Size',
             'subs': 'כתוביות %' if he else 'Sub %',
         }
-        for btn_id, sort_val in SORT_BTNS.items():
-            try:
-                ctrl = self.getControl(btn_id)
-                label = sort_labels.get(sort_val, sort_val)
-                if self._sort_by == sort_val:
-                    ctrl.setLabel('[COLOR FF9b59b6][B]{}[/B][/COLOR]'.format(label))
-                else:
-                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(label))
-            except Exception:
-                pass
 
-        # Provider chips
-        for btn_id, prov in PROVIDER_BTNS.items():
-            try:
-                ctrl = self.getControl(btn_id)
-                display = prov.capitalize()
-                if prov in self._provider_filters:
-                    ctrl.setLabel('[COLOR FF3498db][B]{}[/B][/COLOR]'.format(display))
+        for btn in self._btn_controls:
+            key = id(btn)
+            if key not in self._btn_map:
+                continue
+            chip_type, value = self._btn_map[key]
+
+            if chip_type == 'quality':
+                color = QUALITY_COLORS.get(value, 'FFcccccc')
+                if value in self._quality_filters:
+                    btn.setLabel('[COLOR {}][B]{}[/B][/COLOR]'.format(color, value))
                 else:
-                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(display))
-            except Exception:
-                pass
+                    btn.setLabel('[COLOR FF666666]{}[/COLOR]'.format(value))
+
+            elif chip_type == 'sort':
+                label = sort_labels.get(value, value)
+                if self._sort_by == value:
+                    btn.setLabel('[COLOR FF9b59b6][B]{}[/B][/COLOR]'.format(label))
+                else:
+                    btn.setLabel('[COLOR FF666666]{}[/COLOR]'.format(label))
+
+            elif chip_type == 'provider':
+                display = value.capitalize()
+                if value in self._provider_filters:
+                    btn.setLabel('[COLOR FF3498db][B]{}[/B][/COLOR]'.format(display))
+                else:
+                    btn.setLabel('[COLOR FF666666]{}[/COLOR]'.format(display))
+
+    # ==================================================================
+    # INFO PANEL
+    # ==================================================================
 
     def _populate_info_panel(self):
-        """Fill the right-side movie info panel."""
         meta = self.metadata
         try:
             poster = meta.get('poster', '')
@@ -162,19 +266,19 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         except Exception as e:
             log('Info panel error: {}'.format(e), 'ERROR')
 
+    # ==================================================================
+    # FILTERING & SOURCE LIST
+    # ==================================================================
+
     def _apply_filters(self):
-        """Filter and sort sources, then populate the list control."""
         result = list(self.all_sources)
 
-        # Quality filter: empty set = show all, non-empty = show only selected
         if self._quality_filters:
             result = [s for s in result if s.get('quality', 'SD') in self._quality_filters]
 
-        # Provider filter: empty = show all
         if self._provider_filters:
             result = [s for s in result if s.get('provider', '') in self._provider_filters]
 
-        # Sort within quality tiers
         if self._sort_by == 'size':
             result.sort(key=lambda s: (
                 QUALITY_ORDER.get(s.get('quality', 'SD'), 9),
@@ -195,7 +299,6 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self._populate_source_list()
 
     def _populate_source_list(self):
-        """Fill the ControlList with source items."""
         try:
             list_control = self.getControl(1000)
             list_control.reset()
@@ -203,13 +306,11 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
             items = []
             for src in self.filtered_sources:
                 item = xbmcgui.ListItem(label=src.get('name', 'Unknown'))
-
                 quality = src.get('quality', 'SD')
                 item.setProperty('quality', quality)
                 item.setProperty('quality_color', QUALITY_COLORS.get(quality, 'FF888888'))
                 item.setProperty('provider', src.get('provider', '').capitalize())
 
-                # Sub match display
                 sub_pct = src.get('best_match_pct', 0)
                 has_subs = src.get('has_hebrew_subs', False)
                 if has_subs:
@@ -222,12 +323,8 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 else:
                     sub_display = '[COLOR FFe74c3c]עב X[/COLOR]'
                 item.setProperty('sub_display', sub_display)
+                item.setProperty('info_tags', '  '.join(src.get('info', [])[:6]))
 
-                # Feature tags
-                info_tags = src.get('info', [])
-                item.setProperty('info_tags', '  '.join(info_tags[:6]))
-
-                # Size + RD
                 size_parts = []
                 if src.get('rd_cached'):
                     size_parts.append('[COLOR FF3498db]RD[/COLOR]')
@@ -235,25 +332,23 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 if size:
                     size_parts.append(size)
                 item.setProperty('size_display', '  '.join(size_parts))
-
                 items.append(item)
 
             list_control.addItems(items)
 
-            # Update count label
             try:
-                self.getControl(1001).setLabel(
-                    '{} sources'.format(len(self.filtered_sources))
-                )
+                self.getControl(1001).setLabel('{} sources'.format(len(self.filtered_sources)))
             except Exception:
                 pass
-
         except Exception as e:
             log('Source list populate error: {}'.format(e), 'ERROR')
 
+    # ==================================================================
+    # EVENT HANDLERS
+    # ==================================================================
+
     def onClick(self, controlID):
-        """Handle button clicks."""
-        # Source list item selected
+        # Source list selection
         if controlID == 1000:
             try:
                 idx = self.getControl(1000).getSelectedPosition()
@@ -265,37 +360,33 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 pass
             return
 
-        # Quality filter buttons (toggle: none selected = show all)
-        if controlID in QUALITY_BTNS:
-            q = QUALITY_BTNS[controlID]
-            if q in self._quality_filters:
-                self._quality_filters.discard(q)
-            else:
-                self._quality_filters.add(q)
-            self._sync_filter_labels()
-            self._apply_filters()
+    def onControl(self, control):
+        """Handle clicks on dynamically created buttons."""
+        key = id(control)
+        if key not in self._btn_map:
             return
 
-        # Sort buttons
-        if controlID in SORT_BTNS:
-            self._sort_by = SORT_BTNS[controlID]
-            self._sync_filter_labels()
-            self._apply_filters()
-            return
+        chip_type, value = self._btn_map[key]
 
-        # Provider buttons (toggle: none = show all)
-        if controlID in PROVIDER_BTNS:
-            p = PROVIDER_BTNS[controlID]
-            if p in self._provider_filters:
-                self._provider_filters.discard(p)
+        if chip_type == 'quality':
+            if value in self._quality_filters:
+                self._quality_filters.discard(value)
             else:
-                self._provider_filters.add(p)
-            self._sync_filter_labels()
-            self._apply_filters()
-            return
+                self._quality_filters.add(value)
+
+        elif chip_type == 'sort':
+            self._sort_by = value
+
+        elif chip_type == 'provider':
+            if value in self._provider_filters:
+                self._provider_filters.discard(value)
+            else:
+                self._provider_filters.add(value)
+
+        self._update_chip_visuals()
+        self._apply_filters()
 
     def onAction(self, action):
-        """Handle back/escape."""
         if action.getId() in (9, 10, 92, 216):
             self.selected_source = None
             self._save_filters()

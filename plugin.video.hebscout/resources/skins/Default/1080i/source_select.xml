@@ -6,11 +6,7 @@
         <system>1</system>
     </coordinates>
     <controls>
-        <!-- Full-screen solid backgrounds (stacked for guaranteed opacity) -->
-        <control type="image">
-            <left>0</left><top>0</top><width>1920</width><height>1080</height>
-            <texture colordiffuse="FF000000">white.png</texture>
-        </control>
+        <!-- Full-screen opaque background -->
         <control type="image">
             <left>0</left><top>0</top><width>1920</width><height>1080</height>
             <texture colordiffuse="FF000000">white.png</texture>
@@ -20,107 +16,10 @@
             <texture colordiffuse="FF0d0d1a">white.png</texture>
         </control>
 
-        <!-- ============================================================ -->
-        <!-- LEFT PANEL: Filter buttons + Source list                     -->
-        <!-- ============================================================ -->
-
-        <!-- Row 1: Quality label + buttons (labels set by Python) -->
-        <control type="label" id="4001">
-            <left>40</left><top>28</top><width>100</width><height>30</height>
-            <label></label><font>font12</font>
-        </control>
-        <control type="button" id="3001">
-            <left>150</left><top>22</top><width>90</width><height>36</height>
-            <label>4K</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onright>3002</onright><ondown>3006</ondown>
-        </control>
-        <control type="button" id="3002">
-            <left>248</left><top>22</top><width>90</width><height>36</height>
-            <label>1080p</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3001</onleft><onright>3003</onright><ondown>3006</ondown>
-        </control>
-        <control type="button" id="3003">
-            <left>346</left><top>22</top><width>90</width><height>36</height>
-            <label>720p</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3002</onleft><onright>3004</onright><ondown>3006</ondown>
-        </control>
-        <control type="button" id="3004">
-            <left>444</left><top>22</top><width>90</width><height>36</height>
-            <label>480p</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3003</onleft><onright>3005</onright><ondown>3006</ondown>
-        </control>
-        <control type="button" id="3005">
-            <left>542</left><top>22</top><width>90</width><height>36</height>
-            <label>SD</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3004</onleft><ondown>3006</ondown>
-        </control>
-
-        <!-- Row 2: Sort label + buttons (labels set by Python) -->
-        <control type="label" id="4002">
-            <left>40</left><top>73</top><width>100</width><height>30</height>
-            <label></label><font>font12</font>
-        </control>
-        <control type="button" id="3006">
-            <left>150</left><top>68</top><width>145</width><height>36</height>
-            <label>Default</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onright>3007</onright><onup>3001</onup><ondown>3009</ondown>
-        </control>
-        <control type="button" id="3007">
-            <left>303</left><top>68</top><width>100</width><height>36</height>
-            <label>Size</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3006</onleft><onright>3008</onright><onup>3001</onup><ondown>3009</ondown>
-        </control>
-        <control type="button" id="3008">
-            <left>411</left><top>68</top><width>145</width><height>36</height>
-            <label>Sub %</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3007</onleft><onup>3001</onup><ondown>3009</ondown>
-        </control>
-
-        <!-- Row 3: Source provider label + buttons -->
-        <control type="label" id="4003">
-            <left>40</left><top>118</top><width>100</width><height>30</height>
-            <label></label><font>font12</font>
-        </control>
-        <control type="button" id="3009">
-            <left>150</left><top>114</top><width>135</width><height>36</height>
-            <label>Torrentio</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onright>3010</onright><onup>3006</onup><ondown>1000</ondown>
-        </control>
-        <control type="button" id="3010">
-            <left>293</left><top>114</top><width>155</width><height>36</height>
-            <label>MediaFusion</label><font>font12</font>
-            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
-            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3009</onleft><onup>3006</onup><ondown>1000</ondown>
-        </control>
+        <!-- Filter area: populated dynamically by Python in onInit -->
+        <!-- Python creates ControlButton + ControlLabel for each filter row -->
+        <!-- IDs 3001-3099 reserved for filter buttons -->
+        <!-- IDs 4001-4009 reserved for row labels -->
 
         <!-- Source count label -->
         <control type="label" id="1001">
@@ -130,17 +29,14 @@
         </control>
 
         <!-- Divider line -->
-        <control type="image">
+        <control type="image" id="1002">
             <left>40</left><top>185</top><width>1180</width><height>2</height>
             <texture colordiffuse="FF333355">white.png</texture>
         </control>
 
-        <!-- ============================================================ -->
-        <!-- SOURCE LIST                                                  -->
-        <!-- ============================================================ -->
+        <!-- SOURCE LIST (native ControlList with scroll + focus) -->
         <control type="list" id="1000">
             <left>40</left><top>195</top><width>1180</width><height>870</height>
-            <onup>3009</onup>
             <viewtype label="sources">list</viewtype>
             <pagecontrol>0</pagecontrol>
             <scrolltime>200</scrolltime>
@@ -239,12 +135,9 @@
             </focusedlayout>
         </control>
 
-        <!-- ============================================================ -->
-        <!-- RIGHT PANEL: Movie/Show info                                 -->
-        <!-- ============================================================ -->
+        <!-- RIGHT PANEL: Movie/Show info -->
         <control type="group">
             <left>1280</left><top>20</top>
-
             <control type="image" id="2000">
                 <left>80</left><top>0</top><width>380</width><height>540</height>
                 <aspectratio>keep</aspectratio>
