@@ -8,11 +8,7 @@ Full-featured video addon with native HebSubScout integration.
 import sys
 import json
 
-try:
-    from urllib.parse import urlencode, parse_qsl, quote_plus
-except ImportError:
-    from urllib import urlencode, quote_plus
-    from urlparse import parse_qsl
+from urllib.parse import urlencode, parse_qsl, quote_plus
 
 import xbmc
 import xbmcgui
@@ -53,7 +49,7 @@ def add_dir(label, action, is_folder=True, poster='', fanart='', plot='', **kwar
         art['fanart'] = ADDON_FANART
     li.setArt(art)
     if plot:
-        li.setInfo('video', {'plot': plot})
+        li.getVideoInfoTag().setPlot(plot)
     params = {'action': action}
     params.update(kwargs)
     xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, is_folder)
@@ -94,7 +90,7 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     season = meta.get('season_number', 0)
     episode = meta.get('episode_number', 0)
     if imdb and is_watched(imdb, season, episode):
-        li.setInfo('video', {'playcount': 1})
+        info_tag.setPlaycount(1)
     
     # Context menu
     cm = context_items or []
@@ -157,15 +153,21 @@ def movies_menu():
     end_dir(content='')
 
 
-def list_movies(func, page=1, **kwargs):
-    list_action = kwargs.pop('list_action', 'movies_trending')
+def _list_items(func, item_action, content, page=1, **kwargs):
+    """Generic list function for movies and shows."""
+    list_action = kwargs.pop('list_action', '')
     items, total_pages = func(page=page, **kwargs)
-    for m in items:
-        add_item(m, action='movie_sources', is_folder=True)
-    if page < total_pages:
+    for item in items:
+        add_item(item, action=item_action, is_folder=True)
+    if page < total_pages and list_action:
         add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), list_action,
                 page=str(page + 1), **kwargs)
-    end_dir(content='movies')
+    end_dir(content=content)
+
+
+def list_movies(func, page=1, **kwargs):
+    kwargs.setdefault('list_action', 'movies_trending')
+    _list_items(func, 'movie_sources', 'movies', page, **kwargs)
 
 
 def movies_genres():
@@ -190,14 +192,8 @@ def shows_menu():
 
 
 def list_shows(func, page=1, **kwargs):
-    list_action = kwargs.pop('list_action', 'shows_trending')
-    items, total_pages = func(page=page, **kwargs)
-    for s in items:
-        add_item(s, action='show_seasons', is_folder=True)
-    if page < total_pages:
-        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), list_action,
-                page=str(page + 1))
-    end_dir(content='tvshows')
+    kwargs.setdefault('list_action', 'shows_trending')
+    _list_items(func, 'show_seasons', 'tvshows', page, **kwargs)
 
 
 def show_seasons(tmdb_id):
@@ -327,76 +323,56 @@ def _apply_source_filters(sources):
     Returns filtered list, or None if user cancels.
     """
     while True:
-        # Build filter summary
         total = len(sources)
         q_counts = {}
         for s in sources:
             q = s.get('quality', 'SD')
             q_counts[q] = q_counts.get(q, 0) + 1
-        
+
         cached_count = sum(1 for s in sources if s.get('rd_cached'))
         subs_100 = sum(1 for s in sources if s.get('best_match_pct', 0) >= 95)
         subs_70 = sum(1 for s in sources if s.get('best_match_pct', 0) >= 70)
         subs_any = sum(1 for s in sources if s.get('has_hebrew_subs'))
-        
-        options = [
-            '[COLOR lime]▶ {} ({} {})[/COLOR]'.format(t('show_all'), total, t('found_sources', '').strip()),
+
+        # Build parallel lists: labels for display, filters for execution
+        filters = [
+            ('[COLOR lime]▶ {} ({})[/COLOR]'.format(t('show_all'), total), lambda ss: ss),
         ]
 
-        # Quality filters
         for q in ['4K', '1080p', '720p', '480p', 'SD']:
             if q_counts.get(q, 0) > 0:
-                options.append('[COLOR cyan]{}: {}[/COLOR] ({})'.format(t('quality'), q, q_counts[q]))
+                filters.append((
+                    '[COLOR cyan]{}: {}[/COLOR] ({})'.format(t('quality'), q, q_counts[q]),
+                    lambda ss, _q=q: [s for s in ss if s.get('quality') == _q],
+                ))
 
-        # RD filter
         if cached_count > 0:
-            options.append('[COLOR cyan]{}[/COLOR] ({})'.format(t('rd_cached_only'), cached_count))
-
-        # Hebrew subtitle filters
+            filters.append((
+                '[COLOR cyan]{}[/COLOR] ({})'.format(t('rd_cached_only'), cached_count),
+                lambda ss: [s for s in ss if s.get('rd_cached')],
+            ))
         if subs_100 > 0:
-            options.append('[COLOR lime]עב 100% / {}[/COLOR] ({})'.format(t('subs_100'), subs_100))
+            filters.append((
+                '[COLOR lime]עב 100% / {}[/COLOR] ({})'.format(t('subs_100'), subs_100),
+                lambda ss: [s for s in ss if s.get('best_match_pct', 0) >= 95],
+            ))
         if subs_70 > 0:
-            options.append('[COLOR yellow]עב {}[/COLOR] ({})'.format(t('subs_70'), subs_70))
+            filters.append((
+                '[COLOR yellow]עב {}[/COLOR] ({})'.format(t('subs_70'), subs_70),
+                lambda ss: [s for s in ss if s.get('best_match_pct', 0) >= 70],
+            ))
         if subs_any > 0:
-            options.append('[COLOR orange]עב {}[/COLOR] ({})'.format(t('subs_any'), subs_any))
+            filters.append((
+                '[COLOR orange]עב {}[/COLOR] ({})'.format(t('subs_any'), subs_any),
+                lambda ss: [s for s in ss if s.get('has_hebrew_subs')],
+            ))
 
-        choice = select_dialog(t('filter_sources'), options)
-        
+        labels = [f[0] for f in filters]
+        choice = select_dialog(t('filter_sources'), labels)
+
         if choice < 0:
-            return None  # Cancelled
-        
-        if choice == 0:
-            return sources  # Show all
-        
-        # Parse the filter choice by index offset
-        idx = choice - 1  # 0 was "show all"
-        # Count quality filters
-        quality_list = [q for q in ['4K', '1080p', '720p', '480p', 'SD'] if q_counts.get(q, 0) > 0]
-        if idx < len(quality_list):
-            return [s for s in sources if s.get('quality') == quality_list[idx]]
-        idx -= len(quality_list)
-
-        # RD cached
-        if cached_count > 0:
-            if idx == 0:
-                return [s for s in sources if s.get('rd_cached')]
-            idx -= 1
-
-        # Sub filters
-        if subs_100 > 0:
-            if idx == 0:
-                return [s for s in sources if s.get('best_match_pct', 0) >= 95]
-            idx -= 1
-        if subs_70 > 0:
-            if idx == 0:
-                return [s for s in sources if s.get('best_match_pct', 0) >= 70]
-            idx -= 1
-        if subs_any > 0:
-            if idx == 0:
-                return [s for s in sources if s.get('has_hebrew_subs')]
-            idx -= 1
-
-        return sources  # Fallback: show all
+            return None
+        return filters[choice][1](sources)
 
 
 # =========================================================================

@@ -10,11 +10,7 @@ Also used internally by HebScout addon for auto-subtitle download.
 import sys
 import os
 
-try:
-    from urllib.parse import parse_qsl, unquote
-except ImportError:
-    from urlparse import parse_qsl
-    from urllib import unquote
+from urllib.parse import parse_qsl, unquote
 
 import xbmc
 import xbmcgui
@@ -30,8 +26,8 @@ PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
-def log(msg):
-    xbmc.log('[HebSubScout-Subs] {}'.format(msg), xbmc.LOGINFO)
+def log(msg, level='INFO'):
+    xbmc.log('[HebSubScout-Subs] {}: {}'.format(level, msg), xbmc.LOGINFO)
 
 
 def get_params():

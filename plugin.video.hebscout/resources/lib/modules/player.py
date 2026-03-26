@@ -10,10 +10,12 @@ Custom Kodi player with:
 - HebSubScout learning (record successful subtitle matches)
 """
 
+import sys
 import time
 import threading
 import xbmc
 import xbmcgui
+import xbmcaddon
 
 from resources.lib.modules.utils import log, get_setting, notification, t
 from resources.lib.modules import trakt_api as trakt
@@ -24,6 +26,19 @@ try:
     _scout = SubScout()
 except ImportError:
     _scout = None
+
+
+def _import_subtitle_downloader():
+    """Import download_subtitle from the subtitle service addon."""
+    try:
+        subs_addon = xbmcaddon.Addon('service.subtitles.hebsubscout')
+        subs_path = subs_addon.getAddonInfo('path')
+        if subs_path not in sys.path:
+            sys.path.insert(0, subs_path)
+        from downloader import download_subtitle
+        return download_subtitle
+    except Exception:
+        return None
 
 PROGRESS_SAVE_INTERVAL = 30  # seconds
 
@@ -189,27 +204,28 @@ class HebScoutPlayer(xbmc.Player):
         
         def do_auto_sub():
             try:
-                from service.subtitles.hebsubscout.downloader import download_subtitle
-                
+                download_subtitle = _import_subtitle_downloader()
+                if not download_subtitle:
+                    log('Subtitle service not installed - cannot auto-download', 'WARNING')
+                    return
+
                 log('Auto-downloading subtitle: {} ({}%) from {}'.format(
                     best.get('subtitle_name', ''), best.get('score', 0), best.get('provider', '')))
-                
+
                 path = download_subtitle(
                     provider=best.get('provider', ''),
                     subtitle_id=best.get('subtitle_id', ''),
                 )
-                
+
                 if path and self._playing:
                     self.setSubtitles(path)
                     self._auto_sub_applied = True
                     self.subtitle_name = best.get('subtitle_name', '')
                     log('Auto-applied subtitle: {}'.format(path))
-                    
+
                     # Record in learning DB
                     if _scout and self.source_name:
                         _scout.record_match(self.source_name, self.subtitle_name, best.get('provider', ''))
-            except ImportError:
-                log('Subtitle service not installed - cannot auto-download', 'WARNING')
             except Exception as e:
                 log('Auto-subtitle failed: {}'.format(e), 'ERROR')
         
@@ -249,14 +265,18 @@ class HebScoutPlayer(xbmc.Player):
             return
         
         try:
-            from service.subtitles.hebsubscout.picker import show_subtitle_picker
-            
+            subs_addon = xbmcaddon.Addon('service.subtitles.hebsubscout')
+            subs_path = subs_addon.getAddonInfo('path')
+            if subs_path not in sys.path:
+                sys.path.insert(0, subs_path)
+            from picker import show_subtitle_picker
+
             path = show_subtitle_picker(
                 subtitles=self._sub_matches,
                 player=self,
                 api_key=get_setting('opensubtitles_api_key') or ''
             )
-            
+
             if path:
                 self.subtitle_name = ''
                 for m in self._sub_matches:
@@ -264,7 +284,7 @@ class HebScoutPlayer(xbmc.Player):
                         self.subtitle_name = m.get('subtitle_name', '')
                         break
                 log('User picked subtitle from picker: {}'.format(path))
-        except ImportError:
+        except Exception:
             log('Subtitle picker not available - using basic dialog', 'WARNING')
             self._fallback_subtitle_picker()
     
@@ -288,9 +308,12 @@ class HebScoutPlayer(xbmc.Player):
         
         selected = self._sub_matches[choice]
         
+        download_subtitle = _import_subtitle_downloader()
+        if not download_subtitle:
+            xbmcgui.Dialog().ok('HebSubScout', t('sub_service_missing'))
+            return
+
         try:
-            from service.subtitles.hebsubscout.downloader import download_subtitle
-            
             progress = xbmcgui.DialogProgress()
             progress.create('HebSubScout', t('downloading_subs'))
 
@@ -299,15 +322,15 @@ class HebScoutPlayer(xbmc.Player):
                 subtitle_id=selected.get('subtitle_id', ''),
                 progress_callback=lambda p: progress.update(p, t('downloading_pct', p))
             )
-            
+
             progress.close()
-            
+
             if path:
                 self.setSubtitles(path)
                 self.subtitle_name = selected.get('subtitle_name', '')
                 log('Fallback picker: applied {}'.format(path))
-        except ImportError:
-            xbmcgui.Dialog().ok('HebSubScout', t('sub_service_missing'))
+        except Exception as e:
+            log('Fallback subtitle download failed: {}'.format(e), 'ERROR')
 
     def onPlayBackPaused(self):
         if not self._playing:
@@ -382,10 +405,7 @@ class HebScoutPlayer(xbmc.Player):
                     meta = {'media_type': 'tv', 'imdb_id': self.imdb_id,
                             'tmdb_id': self.tmdb_id, 'title': self.title,
                             'year': self.year, 'season': ns, 'episode': ne}
-                    self.play_source(url, meta,
-                        {'season': ni.get('next_season'), 'episode': ni.get('next_episode'),
-                         'title': ni.get('next_title', ''), 'has_next': False}
-                        if ni.get('has_next') else None, self._resolve_func)
+                    self.play_source(url, meta, None, self._resolve_func)
             except Exception as e:
                 log('Next episode failed: {}'.format(e), 'ERROR')
 

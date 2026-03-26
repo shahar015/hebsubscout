@@ -17,44 +17,48 @@ except Exception:
     _profile = os.path.join(os.path.expanduser('~'), '.hebscout')
 
 DB_PATH = os.path.join(_profile, 'cache.db')
+_initialized = False
 
 
 def _ensure_dir():
     d = os.path.dirname(DB_PATH)
-    if not os.path.exists(d):
+    if d and not os.path.exists(d):
         os.makedirs(d)
 
 
 def _get_conn():
+    global _initialized
     _ensure_dir()
     conn = sqlite3.connect(DB_PATH, timeout=10)
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS cache (
-            key TEXT PRIMARY KEY,
-            value TEXT,
-            expires REAL
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS trakt_bookmarks (
-            imdb_id TEXT PRIMARY KEY,
-            season INTEGER,
-            episode INTEGER,
-            progress REAL,
-            paused_at TEXT,
-            updated REAL
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS watched (
-            imdb_id TEXT,
-            season INTEGER DEFAULT 0,
-            episode INTEGER DEFAULT 0,
-            watched_at REAL,
-            PRIMARY KEY (imdb_id, season, episode)
-        )
-    """)
+    if not _initialized:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cache (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                expires REAL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trakt_bookmarks (
+                imdb_id TEXT PRIMARY KEY,
+                season INTEGER,
+                episode INTEGER,
+                progress REAL,
+                paused_at TEXT,
+                updated REAL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS watched (
+                imdb_id TEXT,
+                season INTEGER DEFAULT 0,
+                episode INTEGER DEFAULT 0,
+                watched_at REAL,
+                PRIMARY KEY (imdb_id, season, episode)
+            )
+        """)
+        _initialized = True
     return conn
 
 
@@ -107,7 +111,7 @@ def set_bookmark(imdb_id, season, episode, progress, paused_at=''):
     try:
         conn = _get_conn()
         conn.execute(
-            "INSERT OR REPLACE INTO trakt_bookmarks VALUES (?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO trakt_bookmarks (imdb_id, season, episode, progress, paused_at, updated) VALUES (?,?,?,?,?,?)",
             (imdb_id, season or 0, episode or 0, progress, paused_at, time.time())
         )
         conn.commit()
@@ -119,7 +123,10 @@ def set_bookmark(imdb_id, season, episode, progress, paused_at=''):
 def get_bookmark(imdb_id):
     try:
         conn = _get_conn()
-        row = conn.execute("SELECT * FROM trakt_bookmarks WHERE imdb_id=?", (imdb_id,)).fetchone()
+        row = conn.execute(
+            "SELECT imdb_id, season, episode, progress, paused_at FROM trakt_bookmarks WHERE imdb_id=?",
+            (imdb_id,)
+        ).fetchone()
         conn.close()
         if row:
             return {'imdb_id': row[0], 'season': row[1], 'episode': row[2],
@@ -133,7 +140,7 @@ def mark_watched(imdb_id, season=0, episode=0):
     try:
         conn = _get_conn()
         conn.execute(
-            "INSERT OR REPLACE INTO watched VALUES (?,?,?,?)",
+            "INSERT OR REPLACE INTO watched (imdb_id, season, episode, watched_at) VALUES (?,?,?,?)",
             (imdb_id, season, episode, time.time())
         )
         conn.commit()

@@ -269,7 +269,9 @@ class ReleaseMatcher:
         try:
             import json
             import os
-            os.makedirs(os.path.dirname(self.learning_db_path), exist_ok=True)
+            parent = os.path.dirname(self.learning_db_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
             with open(self.learning_db_path, 'w', encoding='utf-8') as f:
                 json.dump(self._learning_db, f, ensure_ascii=False, indent=2)
         except Exception:

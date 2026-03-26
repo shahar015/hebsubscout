@@ -12,12 +12,8 @@ from resources.lib.modules.utils import (
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib2 import Request, urlopen
-    from urllib import urlencode
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 
 BASE = 'https://api.real-debrid.com/rest/1.0'
 OAUTH_BASE = 'https://api.real-debrid.com/oauth/v2'

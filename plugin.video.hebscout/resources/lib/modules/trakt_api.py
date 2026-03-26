@@ -13,12 +13,8 @@ from resources.lib.modules.utils import (
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key, mark_watched as local_mark_watched
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib2 import Request, urlopen
-    from urllib import urlencode
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 
 BASE = 'https://api.trakt.tv'
 CLIENT_ID = 'a04728bb8144a61adca51b59ca76f2feff0d8f7467e7747676bfa4ccf4e4bedd'

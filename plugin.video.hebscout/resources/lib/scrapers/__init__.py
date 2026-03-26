@@ -10,10 +10,7 @@ import re
 import hashlib
 from resources.lib.modules.utils import http_get, http_get_raw, log
 
-try:
-    from urllib.parse import quote_plus, urlencode
-except ImportError:
-    from urllib import quote_plus, urlencode
+from urllib.parse import quote_plus, urlencode
 
 
 QUALITY_ORDER = {'4k': 0, '2160p': 0, '1080p': 1, '720p': 2, '480p': 3, 'sd': 4}
@@ -70,14 +67,11 @@ def _size_str(size_bytes):
 
 
 # =========================================================================
-# TORRENTIO - Stremio addon as a scraper source (common in the community)
+# STREMIO ADDON SCRAPER (shared logic for Torrentio, MediaFusion, etc.)
 # =========================================================================
 
-def scrape_torrentio(imdb_id, season=None, episode=None):
-    """
-    Scrape Torrentio (Stremio addon) for cached torrent sources.
-    Returns list of source dicts.
-    """
+def _scrape_stremio(base_url, provider_name, imdb_id, season=None, episode=None):
+    """Scrape a Stremio-compatible addon for torrent sources."""
     sources = []
     try:
         if season is not None and episode is not None:
@@ -87,20 +81,16 @@ def scrape_torrentio(imdb_id, season=None, episode=None):
             media_type = 'movie'
             media_id = imdb_id
 
-        # Torrentio manifest - filter for RD cached
-        url = 'https://torrentio.strem.fun/realdebrid={}/stream/{}/{}.json'.format(
-            '', media_type, media_id  # Empty RD key = public results
-        )
+        url = '{}/stream/{}/{}.json'.format(base_url, media_type, media_id)
         data = http_get(url, timeout=15)
         if not data:
             return sources
 
         for stream in data.get('streams', []):
-            title = stream.get('title', '') or stream.get('name', '')
+            title = stream.get('title', '') or stream.get('name', '') or stream.get('description', '')
             info_hash = stream.get('infoHash', '')
             file_idx = stream.get('fileIdx')
 
-            # Parse the title for release name
             lines = title.split('\n')
             release_name = lines[0] if lines else title
             size_info = ''
@@ -116,56 +106,21 @@ def scrape_torrentio(imdb_id, season=None, episode=None):
                 'size': size_info,
                 'hash': info_hash,
                 'file_idx': file_idx,
-                'provider': 'torrentio',
+                'provider': provider_name,
                 'type': 'torrent',
             })
     except Exception as e:
-        log('Torrentio scrape error: {}'.format(e), 'ERROR')
+        log('{} scrape error: {}'.format(provider_name, e), 'ERROR')
 
     return sources
 
 
-# =========================================================================
-# MEDIAFUSION - Another Stremio addon scraper
-# =========================================================================
+def scrape_torrentio(imdb_id, season=None, episode=None):
+    return _scrape_stremio('https://torrentio.strem.fun/realdebrid=', 'torrentio', imdb_id, season, episode)
+
 
 def scrape_mediafusion(imdb_id, season=None, episode=None):
-    """Scrape MediaFusion for additional sources."""
-    sources = []
-    try:
-        if season is not None and episode is not None:
-            media_type = 'series'
-            media_id = '{}:{}:{}'.format(imdb_id, season, episode)
-        else:
-            media_type = 'movie'
-            media_id = imdb_id
-
-        url = 'https://mediafusion.elfhosted.com/stream/{}/{}.json'.format(
-            media_type, media_id
-        )
-        data = http_get(url, timeout=15)
-        if not data:
-            return sources
-
-        for stream in data.get('streams', []):
-            title = stream.get('title', '') or stream.get('description', '')
-            info_hash = stream.get('infoHash', '')
-            lines = title.split('\n')
-            release_name = lines[0] if lines else title
-
-            sources.append({
-                'name': release_name,
-                'quality': _detect_quality(release_name),
-                'info': _detect_info(release_name),
-                'size': '',
-                'hash': info_hash,
-                'provider': 'mediafusion',
-                'type': 'torrent',
-            })
-    except Exception as e:
-        log('MediaFusion scrape error: {}'.format(e), 'ERROR')
-
-    return sources
+    return _scrape_stremio('https://mediafusion.elfhosted.com', 'mediafusion', imdb_id, season, episode)
 
 
 # =========================================================================

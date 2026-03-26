@@ -24,7 +24,7 @@ import time
 import xbmc
 import xbmcgui
 
-from service.subtitles.hebsubscout.downloader import download_subtitle, log
+from downloader import download_subtitle, log
 
 # Layout constants - positioned in top-right corner
 POPUP_W = 620

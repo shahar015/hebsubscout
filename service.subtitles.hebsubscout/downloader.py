@@ -15,13 +15,9 @@ import zipfile
 import tempfile
 import time
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.parse import urlencode
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import Request, urlopen, HTTPError
-    from urllib import urlencode
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
+from urllib.error import HTTPError
 
 import xbmc
 import xbmcvfs

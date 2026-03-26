@@ -5,14 +5,9 @@ Utility Module - shared helpers
 import sys
 import json
 
-try:
-    from urllib.request import Request, urlopen
-    from urllib.parse import urlencode, quote_plus, parse_qsl
-    from urllib.error import HTTPError, URLError
-except ImportError:
-    from urllib2 import Request, urlopen, HTTPError, URLError
-    from urllib import urlencode, quote_plus
-    from urlparse import parse_qsl
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode, quote_plus, parse_qsl
+from urllib.error import HTTPError, URLError
 
 import xbmc
 import xbmcgui

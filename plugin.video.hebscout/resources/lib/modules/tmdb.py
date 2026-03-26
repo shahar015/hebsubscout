@@ -66,56 +66,41 @@ def _parse_show(item):
 
 
 # =========================================================================
+# LIST HELPER
+# =========================================================================
+
+def _list(path, parser, page=1, cache_hours=12, **kwargs):
+    """Fetch a paginated TMDB list and parse results."""
+    data = _fetch(path, page=page, cache_hours=cache_hours, **kwargs)
+    if not data:
+        return [], 0
+    return [parser(i) for i in data.get('results', [])], data.get('total_pages', 1)
+
+
+# =========================================================================
 # MOVIES
 # =========================================================================
 
 def movies_trending(page=1):
-    data = _fetch('trending/movie/week', page=page, cache_hours=4)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('trending/movie/week', _parse_movie, page, cache_hours=4)
 
 def movies_popular(page=1):
-    data = _fetch('movie/popular', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('movie/popular', _parse_movie, page)
 
 def movies_top_rated(page=1):
-    data = _fetch('movie/top_rated', page=page, cache_hours=24)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('movie/top_rated', _parse_movie, page, cache_hours=24)
 
 def movies_now_playing(page=1):
-    data = _fetch('movie/now_playing', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('movie/now_playing', _parse_movie, page)
 
 def movies_upcoming(page=1):
-    data = _fetch('movie/upcoming', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('movie/upcoming', _parse_movie, page)
 
 def movies_genre(genre_id, page=1):
-    data = _fetch('discover/movie', with_genres=genre_id, sort_by='popularity.desc', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('discover/movie', _parse_movie, page, with_genres=genre_id, sort_by='popularity.desc')
 
 def movies_search(query, page=1):
-    data = _fetch('search/movie', query=query, page=page, cache_hours=1)
-    if not data:
-        return [], 0
-    return [_parse_movie(i) for i in data.get('results', [])], data.get('total_pages', 1)
+    return _list('search/movie', _parse_movie, page, cache_hours=1, query=query)
 
 
 def movie_details(tmdb_id):
@@ -141,45 +126,22 @@ def movie_details(tmdb_id):
 # =========================================================================
 
 def shows_trending(page=1):
-    data = _fetch('trending/tv/week', page=page, cache_hours=4)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('trending/tv/week', _parse_show, page, cache_hours=4)
 
 def shows_popular(page=1):
-    data = _fetch('tv/popular', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('tv/popular', _parse_show, page)
 
 def shows_top_rated(page=1):
-    data = _fetch('tv/top_rated', page=page, cache_hours=24)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('tv/top_rated', _parse_show, page, cache_hours=24)
 
 def shows_airing_today(page=1):
-    data = _fetch('tv/airing_today', page=page, cache_hours=4)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('tv/airing_today', _parse_show, page, cache_hours=4)
 
 def shows_genre(genre_id, page=1):
-    data = _fetch('discover/tv', with_genres=genre_id, sort_by='popularity.desc', page=page, cache_hours=12)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
-
+    return _list('discover/tv', _parse_show, page, with_genres=genre_id, sort_by='popularity.desc')
 
 def shows_search(query, page=1):
-    data = _fetch('search/tv', query=query, page=page, cache_hours=1)
-    if not data:
-        return [], 0
-    return [_parse_show(i) for i in data.get('results', [])], data.get('total_pages', 1)
+    return _list('search/tv', _parse_show, page, cache_hours=1, query=query)
 
 
 def show_details(tmdb_id):
