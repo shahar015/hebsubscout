@@ -48,7 +48,8 @@
       "WebFetch(domain:xbmc.github.io)",
       "WebFetch(domain:forum.kodi.tv)",
       "WebFetch(domain:alwinesch.github.io)",
-      "WebFetch(domain:kodi.wiki)"
+      "WebFetch(domain:kodi.wiki)",
+      "Bash(unzip -o twilight.zip -d twilight_extracted)"
     ]
   }
 }

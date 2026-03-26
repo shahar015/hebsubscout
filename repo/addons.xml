@@ -2,7 +2,7 @@
 <addons>
 <addon id="repository.hebsubscout"
        name="HebSubScout Repository"
-       version="1.0.15"
+       version="1.0.16"
        provider-name="HebSubScout Community">
     <extension point="xbmc.addon.repository" name="HebSubScout Repository">
         <dir>
@@ -41,7 +41,7 @@ All dependencies resolve automatically.
 </addon>
 <addon id="script.module.hebsubscout"
        name="HebSubScout Module"
-       version="1.0.15"
+       version="1.0.16"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -84,11 +84,11 @@ For addon developers: from hebsubscout import SubScout
 </addon>
 <addon id="service.subtitles.hebsubscout"
        name="HebSubScout Subtitles"
-       version="1.0.15"
+       version="1.0.16"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.hebsubscout" version="1.0.15"/>
+        <import addon="script.module.hebsubscout" version="1.0.16"/>
     </requires>
     <extension point="xbmc.subtitle.module" library="service.py"/>
     <extension point="xbmc.addon.metadata">
@@ -117,12 +117,12 @@ with the HebScout video addon for seamless subtitle matching.
 </addon>
 <addon id="plugin.video.hebscout"
        name="HebScout"
-       version="1.0.15"
+       version="1.0.16"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.hebsubscout" version="1.0.15"/>
-        <import addon="service.subtitles.hebsubscout" version="1.0.15" optional="true"/>
+        <import addon="script.module.hebsubscout" version="1.0.16"/>
+        <import addon="service.subtitles.hebsubscout" version="1.0.16" optional="true"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>
@@ -162,11 +162,11 @@ The first addon built natively on the HebSubScout module.
 </addon>
 <addon id="context.hebsubscout"
        name="HebSubScout Context Menu"
-       version="1.0.15"
+       version="1.0.16"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.hebsubscout" version="1.0.15"/>
+        <import addon="script.module.hebsubscout" version="1.0.16"/>
     </requires>
     <extension point="kodi.context.item">
         <menu id="kodi.core.main">

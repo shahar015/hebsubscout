@@ -276,17 +276,29 @@ def progress_dialog(heading, message=''):
 
 
 def _get_white_texture():
-    """Create a 1x1 white PNG for use as a solid-color texture base."""
+    """Get path to white PNG texture for colorDiffuse tinting."""
+    # Use the skin media texture (proper 16x16 PNG)
+    addon_path = ADDON.getAddonInfo('path')
+    skin_tex = os.path.join(addon_path, 'resources', 'skins', 'Default', 'media', 'white.png')
+    if os.path.exists(skin_tex):
+        return skin_tex
+    # Fallback: create in profile
     import xbmcvfs
     profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
     os.makedirs(profile, exist_ok=True)
     path = os.path.join(profile, 'white.png')
     if not os.path.exists(path):
-        # Minimal 1x1 white PNG (67 bytes)
-        import base64
-        data = base64.b64decode(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
-        )
+        import struct, zlib
+        def _chunk(ct, d):
+            c = ct + d
+            return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c) & 0xffffffff)
+        raw = b''
+        for _ in range(16):
+            raw += b'\x00' + b'\xff\xff\xff' * 16
+        data = (b'\x89PNG\r\n\x1a\n' +
+                _chunk(b'IHDR', struct.pack('>IIBBBBB', 16, 16, 8, 2, 0, 0, 0)) +
+                _chunk(b'IDAT', zlib.compress(raw)) +
+                _chunk(b'IEND', b''))
         with open(path, 'wb') as f:
             f.write(data)
     return path
