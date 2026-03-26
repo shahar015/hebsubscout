@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window type="dialog">
     <defaultcontrol always="true">1000</defaultcontrol>
+    <backgroundcolor>FF000000</backgroundcolor>
     <coordinates>
         <system>1</system>
     </coordinates>
@@ -8,7 +9,7 @@
         <!-- Full-screen solid dark background -->
         <control type="image">
             <left>0</left><top>0</top><width>1920</width><height>1080</height>
-            <texture colordiffuse="FF0a0a14">white.png</texture>
+            <texture colordiffuse="FF0d0d1a">white.png</texture>
         </control>
 
         <!-- ============================================================ -->
@@ -22,65 +23,45 @@
             <font>font12</font>
         </control>
 
-        <!-- Quality filter buttons (toggleable via Python setSelected) -->
-        <control type="togglebutton" id="3001">
+        <!-- Quality filter buttons (label updated by Python for selected state) -->
+        <control type="button" id="3001">
             <left>150</left><top>22</top><width>90</width><height>36</height>
             <label>4K</label><font>font12</font>
-            <texturefocus colordiffuse="FF9b59b6">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <usealttexture>true</usealttexture>
-            <alttexturefocus colordiffuse="FF9b59b6">white.png</alttexturefocus>
-            <alttexturenofocus colordiffuse="FF6a3d8a">white.png</alttexturenofocus>
-            <textcolor>FF999999</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <altcolor>FFffffff</altcolor>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onright>3002</onright><ondown>3006</ondown>
         </control>
-        <control type="togglebutton" id="3002">
+        <control type="button" id="3002">
             <left>248</left><top>22</top><width>90</width><height>36</height>
             <label>1080p</label><font>font12</font>
-            <texturefocus colordiffuse="FF2ecc71">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <usealttexture>true</usealttexture>
-            <alttexturefocus colordiffuse="FF2ecc71">white.png</alttexturefocus>
-            <alttexturenofocus colordiffuse="FF1d8a4a">white.png</alttexturenofocus>
-            <textcolor>FF999999</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <altcolor>FFffffff</altcolor>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3001</onleft><onright>3003</onright><ondown>3006</ondown>
         </control>
-        <control type="togglebutton" id="3003">
+        <control type="button" id="3003">
             <left>346</left><top>22</top><width>90</width><height>36</height>
             <label>720p</label><font>font12</font>
-            <texturefocus colordiffuse="FFe67e22">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <usealttexture>true</usealttexture>
-            <alttexturefocus colordiffuse="FFe67e22">white.png</alttexturefocus>
-            <alttexturenofocus colordiffuse="FF995416">white.png</alttexturenofocus>
-            <textcolor>FF999999</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <altcolor>FFffffff</altcolor>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3002</onleft><onright>3004</onright><ondown>3006</ondown>
         </control>
-        <control type="togglebutton" id="3004">
+        <control type="button" id="3004">
             <left>444</left><top>22</top><width>90</width><height>36</height>
             <label>480p</label><font>font12</font>
-            <texturefocus colordiffuse="FFe74c3c">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <usealttexture>true</usealttexture>
-            <alttexturefocus colordiffuse="FFe74c3c">white.png</alttexturefocus>
-            <alttexturenofocus colordiffuse="FF993228">white.png</alttexturenofocus>
-            <textcolor>FF999999</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <altcolor>FFffffff</altcolor>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3003</onleft><onright>3005</onright><ondown>3006</ondown>
         </control>
-        <control type="togglebutton" id="3005">
+        <control type="button" id="3005">
             <left>542</left><top>22</top><width>90</width><height>36</height>
             <label>SD</label><font>font12</font>
-            <texturefocus colordiffuse="FF95a5a6">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
-            <usealttexture>true</usealttexture>
-            <alttexturefocus colordiffuse="FF95a5a6">white.png</alttexturefocus>
-            <alttexturenofocus colordiffuse="FF636e6f">white.png</alttexturenofocus>
-            <textcolor>FF999999</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <altcolor>FFffffff</altcolor>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3004</onleft><ondown>3006</ondown>
         </control>
 
@@ -148,17 +129,17 @@
                     <texture colordiffuse="FF111128">white.png</texture>
                 </control>
                 <control type="image">
-                    <left>0</left><top>0</top><width>65</width><height>100</height>
+                    <left>0</left><top>0</top><width>80</width><height>100</height>
                     <texture colordiffuse="$INFO[ListItem.Property(quality_color)]">white.png</texture>
                 </control>
                 <control type="label">
-                    <left>0</left><top>35</top><width>65</width><height>30</height>
+                    <left>0</left><top>35</top><width>80</width><height>30</height>
                     <label>$INFO[ListItem.Property(quality)]</label>
                     <font>font12</font><textcolor>FFffffff</textcolor>
                     <aligny>center</aligny><align>center</align>
                 </control>
                 <control type="label">
-                    <left>80</left><top>8</top><width>400</width><height>20</height>
+                    <left>95</left><top>8</top><width>400</width><height>20</height>
                     <label>$INFO[ListItem.Property(provider)]</label>
                     <font>font10</font><textcolor>FF888888</textcolor>
                 </control>
@@ -168,17 +149,17 @@
                     <font>font12</font><align>right</align>
                 </control>
                 <control type="label">
-                    <left>80</left><top>30</top><width>1080</width><height>22</height>
+                    <left>95</left><top>30</top><width>1080</width><height>22</height>
                     <label>$INFO[ListItem.Label]</label>
                     <font>font10</font><textcolor>FFdddddd</textcolor>
                 </control>
                 <control type="label">
-                    <left>80</left><top>54</top><width>800</width><height>20</height>
+                    <left>95</left><top>54</top><width>800</width><height>20</height>
                     <label>$INFO[ListItem.Property(info_tags)]</label>
                     <font>font10</font><textcolor>FFaaaaaa</textcolor>
                 </control>
                 <control type="label">
-                    <left>80</left><top>76</top><width>800</width><height>20</height>
+                    <left>95</left><top>76</top><width>800</width><height>20</height>
                     <label>$INFO[ListItem.Property(size_display)]</label>
                     <font>font10</font><textcolor>FF888888</textcolor>
                 </control>
@@ -196,17 +177,17 @@
                     <texture colordiffuse="FF1a1a3e">white.png</texture>
                 </control>
                 <control type="image">
-                    <left>0</left><top>0</top><width>65</width><height>100</height>
+                    <left>0</left><top>0</top><width>80</width><height>100</height>
                     <texture colordiffuse="$INFO[ListItem.Property(quality_color)]">white.png</texture>
                 </control>
                 <control type="label">
-                    <left>0</left><top>35</top><width>65</width><height>30</height>
+                    <left>0</left><top>35</top><width>80</width><height>30</height>
                     <label>$INFO[ListItem.Property(quality)]</label>
                     <font>font12</font><textcolor>FFffffff</textcolor>
                     <aligny>center</aligny><align>center</align>
                 </control>
                 <control type="label">
-                    <left>80</left><top>8</top><width>400</width><height>20</height>
+                    <left>95</left><top>8</top><width>400</width><height>20</height>
                     <label>$INFO[ListItem.Property(provider)]</label>
                     <font>font10</font><textcolor>FFcccccc</textcolor>
                 </control>
@@ -216,18 +197,18 @@
                     <font>font12</font><align>right</align>
                 </control>
                 <control type="label">
-                    <left>80</left><top>30</top><width>1080</width><height>22</height>
+                    <left>95</left><top>30</top><width>1080</width><height>22</height>
                     <label>$INFO[ListItem.Label]</label>
                     <font>font10</font><textcolor>FFffffff</textcolor>
                     <scroll>true</scroll><scrollspeed>60</scrollspeed>
                 </control>
                 <control type="label">
-                    <left>80</left><top>54</top><width>800</width><height>20</height>
+                    <left>95</left><top>54</top><width>800</width><height>20</height>
                     <label>$INFO[ListItem.Property(info_tags)]</label>
                     <font>font10</font><textcolor>FFcccccc</textcolor>
                 </control>
                 <control type="label">
-                    <left>80</left><top>76</top><width>800</width><height>20</height>
+                    <left>95</left><top>76</top><width>800</width><height>20</height>
                     <label>$INFO[ListItem.Property(size_display)]</label>
                     <font>font10</font><textcolor>FFaaaaaa</textcolor>
                 </control>

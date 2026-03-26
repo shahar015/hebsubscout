@@ -62,16 +62,30 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
 
     def onInit(self):
         """Called when the dialog opens. Populate all controls."""
-        self._sync_toggle_buttons()
+        self._sync_filter_labels()
         self._populate_info_panel()
         self._apply_filters()
 
-    def _sync_toggle_buttons(self):
-        """Set toggle button selected state to match filter state."""
+    def _sync_filter_labels(self):
+        """Update button labels to show selected state with color."""
         for btn_id, quality in QUALITY_BTNS.items():
             try:
                 ctrl = self.getControl(btn_id)
-                ctrl.setSelected(quality in self._quality_filters)
+                color = QUALITY_COLORS.get(quality, 'FFcccccc')
+                if quality in self._quality_filters:
+                    ctrl.setLabel('[COLOR {}][B]{}[/B][/COLOR]'.format(color, quality))
+                else:
+                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(quality))
+            except Exception:
+                pass
+        for btn_id, sort_val in SORT_BTNS.items():
+            try:
+                ctrl = self.getControl(btn_id)
+                label = {'default': 'Default', 'size': 'Size', 'subs': 'Sub %'}[sort_val]
+                if self._sort_by == sort_val:
+                    ctrl.setLabel('[COLOR FF9b59b6][B]{}[/B][/COLOR]'.format(label))
+                else:
+                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(label))
             except Exception:
                 pass
 
@@ -217,12 +231,14 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 self._quality_filters.discard(q)
             else:
                 self._quality_filters.add(q)
+            self._sync_filter_labels()
             self._apply_filters()
             return
 
         # Sort buttons
         if controlID in SORT_BTNS:
             self._sort_by = SORT_BTNS[controlID]
+            self._sync_filter_labels()
             self._apply_filters()
             return
 

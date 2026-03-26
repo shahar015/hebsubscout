@@ -114,7 +114,9 @@ def _scrape_stremio(base_url, provider_name, imdb_id, season=None, episode=None)
             size_info = ''
             for line in lines:
                 if 'gb' in line.lower() or 'mb' in line.lower():
-                    size_info = line.strip()
+                    # Clean Unicode emoji/symbols that don't render in Kodi fonts
+                    clean = ''.join(c for c in line if ord(c) < 0x2600 or c in ' .')
+                    size_info = re.sub(r'\s+', ' ', clean).strip()
                     break
 
             sources.append({
