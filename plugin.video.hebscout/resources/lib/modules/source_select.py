@@ -9,8 +9,9 @@ Filter buttons are created dynamically by Python in onInit for proper sizing.
 import xbmcgui
 import xbmcaddon
 
+import os
 from resources.lib.modules.utils import (
-    t, get_setting, set_setting, log, is_hebrew
+    t, get_setting, set_setting, log, is_hebrew, _get_white_texture
 )
 
 QUALITY_COLORS = {
@@ -154,6 +155,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self.addControl(lbl)
         self._label_controls.append(lbl)
 
+        tex = _get_white_texture()
         buttons = []
         x = CHIP_START_X
         for display_text, value in items:
@@ -161,8 +163,9 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
             btn = xbmcgui.ControlButton(
                 x, y, w, CHIP_H, display_text,
                 font='font12',
-                focusTexture='white.png', noFocusTexture='white.png',
+                focusTexture=tex, noFocusTexture=tex,
                 focusedColor='FFffffff', textColor='FFcccccc',
+                alignment=2,  # center text
             )
             self.addControl(btn)
             btn_id = self._next_id

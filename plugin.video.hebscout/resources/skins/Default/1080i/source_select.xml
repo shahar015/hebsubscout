@@ -6,9 +6,21 @@
         <system>1</system>
     </coordinates>
     <controls>
-        <!-- Full-screen opaque background -->
+        <!-- Full-screen opaque background (5 layers to guarantee opacity) -->
         <control type="image">
-            <left>0</left><top>0</top><width>1920</width><height>1080</height>
+            <left>-100</left><top>-100</top><width>2120</width><height>1280</height>
+            <texture colordiffuse="FF000000">white.png</texture>
+        </control>
+        <control type="image">
+            <left>-100</left><top>-100</top><width>2120</width><height>1280</height>
+            <texture colordiffuse="FF000000">white.png</texture>
+        </control>
+        <control type="image">
+            <left>-100</left><top>-100</top><width>2120</width><height>1280</height>
+            <texture colordiffuse="FF000000">white.png</texture>
+        </control>
+        <control type="image">
+            <left>-100</left><top>-100</top><width>2120</width><height>1280</height>
             <texture colordiffuse="FF000000">white.png</texture>
         </control>
         <control type="image">
