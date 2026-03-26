@@ -26,6 +26,10 @@ QUALITY_ORDER = {'4K': 0, '1080p': 1, '720p': 2, '480p': 3, 'SD': 4}
 # Filter button IDs from XML
 QUALITY_BTNS = {3001: '4K', 3002: '1080p', 3003: '720p', 3004: '480p', 3005: 'SD'}
 SORT_BTNS = {3006: 'default', 3007: 'size', 3008: 'subs'}
+PROVIDER_BTNS = {3009: 'torrentio', 3010: 'mediafusion'}
+
+# Row label IDs
+LABEL_IDS = {4001: 'quality', 4002: 'sort', 4003: 'source'}
 
 
 def _parse_size_bytes(size_str):
@@ -55,10 +59,12 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self.metadata = metadata or {}
         self.selected_source = None
 
-        # Filter state: empty set = show all (no filter)
+        # Filter state: empty set = show all (no filter active)
         saved_quality = get_setting('filter_quality') or ''
-        self._quality_filters = set(saved_quality.split('|')) if saved_quality else set()
+        self._quality_filters = set(q for q in saved_quality.split('|') if q) if saved_quality else set()
         self._sort_by = get_setting('filter_sort') or 'default'
+        saved_providers = get_setting('filter_providers') or ''
+        self._provider_filters = set(p for p in saved_providers.split('|') if p) if saved_providers else set()
 
     def onInit(self):
         """Called when the dialog opens. Populate all controls."""
@@ -67,7 +73,19 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self._apply_filters()
 
     def _sync_filter_labels(self):
-        """Update button labels to show selected state with color."""
+        """Update button labels to show selected state with color, and row labels."""
+        from resources.lib.modules.utils import is_hebrew
+
+        # Row labels (translated)
+        he = is_hebrew()
+        try:
+            self.getControl(4001).setLabel('[COLOR FF888888]{}[/COLOR]'.format('איכות' if he else 'Quality'))
+            self.getControl(4002).setLabel('[COLOR FF888888]{}[/COLOR]'.format('מיון' if he else 'Sort'))
+            self.getControl(4003).setLabel('[COLOR FF888888]{}[/COLOR]'.format('מקור' if he else 'Source'))
+        except Exception:
+            pass
+
+        # Quality chips
         for btn_id, quality in QUALITY_BTNS.items():
             try:
                 ctrl = self.getControl(btn_id)
@@ -78,14 +96,33 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                     ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(quality))
             except Exception:
                 pass
+
+        # Sort chips
+        sort_labels = {
+            'default': 'ברירת מחדל' if he else 'Default',
+            'size': 'גודל' if he else 'Size',
+            'subs': 'כתוביות %' if he else 'Sub %',
+        }
         for btn_id, sort_val in SORT_BTNS.items():
             try:
                 ctrl = self.getControl(btn_id)
-                label = {'default': 'Default', 'size': 'Size', 'subs': 'Sub %'}[sort_val]
+                label = sort_labels.get(sort_val, sort_val)
                 if self._sort_by == sort_val:
                     ctrl.setLabel('[COLOR FF9b59b6][B]{}[/B][/COLOR]'.format(label))
                 else:
                     ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(label))
+            except Exception:
+                pass
+
+        # Provider chips
+        for btn_id, prov in PROVIDER_BTNS.items():
+            try:
+                ctrl = self.getControl(btn_id)
+                display = prov.capitalize()
+                if prov in self._provider_filters:
+                    ctrl.setLabel('[COLOR FF3498db][B]{}[/B][/COLOR]'.format(display))
+                else:
+                    ctrl.setLabel('[COLOR FF666666]{}[/COLOR]'.format(display))
             except Exception:
                 pass
 
@@ -132,6 +169,10 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         # Quality filter: empty set = show all, non-empty = show only selected
         if self._quality_filters:
             result = [s for s in result if s.get('quality', 'SD') in self._quality_filters]
+
+        # Provider filter: empty = show all
+        if self._provider_filters:
+            result = [s for s in result if s.get('provider', '') in self._provider_filters]
 
         # Sort within quality tiers
         if self._sort_by == 'size':
@@ -242,6 +283,17 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
             self._apply_filters()
             return
 
+        # Provider buttons (toggle: none = show all)
+        if controlID in PROVIDER_BTNS:
+            p = PROVIDER_BTNS[controlID]
+            if p in self._provider_filters:
+                self._provider_filters.discard(p)
+            else:
+                self._provider_filters.add(p)
+            self._sync_filter_labels()
+            self._apply_filters()
+            return
+
     def onAction(self, action):
         """Handle back/escape."""
         if action.getId() in (9, 10, 92, 216):
@@ -252,3 +304,4 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
     def _save_filters(self):
         set_setting('filter_quality', '|'.join(sorted(self._quality_filters)))
         set_setting('filter_sort', self._sort_by)
+        set_setting('filter_providers', '|'.join(sorted(self._provider_filters)))

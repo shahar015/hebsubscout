@@ -6,7 +6,15 @@
         <system>1</system>
     </coordinates>
     <controls>
-        <!-- Full-screen solid dark background -->
+        <!-- Full-screen solid backgrounds (stacked for guaranteed opacity) -->
+        <control type="image">
+            <left>0</left><top>0</top><width>1920</width><height>1080</height>
+            <texture colordiffuse="FF000000">white.png</texture>
+        </control>
+        <control type="image">
+            <left>0</left><top>0</top><width>1920</width><height>1080</height>
+            <texture colordiffuse="FF000000">white.png</texture>
+        </control>
         <control type="image">
             <left>0</left><top>0</top><width>1920</width><height>1080</height>
             <texture colordiffuse="FF0d0d1a">white.png</texture>
@@ -16,14 +24,11 @@
         <!-- LEFT PANEL: Filter buttons + Source list                     -->
         <!-- ============================================================ -->
 
-        <!-- Quality label -->
-        <control type="label">
+        <!-- Row 1: Quality label + buttons (labels set by Python) -->
+        <control type="label" id="4001">
             <left>40</left><top>28</top><width>100</width><height>30</height>
-            <label>[COLOR FF888888]Quality[/COLOR]</label>
-            <font>font12</font>
+            <label></label><font>font12</font>
         </control>
-
-        <!-- Quality filter buttons (label updated by Python for selected state) -->
         <control type="button" id="3001">
             <left>150</left><top>22</top><width>90</width><height>36</height>
             <label>4K</label><font>font12</font>
@@ -65,49 +70,68 @@
             <onleft>3004</onleft><ondown>3006</ondown>
         </control>
 
-        <!-- Sort label -->
-        <control type="label">
+        <!-- Row 2: Sort label + buttons (labels set by Python) -->
+        <control type="label" id="4002">
             <left>40</left><top>73</top><width>100</width><height>30</height>
-            <label>[COLOR FF888888]Sort[/COLOR]</label>
-            <font>font12</font>
+            <label></label><font>font12</font>
         </control>
-
-        <!-- Sort buttons -->
         <control type="button" id="3006">
             <left>150</left><top>68</top><width>100</width><height>36</height>
             <label>Default</label><font>font12</font>
-            <texturefocus colordiffuse="FF9b59b6">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
             <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onright>3007</onright><onup>3001</onup><ondown>1000</ondown>
+            <onright>3007</onright><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3007">
             <left>258</left><top>68</top><width>100</width><height>36</height>
             <label>Size</label><font>font12</font>
-            <texturefocus colordiffuse="FF9b59b6">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
             <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3006</onleft><onright>3008</onright><onup>3001</onup><ondown>1000</ondown>
+            <onleft>3006</onleft><onright>3008</onright><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3008">
             <left>366</left><top>68</top><width>100</width><height>36</height>
             <label>Sub %</label><font>font12</font>
-            <texturefocus colordiffuse="FF9b59b6">white.png</texturefocus>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
             <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
-            <onleft>3007</onleft><onup>3001</onup><ondown>1000</ondown>
+            <onleft>3007</onleft><onup>3001</onup><ondown>3009</ondown>
+        </control>
+
+        <!-- Row 3: Source provider label + buttons -->
+        <control type="label" id="4003">
+            <left>40</left><top>118</top><width>100</width><height>30</height>
+            <label></label><font>font12</font>
+        </control>
+        <control type="button" id="3009">
+            <left>150</left><top>114</top><width>120</width><height>36</height>
+            <label>Torrentio</label><font>font12</font>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
+            <onright>3010</onright><onup>3006</onup><ondown>1000</ondown>
+        </control>
+        <control type="button" id="3010">
+            <left>278</left><top>114</top><width>130</width><height>36</height>
+            <label>MediaFusion</label><font>font12</font>
+            <texturefocus colordiffuse="FF444466">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
+            <textcolor>FFcccccc</textcolor><focusedcolor>FFffffff</focusedcolor>
+            <onleft>3009</onleft><onup>3006</onup><ondown>1000</ondown>
         </control>
 
         <!-- Source count label -->
         <control type="label" id="1001">
-            <left>40</left><top>115</top><width>400</width><height>25</height>
+            <left>40</left><top>158</top><width>400</width><height>25</height>
             <label></label>
             <font>font10</font><textcolor>FF666688</textcolor>
         </control>
 
         <!-- Divider line -->
         <control type="image">
-            <left>40</left><top>142</top><width>1180</width><height>2</height>
+            <left>40</left><top>185</top><width>1180</width><height>2</height>
             <texture colordiffuse="FF333355">white.png</texture>
         </control>
 
@@ -115,8 +139,8 @@
         <!-- SOURCE LIST                                                  -->
         <!-- ============================================================ -->
         <control type="list" id="1000">
-            <left>40</left><top>152</top><width>1180</width><height>915</height>
-            <onup>3006</onup>
+            <left>40</left><top>195</top><width>1180</width><height>870</height>
+            <onup>3009</onup>
             <viewtype label="sources">list</viewtype>
             <pagecontrol>0</pagecontrol>
             <scrolltime>200</scrolltime>
