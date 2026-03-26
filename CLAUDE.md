@@ -179,22 +179,29 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 
 ## Current TODOs
 
-### Needs testing (implemented but not verified in Kodi):
-- [ ] QR dialog: full-screen black background (was green/transparent) — verify with v1.0.4
-- [ ] RD QR: uses `direct_verification_url` for auto-authorize — verify code pre-fills
-- [ ] Trakt QR: URL includes device code (`trakt.tv/activate/{CODE}`) — verify
-- [ ] Source selection screen: filter chips toggle visually, scroll only re-renders on offset change
-- [ ] Wizdom API: fixed endpoints (`/api/search?action=by_id`), TV show nested parsing
+### Working (verified in Kodi):
+- [x] QR auth dialog: centered, dark opaque background, QR code visible (1280x720 coords)
+- [x] RD QR: uses `direct_verification_url` for auto-authorize
+- [x] Trakt QR: URL includes device code (`trakt.tv/activate/{CODE}`)
+- [x] QR dialog cancel works (xbmc.sleep in 200ms increments)
+- [x] Source selection screen: WindowXMLDialog with XML skin, native ControlList scroll/focus
+- [x] Wizdom API: fixed endpoints (`/api/search?action=by_id`), TV nested parsing works
+- [x] Subtitle match % shows on source cards
+- [x] Filter buttons (quality/sort/provider) with label-based selected state
+- [x] Source screen: cinematic dark redesign v1.1.0
+
+### Needs testing:
 - [ ] Subtitle search notifications during playback (start/found/applied)
-- [ ] Subtitle picker OSD button ("CC עב") appears during playback
+- [ ] Subtitle picker OSD button ("CC עב") during playback
+- [ ] Ktuvit provider with credentials (login + HTML scraping)
+- [ ] Subtitle download/apply flow end-to-end
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
 - Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
-- Wizdom/Ktuvit download endpoints need live testing with actual subtitle downloads
 - No icon.png or fanart.jpg assets yet for the addons
-- Source selection screen: focused card glow effect not fully implemented (only border changes)
-- Subtitle picker window (picker.py) trigger via OSD button needs testing
+- Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
+- 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
 
 ## Key UI Architecture
 
@@ -205,14 +212,23 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - Kodi skins live in `resources/skins/Default/1080i/filename.xml`
 
 ### UI Components
-- **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — uses 1280x720 coordinates, full-screen black bg + centered panel with QR code from api.qrserver.com
-- **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowXMLDialog)` — XML skin at `resources/skins/Default/1080i/source_select.xml`. Uses Kodi's native ControlList for smooth scroll/focus. Left panel: filter buttons + source list. Right panel: poster + plot + cast.
-- **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback (uses 1280x720 coords)
+- **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — 1280x720 coords, full-screen double-layer black bg + centered panel, QR from api.qrserver.com, xbmc.sleep(200) for responsive cancel
+- **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowXMLDialog)` — XML skin at `resources/skins/Default/1080i/source_select.xml`. Cinematic dark theme. Native ControlList for scroll/focus. All filter buttons in XML, labels managed by Python `setLabel()`. Left panel: quality/sort/provider filters + source cards. Right panel: poster + title + rating + genres + plot + director + cast.
+- **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback (1280x720 coords)
+- **Subtitle OSD Button:** `player.py` → `SubtitleOSDOverlay(WindowDialog)` — small "CC עב" button at bottom-right during playback, auto-hides after 5s
 - **Translation system:** `utils.py` → `t(key, *args)` function with `_STRINGS` dict (Hebrew/English)
-- **White texture helper:** `utils.py` → `_get_white_texture()` creates 1x1 white PNG for WindowDialog colorDiffuse backgrounds
+- **White texture:** `resources/skins/Default/media/white.png` — 16x16 solid white PNG for colorDiffuse tinting. `_get_white_texture()` returns absolute path for programmatic controls.
 
-### Source Selection XML Pattern
-The source screen uses `WindowXMLDialog` + `ControlList` with `<itemlayout>` / `<focusedlayout>` for native focus handling. Source properties are set via `ListItem.setProperty()` and displayed via `$INFO[ListItem.Property(name)]` in XML. This is the standard pattern used by Seren, Twilight, and other major Kodi addons.
+### Source Selection Architecture (v1.1.0)
+- XML defines: backgrounds, filter buttons (uniform width), ControlList with itemlayout/focusedlayout, right info panel
+- Python defines: data population, filter state management, label updates for selected/unselected
+- Filter buttons: XML `<control type="button">`, Python calls `setLabel('[COLOR ...]...')` for selected state
+- Source cards: `ListItem.setProperty('quality'/'provider'/'sub_display'/etc)`, XML reads via `$INFO[ListItem.Property(name)]`
+- Quality badge: dimmed (88000000 overlay) when unfocused, full color when focused
+- Focused card: quality-colored 2px border glow + brighter background
+- **NEVER use programmatic ControlButton in WindowXMLDialog** — they look wrong. Always define buttons in XML.
+- **Texture must be 16x16+ pixels** — 1x1 PNG doesn't render as fullscreen texture reliably
+- Reference implementation: Twilight (kodi7rd/repository) uses same pattern — white.png + colordiffuse, all XML controls, Python only populates data
 
 ## Change Log
 
@@ -255,4 +271,15 @@ The source screen uses `WindowXMLDialog` + `ControlList` with `<itemlayout>` / `
 - Added subtitle picker OSD button ("CC עב") during playback
 - Updated CLAUDE.md with proper versioning workflow and API docs
 - v1.0.5: Fixed IndentationError in providers.py (leftover Python 2 shim line)
-- v1.0.6: Rewrote source_select.py to WindowXMLDialog + XML skin (native ControlList for smooth scroll/focus), fixed QR dialog coordinates (1280x720 not 1920x1080), fixed OSD button coordinates
+- v1.0.6: Rewrote source_select.py to WindowXMLDialog + XML skin
+- v1.0.7: Fixed WindowXMLDialog constructor (__new__ override for Kodi bindings)
+- v1.0.8: Fixed XML textures (white.png not `-`), togglebutton→button, Unicode ✗→X
+- v1.0.9: QR dialog double-layer backgrounds for opacity
+- v1.0.10: QR cancel fix (xbmc.sleep 200ms instead of time.sleep 5s)
+- v1.0.11: backgroundcolor, badge 80px, Unicode cleanup, filter label sync
+- v1.0.12: Hebrew labels, provider filter row, default empty quality
+- v1.0.13: Button widths for Hebrew, window type change
+- v1.0.14: Dynamic Python buttons (looked bad, reverted in 1.1.0)
+- v1.0.15: Absolute texture paths for programmatic buttons
+- v1.0.16: 16x16 white.png (1x1 was too small for Kodi)
+- **v1.1.0: Complete source screen redesign** — cinematic dark theme, all XML buttons, clean architecture
