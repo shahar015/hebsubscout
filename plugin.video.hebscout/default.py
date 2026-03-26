@@ -395,79 +395,41 @@ def _apply_source_filters(sources):
 
 def _check_setup():
     """
-    Check if required API keys are configured.
+    Check if required services are connected.
     If not, walk the user through first-time setup.
-    Returns True if ready to use, False if user cancelled.
+    TMDB and Trakt keys are built into the addon - users only authorize accounts.
     """
-    from resources.lib.modules.utils import TMDB_KEY
-    
-    missing = []
-    if not TMDB_KEY:
-        missing.append('TMDB API Key')
-    if not rd.is_authorized():
-        missing.append('Real Debrid')
-    
-    if not missing:
+    if rd.is_authorized():
         return True
     
-    # First-run dialog
-    if not TMDB_KEY:
-        result = xbmcgui.Dialog().yesno(
-            'HebScout - הגדרה ראשונה',
-            'נדרש TMDB API Key כדי לדפדף סרטים וסדרות.\n\n'
-            'הירשם בחינם ב-themoviedb.org/settings/api\n'
-            'וקבל את המפתח שלך.',
-            yeslabel='הכנס מפתח',
-            nolabel='מאוחר יותר'
-        )
-        if result:
-            key = input_dialog('TMDB API Key')
-            if key:
-                from resources.lib.modules.utils import ADDON as _a, set_setting
-                set_setting('tmdb_api_key', key.strip())
-                notification('TMDB API Key saved!')
-                # Reload
-                import importlib
-                from resources.lib.modules import utils
-                importlib.reload(utils)
-            else:
-                return False
-        else:
-            return False
+    # First-run: need Real Debrid
+    result = xbmcgui.Dialog().yesno(
+        'HebScout - הגדרה ראשונה',
+        'ברוך הבא ל-HebScout!\n\n'
+        'נדרש חיבור Real Debrid להפעלת מקורות.\n'
+        'יש לך חשבון Real Debrid?',
+        yeslabel='חבר עכשיו',
+        nolabel='מאוחר יותר'
+    )
+    if result:
+        rd.authorize()
+    else:
+        return False
     
-    if not rd.is_authorized():
-        result = xbmcgui.Dialog().yesno(
-            'HebScout - הגדרה ראשונה',
-            'חיבור Real Debrid נדרש להפעלת מקורות.\n\n'
-            'יש לך חשבון Real Debrid?',
-            yeslabel='חבר עכשיו',
-            nolabel='מאוחר יותר'
-        )
-        if result:
-            rd.authorize()
-    
-    # Trakt is optional - offer but don't require
+    # Offer Trakt (optional)
     if not trakt.is_authorized():
         result = xbmcgui.Dialog().yesno(
             'HebScout - Trakt (אופציונלי)',
-            'רוצה לחבר Trakt?\n'
-            'זה מאפשר מעקב התקדמות, רשימות צפייה, ועוד.\n\n'
-            'תצטרך ליצור אפליקציה ב-trakt.tv/oauth/applications\n'
-            'ולקבל Client ID + Client Secret.',
-            yeslabel='הגדר Trakt',
+            'רוצה לחבר Trakt?\n\n'
+            'מעקב התקדמות צפייה, רשימות צפייה,\n'
+            'פרק הבא, והמלצות אישיות.',
+            yeslabel='חבר Trakt',
             nolabel='דלג'
         )
         if result:
-            # Get client ID
-            client_id = input_dialog('Trakt Client ID')
-            if client_id:
-                set_setting('trakt_client_id', client_id.strip())
-                client_secret = input_dialog('Trakt Client Secret')
-                if client_secret:
-                    set_setting('trakt_client_secret', client_secret.strip())
-                    trakt.authorize()
+            trakt.authorize()
     
-    return True
+    return rd.is_authorized()
 
 
 def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,

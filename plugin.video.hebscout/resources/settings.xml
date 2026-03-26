@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
     <category label="כללי / General">
-        <setting id="tmdb_api_key" type="text" label="TMDB API Key" default=""/>
-        <setting id="tmdb_language" type="labelenum" label="שפת TMDB / TMDB Language" values="he-IL|en-US|ar-SA|ru-RU|fr-FR" default="he-IL"/>
         <setting id="auto_play" type="bool" label="הפעלה אוטומטית / Auto Play" default="false"/>
         <setting id="auto_next_episode" type="bool" label="פרק הבא אוטומטי / Auto Next Episode" default="true"/>
     </category>
@@ -14,8 +12,6 @@
         <setting id="rd_expiry" type="text" label="Expiry" default="" visible="false"/>
     </category>
     <category label="Trakt">
-        <setting id="trakt_client_id" type="text" label="Trakt Client ID (optional)" default=""/>
-        <setting id="trakt_client_secret" type="text" label="Trakt Client Secret (optional)" default=""/>
         <setting id="trakt_token" type="text" label="Token" default="" visible="false"/>
         <setting id="trakt_refresh" type="text" label="Refresh Token" default="" visible="false"/>
         <setting id="trakt_expiry" type="text" label="Expiry" default="" visible="false"/>

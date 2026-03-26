@@ -25,7 +25,7 @@ ADDON_NAME = ADDON.getAddonInfo('name')
 ADDON_ICON = ADDON.getAddonInfo('icon')
 ADDON_FANART = ADDON.getAddonInfo('fanart')
 
-TMDB_KEY = ADDON.getSetting('tmdb_api_key') or ''
+TMDB_KEY = ADDON.getSetting('tmdb_api_key') or '814542f9e3ac8132198f2b3d541a4bc2'
 TMDB_LANG = ADDON.getSetting('tmdb_language') or 'he-IL'
 TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/'
 TMDB_POSTER = TMDB_IMG_BASE + 'w500'

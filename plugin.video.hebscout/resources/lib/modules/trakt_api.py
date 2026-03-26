@@ -21,8 +21,8 @@ except ImportError:
     from urllib import urlencode
 
 BASE = 'https://api.trakt.tv'
-CLIENT_ID = ''       # User provides via settings or first-run setup
-CLIENT_SECRET = ''   # User provides via settings or first-run setup
+CLIENT_ID = 'a04728bb8144a61adca51b59ca76f2feff0d8f7467e7747676bfa4ccf4e4bedd'
+CLIENT_SECRET = '982ef7cd073011fae61d3a8087dc96fda775ee1d8eda1042c0b4a65ab6cc0872'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 
