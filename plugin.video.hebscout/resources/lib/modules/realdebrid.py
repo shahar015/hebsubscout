@@ -7,6 +7,7 @@ Authorization, torrent cache checking, link unrestricting, and streaming.
 
 import time
 import json
+import xbmc
 from resources.lib.modules.utils import (
     http_get, http_post, log, get_setting, set_setting, notification, t, QRAuthDialog
 )
@@ -89,7 +90,13 @@ def authorize():
 
         pct = int(((time.time() - start) / expires_in) * 100)
         dialog.update(pct)
-        time.sleep(interval)
+
+        # Sleep in small increments so cancel is responsive
+        for _ in range(interval * 5):
+            if dialog.iscanceled():
+                dialog.close()
+                return False
+            xbmc.sleep(200)
 
         # Poll for credentials
         cred_url = '{}/device/credentials?client_id={}&code={}'.format(
