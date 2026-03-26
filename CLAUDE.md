@@ -198,11 +198,21 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 
 ## Key UI Architecture
 
-- **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — full-screen dimmer + centered dialog with QR code from api.qrserver.com, URL, device code, progress bar
-- **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowDialog)` — full-screen dark overlay, left panel (filter chips + scrollable source cards), right panel (poster + plot + cast)
-- **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback, shows subs with match %, download progress, auto-close
-- **Translation system:** `utils.py` → `t(key, *args)` function with `_STRINGS` dict (Hebrew/English), controlled by `ui_language` setting
-- **White texture helper:** `utils.py` → `_get_white_texture()` creates 1x1 white PNG for WindowDialog solid-color backgrounds via colorDiffuse
+### CRITICAL: Kodi Coordinate Systems
+- **WindowDialog** (programmatic, no XML): uses **1280x720** virtual coordinate system ALWAYS — regardless of screen resolution
+- **WindowXMLDialog** (XML skin): `1080i/` folder uses **1920x1080**; `720p/` folder uses **1280x720**
+- **Never use 1920x1080 coordinates in WindowDialog** — this was a major bug that caused off-center rendering
+- Kodi skins live in `resources/skins/Default/1080i/filename.xml`
+
+### UI Components
+- **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — uses 1280x720 coordinates, full-screen black bg + centered panel with QR code from api.qrserver.com
+- **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowXMLDialog)` — XML skin at `resources/skins/Default/1080i/source_select.xml`. Uses Kodi's native ControlList for smooth scroll/focus. Left panel: filter buttons + source list. Right panel: poster + plot + cast.
+- **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback (uses 1280x720 coords)
+- **Translation system:** `utils.py` → `t(key, *args)` function with `_STRINGS` dict (Hebrew/English)
+- **White texture helper:** `utils.py` → `_get_white_texture()` creates 1x1 white PNG for WindowDialog colorDiffuse backgrounds
+
+### Source Selection XML Pattern
+The source screen uses `WindowXMLDialog` + `ControlList` with `<itemlayout>` / `<focusedlayout>` for native focus handling. Source properties are set via `ListItem.setProperty()` and displayed via `$INFO[ListItem.Property(name)]` in XML. This is the standard pattern used by Seren, Twilight, and other major Kodi addons.
 
 ## Change Log
 
@@ -244,3 +254,5 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - Added subtitle search notifications during playback
 - Added subtitle picker OSD button ("CC עב") during playback
 - Updated CLAUDE.md with proper versioning workflow and API docs
+- v1.0.5: Fixed IndentationError in providers.py (leftover Python 2 shim line)
+- v1.0.6: Rewrote source_select.py to WindowXMLDialog + XML skin (native ControlList for smooth scroll/focus), fixed QR dialog coordinates (1280x720 not 1920x1080), fixed OSD button coordinates

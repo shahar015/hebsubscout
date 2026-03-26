@@ -44,7 +44,11 @@
       "Bash(for f:*)",
       "Bash(do sed:*)",
       "Bash(done)",
-      "Bash(find repo/ -name \"*1.0.3*\" -delete)"
+      "Bash(find repo/ -name \"*1.0.3*\" -delete)",
+      "WebFetch(domain:xbmc.github.io)",
+      "WebFetch(domain:forum.kodi.tv)",
+      "WebFetch(domain:alwinesch.github.io)",
+      "WebFetch(domain:kodi.wiki)"
     ]
   }
 }

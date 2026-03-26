@@ -303,57 +303,60 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         self.cancelled = False
         tex = _get_white_texture()
 
-        # Full-screen solid black background (fully opaque)
-        self.addControl(xbmcgui.ControlImage(0, 0, 1920, 1080, tex, colorDiffuse='FF000000'))
+        # WindowDialog uses 1280x720 coordinate system (NOT 1920x1080)
+        SW, SH = 1280, 720
 
-        # Dialog panel (centered, slightly lighter)
-        w, h = 700, 520
-        x = (1920 - w) // 2
-        y = (1080 - h) // 2
+        # Full-screen solid black background
+        self.addControl(xbmcgui.ControlImage(0, 0, SW, SH, tex, colorDiffuse='FF000000'))
+
+        # Dialog panel (centered)
+        w, h = 460, 400
+        x = (SW - w) // 2
+        y = (SH - h) // 2
         self.addControl(xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF0f0f24'))
 
         # Heading
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 15, w, 40, heading,
+            x, y + 8, w, 30, heading,
             font='font13', textColor='FF00d4aa', alignment=0x00000002
         ))
 
-        # QR code image (white on dark background)
-        qr_size = 220
-        qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=111122&color=ffffff&data={}'.format(
+        # QR code image
+        qr_size = 160
+        qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=0f0f24&color=ffffff&data={}'.format(
             quote_plus(verify_url)
         )
         qr_x = x + (w - qr_size) // 2
-        self.addControl(xbmcgui.ControlImage(qr_x, y + 65, qr_size, qr_size, qr_url))
+        self.addControl(xbmcgui.ControlImage(qr_x, y + 42, qr_size, qr_size, qr_url))
 
         # "Scan or go to:" label
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 300, w, 30, t('scan_or_visit'),
+            x, y + 210, w, 20, t('scan_or_visit'),
             font='font12', textColor='FFaaaaaa', alignment=0x00000002
         ))
 
         # URL
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 330, w, 35, '[COLOR cyan]{}[/COLOR]'.format(verify_url),
-            font='font13', alignment=0x00000002
+            x, y + 232, w, 25, '[COLOR cyan]{}[/COLOR]'.format(verify_url),
+            font='font12', alignment=0x00000002
         ))
 
         # "Enter code:" label
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 375, w, 30, t('enter_code'),
+            x, y + 265, w, 20, t('enter_code'),
             font='font12', textColor='FFaaaaaa', alignment=0x00000002
         ))
 
-        # Code (large, bright white on dark bg)
+        # Code (large, bright)
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 410, w, 55, '[COLOR lime]{}[/COLOR]'.format(user_code),
-            font='font13', textColor='FFffffff', alignment=0x00000002
+            x, y + 290, w, 40, '[COLOR lime]{}[/COLOR]'.format(user_code),
+            font='font14', textColor='FFffffff', alignment=0x00000002
         ))
 
-        # Progress bar background
-        bar_w, bar_h = 500, 6
+        # Progress bar
+        bar_w, bar_h = 340, 4
         bar_x = x + (w - bar_w) // 2
-        bar_y = y + h - 25
+        bar_y = y + h - 18
         self.addControl(xbmcgui.ControlImage(bar_x, bar_y, bar_w, bar_h, tex, colorDiffuse='FF333333'))
         self._progress_bar = xbmcgui.ControlImage(bar_x, bar_y, 1, bar_h, tex, colorDiffuse='FF00d4aa')
         self.addControl(self._progress_bar)

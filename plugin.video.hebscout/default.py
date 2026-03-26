@@ -324,9 +324,10 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
         _play_source(best, imdb_id, tmdb_id, title, year, season, episode, media_type, poster, fanart)
         return
 
-    # Custom source selection screen
+    # Custom source selection screen (WindowXMLDialog with XML skin)
     from resources.lib.modules.source_select import SourceSelectDialog
-    dialog = SourceSelectDialog(sources, metadata)
+    addon_path = xbmcaddon.Addon().getAddonInfo('path')
+    dialog = SourceSelectDialog('source_select.xml', addon_path, sources, metadata)
     dialog.doModal()
     chosen = dialog.selected_source
     del dialog

@@ -114,7 +114,8 @@ class SubtitleOSDOverlay(xbmcgui.WindowDialog):
             tex = ''
 
         # Small button at bottom-right
-        bx, by, bw, bh = 1740, 990, 140, 50
+        # WindowDialog uses 1280x720 coordinate system
+        bx, by, bw, bh = 1110, 660, 100, 35
         if tex:
             self.addControl(xbmcgui.ControlImage(bx, by, bw, bh, tex, colorDiffuse='AA000000'))
             self.addControl(xbmcgui.ControlImage(bx, by, bw, 2, tex, colorDiffuse='FF00d4aa'))
