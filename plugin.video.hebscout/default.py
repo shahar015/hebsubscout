@@ -413,8 +413,20 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
         'poster': poster,
         'fanart': fanart,
         'source_name': source.get('name', ''),
-        'sub_matches': source.get('all_matches', []),  # Pass subtitle matches to player
+        'sub_matches': source.get('all_matches', []),
     }, next_ep_info, resolve_func)
+
+    # Keep script alive so player callbacks (onAVStarted, progress tracker,
+    # subtitle auto-download, scrobbling) keep working.
+    # Wait up to 30s for playback to start, then stay alive during playback.
+    monitor = xbmc.Monitor()
+    for _ in range(30):
+        if _player._playing or monitor.abortRequested():
+            break
+        monitor.waitForAbort(1)
+    while not monitor.abortRequested() and _player._playing:
+        if monitor.waitForAbort(1):
+            break
 
 
 def _get_next_episode_info(tmdb_id, current_season, current_episode):
