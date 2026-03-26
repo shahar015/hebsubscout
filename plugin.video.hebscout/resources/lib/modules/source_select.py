@@ -55,16 +55,25 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self.metadata = metadata or {}
         self.selected_source = None
 
-        # Filter state
-        self._quality_filters = set(
-            (get_setting('filter_quality') or '4K|1080p|720p|480p|SD').split('|')
-        )
+        # Filter state: empty set = show all (no filter)
+        saved_quality = get_setting('filter_quality') or ''
+        self._quality_filters = set(saved_quality.split('|')) if saved_quality else set()
         self._sort_by = get_setting('filter_sort') or 'default'
 
     def onInit(self):
         """Called when the dialog opens. Populate all controls."""
+        self._sync_toggle_buttons()
         self._populate_info_panel()
         self._apply_filters()
+
+    def _sync_toggle_buttons(self):
+        """Set toggle button selected state to match filter state."""
+        for btn_id, quality in QUALITY_BTNS.items():
+            try:
+                ctrl = self.getControl(btn_id)
+                ctrl.setSelected(quality in self._quality_filters)
+            except Exception:
+                pass
 
     def _populate_info_panel(self):
         """Fill the right-side movie info panel."""
@@ -106,8 +115,8 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         """Filter and sort sources, then populate the list control."""
         result = list(self.all_sources)
 
-        # Quality filter
-        if self._quality_filters and len(self._quality_filters) < 5:
+        # Quality filter: empty set = show all, non-empty = show only selected
+        if self._quality_filters:
             result = [s for s in result if s.get('quality', 'SD') in self._quality_filters]
 
         # Sort within quality tiers
@@ -156,7 +165,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                     else:
                         sub_display = '[COLOR FFe67e22]עב {}%[/COLOR]'.format(sub_pct)
                 else:
-                    sub_display = '[COLOR FFe74c3c]עב ✗[/COLOR]'
+                    sub_display = '[COLOR FFe74c3c]עב X[/COLOR]'
                 item.setProperty('sub_display', sub_display)
 
                 # Feature tags
@@ -201,13 +210,11 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 pass
             return
 
-        # Quality filter buttons
+        # Quality filter buttons (toggle: none selected = show all)
         if controlID in QUALITY_BTNS:
             q = QUALITY_BTNS[controlID]
             if q in self._quality_filters:
                 self._quality_filters.discard(q)
-                if not self._quality_filters:
-                    self._quality_filters = set(QUALITY_BTNS.values())
             else:
                 self._quality_filters.add(q)
             self._apply_filters()

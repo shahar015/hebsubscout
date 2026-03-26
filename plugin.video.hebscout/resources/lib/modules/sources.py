@@ -123,7 +123,7 @@ def build_source_label(source):
         else:
             parts.append('[COLOR orange]עב {}%[/COLOR]'.format(pct))
     elif HEBSUBSCOUT_AVAILABLE and source.get('has_hebrew_subs') is not None:
-        parts.append('[COLOR red]עב ✗[/COLOR]')
+        parts.append('[COLOR red]עב X[/COLOR]')
     
     # RD cached indicator
     if source.get('rd_cached'):
