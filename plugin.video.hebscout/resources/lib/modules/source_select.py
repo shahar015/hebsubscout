@@ -45,6 +45,9 @@ def _parse_size_bytes(size_str):
 class SourceSelectDialog(xbmcgui.WindowXMLDialog):
     """Source selection using XML skin for native focus/scroll handling."""
 
+    def __new__(cls, xml_file, addon_path, sources, metadata):
+        return super().__new__(cls, xml_file, addon_path, 'Default', '1080i')
+
     def __init__(self, xml_file, addon_path, sources, metadata):
         super().__init__(xml_file, addon_path, 'Default', '1080i')
         self.all_sources = sources
