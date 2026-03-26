@@ -98,13 +98,22 @@ def authorize():
         )
         cred = http_get(cred_url)
         if cred and cred.get('client_id'):
-            # Got credentials, now get token
-            token_data = http_post('{}/token'.format(OAUTH_BASE), {
+            # Got credentials, now get token (RD requires form-encoded POST)
+            token_form = urlencode({
                 'client_id': cred['client_id'],
                 'client_secret': cred['client_secret'],
                 'code': device_code,
                 'grant_type': 'http://oauth.net/grant_type/device/1.0'
-            })
+            }).encode('utf-8')
+            try:
+                req = Request('{}/token'.format(OAUTH_BASE), data=token_form)
+                req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+                req.add_header('User-Agent', 'HebScout/1.0')
+                resp = urlopen(req, timeout=15)
+                token_data = json.loads(resp.read().decode('utf-8'))
+            except Exception as e:
+                log('RD token request failed: {}'.format(e), 'ERROR')
+                token_data = None
             if token_data and token_data.get('access_token'):
                 set_setting('rd_token', token_data['access_token'])
                 set_setting('rd_refresh', token_data.get('refresh_token', ''))
@@ -132,12 +141,20 @@ def refresh_token():
     if not all([refresh, client_id, client_secret]):
         return False
 
-    data = http_post('{}/token'.format(OAUTH_BASE), {
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'code': refresh,
-        'grant_type': 'http://oauth.net/grant_type/device/1.0'
-    })
+    try:
+        form = urlencode({
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'code': refresh,
+            'grant_type': 'http://oauth.net/grant_type/device/1.0'
+        }).encode('utf-8')
+        req = Request('{}/token'.format(OAUTH_BASE), data=form)
+        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+        req.add_header('User-Agent', 'HebScout/1.0')
+        resp = urlopen(req, timeout=15)
+        data = json.loads(resp.read().decode('utf-8'))
+    except Exception:
+        data = None
     if data and data.get('access_token'):
         set_setting('rd_token', data['access_token'])
         set_setting('rd_refresh', data.get('refresh_token', refresh))
