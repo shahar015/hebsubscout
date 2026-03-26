@@ -73,10 +73,12 @@ def authorize():
     device_code = data['device_code']
     user_code = data['user_code']
     verify_url = data.get('verification_url', 'https://real-debrid.com/device')
+    # Use direct_verification_url for QR (auto-authorizes, no code typing)
+    qr_url = data.get('direct_verification_url') or '{}?user_code={}'.format(verify_url, user_code)
     interval = data.get('interval', 5)
     expires_in = data.get('expires_in', 600)
 
-    dialog = QRAuthDialog(t('rd_auth_title'), verify_url, user_code)
+    dialog = QRAuthDialog(t('rd_auth_title'), qr_url, user_code)
     dialog.show()
 
     start = time.time()

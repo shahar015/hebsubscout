@@ -90,6 +90,8 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
                 'min_match_score': int(get_setting('min_match_score') or 40),
                 'providers': ['wizdom', 'ktuvit'],
                 'learning_db': True,
+                'ktuvit_email': get_setting('ktuvit_email'),
+                'ktuvit_password': get_setting('ktuvit_password'),
             })
             sources = scout.check_sources(imdb_id, sources, season=season, episode=episode)
             

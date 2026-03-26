@@ -21,6 +21,8 @@
         <setting id="enable_hebsubscout" type="bool" label="בדוק כתוביות עבריות / Check Hebrew Subs" default="true"/>
         <setting id="auto_subs" type="bool" label="הורד כתוביות אוטומטית / Auto Download Subs" default="true"/>
         <setting id="min_match_score" type="slider" label="סף התאמה / Min Match %" default="40" range="10,10,90" option="int"/>
+        <setting id="ktuvit_email" type="text" label="Ktuvit Email (אופציונלי)" default=""/>
+        <setting id="ktuvit_password" type="text" label="Ktuvit Hashed Password" default="" option="hidden"/>
     </category>
     <category label="מקורות / Sources">
         <setting id="enable_torrentio" type="bool" label="Torrentio" default="true"/>

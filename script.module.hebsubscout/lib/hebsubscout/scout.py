@@ -96,7 +96,9 @@ class SubScout:
         if 'wizdom' in self.enabled_providers:
             self.providers['wizdom'] = WizdomProvider()
         if 'ktuvit' in self.enabled_providers:
-            self.providers['ktuvit'] = KtuvitProvider()
+            ktuvit_email = self.settings.get('ktuvit_email', '')
+            ktuvit_password = self.settings.get('ktuvit_password', '')
+            self.providers['ktuvit'] = KtuvitProvider(email=ktuvit_email, hashed_password=ktuvit_password)
         if 'opensubtitles' in self.enabled_providers:
             api_key = self.settings.get('opensubtitles_api_key', '')
             if api_key:
