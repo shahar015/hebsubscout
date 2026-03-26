@@ -102,7 +102,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         # Sort buttons
         sort_labels = {
             'default': 'ברירת מחדל' if he else 'Default',
-            'size': 'גודל' if he else 'Size',
+            'size': 'גודל קובץ' if he else 'File Size',
             'subs': 'אחוזי התאמת כתוביות' if he else 'Sub Match %',
         }
         for btn_id, sort_val in SORT_BTNS.items():
@@ -216,13 +216,15 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
 
                 sub_pct = src.get('best_match_pct', 0)
                 has_subs = src.get('has_hebrew_subs', False)
+                he = is_hebrew()
                 if has_subs:
+                    sub_text = '{} אחוזי התאמה לכתוביות'.format(sub_pct) if he else '{}% Sub Match'.format(sub_pct)
                     if sub_pct >= 90:
-                        sub_display = '[COLOR FF2ecc71]{}%  עב[/COLOR]'.format(sub_pct)
+                        sub_display = '[COLOR FF2ecc71]{}[/COLOR]'.format(sub_text)
                     elif sub_pct >= 70:
-                        sub_display = '[COLOR FFe5a84b]{}%  עב[/COLOR]'.format(sub_pct)
+                        sub_display = '[COLOR FFe5a84b]{}[/COLOR]'.format(sub_text)
                     else:
-                        sub_display = '[COLOR FFe67e22]{}%  עב[/COLOR]'.format(sub_pct)
+                        sub_display = '[COLOR FFe67e22]{}[/COLOR]'.format(sub_text)
                 else:
                     sub_display = '[COLOR FF3a3a50]--[/COLOR]'
                 item.setProperty('sub_display', sub_display)

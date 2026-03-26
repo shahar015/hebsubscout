@@ -7,70 +7,64 @@
     </coordinates>
     <controls>
 
-        <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- BACKGROUND                                                -->
-        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- BACKGROUND -->
         <control type="image">
             <left>0</left><top>0</top><width>1920</width><height>1080</height>
             <texture colordiffuse="FF08080f">white.png</texture>
         </control>
-        <!-- Right panel bg -->
         <control type="image">
             <left>1230</left><top>0</top><width>690</width><height>1080</height>
             <texture colordiffuse="FF0e0e18">white.png</texture>
         </control>
-        <!-- Vertical separator -->
         <control type="image">
             <left>1228</left><top>30</top><width>1</width><height>1020</height>
             <texture colordiffuse="FF1a1a2a">white.png</texture>
         </control>
 
         <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- FILTERS (RTL: label on right, buttons right-to-left)      -->
+        <!-- FILTERS (RTL: labels right, buttons right-to-left)        -->
         <!-- ══════════════════════════════════════════════════════════ -->
 
-        <!-- Row 1: Quality — label right-aligned, buttons from right -->
+        <!-- Row 1: Quality -->
         <control type="label" id="4001">
-            <left>1080</left><top>32</top><width>140</width><height>28</height>
-            <label></label>
-            <font>font10</font><textcolor>FF555570</textcolor>
-            <align>right</align>
+            <left>1060</left><top>34</top><width>160</width><height>28</height>
+            <label></label><font>font10</font><textcolor>FF555570</textcolor><align>right</align>
         </control>
         <control type="button" id="3001">
-            <left>940</left><top>25</top><width>130</width><height>38</height>
-            <label>4K</label><font>font12</font>
+            <left>910</left><top>26</top><width>145</width><height>42</height>
+            <label>4K</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3002</onleft><ondown>3006</ondown>
         </control>
         <control type="button" id="3002">
-            <left>802</left><top>25</top><width>130</width><height>38</height>
-            <label>1080p</label><font>font12</font>
+            <left>757</left><top>26</top><width>145</width><height>42</height>
+            <label>1080p</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3003</onleft><onright>3001</onright><ondown>3006</ondown>
         </control>
         <control type="button" id="3003">
-            <left>664</left><top>25</top><width>130</width><height>38</height>
-            <label>720p</label><font>font12</font>
+            <left>604</left><top>26</top><width>145</width><height>42</height>
+            <label>720p</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3004</onleft><onright>3002</onright><ondown>3006</ondown>
         </control>
         <control type="button" id="3004">
-            <left>526</left><top>25</top><width>130</width><height>38</height>
-            <label>480p</label><font>font12</font>
+            <left>451</left><top>26</top><width>145</width><height>42</height>
+            <label>480p</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3005</onleft><onright>3003</onright><ondown>3006</ondown>
         </control>
         <control type="button" id="3005">
-            <left>388</left><top>25</top><width>130</width><height>38</height>
-            <label>SD</label><font>font12</font>
+            <left>298</left><top>26</top><width>145</width><height>42</height>
+            <label>SD</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
@@ -79,30 +73,28 @@
 
         <!-- Row 2: Sort -->
         <control type="label" id="4002">
-            <left>1080</left><top>80</top><width>140</width><height>28</height>
-            <label></label>
-            <font>font10</font><textcolor>FF555570</textcolor>
-            <align>right</align>
+            <left>1060</left><top>84</top><width>160</width><height>28</height>
+            <label></label><font>font10</font><textcolor>FF555570</textcolor><align>right</align>
         </control>
         <control type="button" id="3006">
-            <left>860</left><top>73</top><width>210</width><height>38</height>
-            <label>Default</label><font>font12</font>
+            <left>820</left><top>76</top><width>235</width><height>42</height>
+            <label>Default</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3007</onleft><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3007">
-            <left>642</left><top>73</top><width>210</width><height>38</height>
-            <label>Size</label><font>font12</font>
+            <left>577</left><top>76</top><width>235</width><height>42</height>
+            <label>Size</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3008</onleft><onright>3006</onright><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3008">
-            <left>424</left><top>73</top><width>210</width><height>38</height>
-            <label>Sub %</label><font>font12</font>
+            <left>334</left><top>76</top><width>235</width><height>42</height>
+            <label>Sub %</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
@@ -111,39 +103,35 @@
 
         <!-- Row 3: Source provider -->
         <control type="label" id="4003">
-            <left>1080</left><top>128</top><width>140</width><height>28</height>
-            <label></label>
-            <font>font10</font><textcolor>FF555570</textcolor>
-            <align>right</align>
+            <left>1060</left><top>134</top><width>160</width><height>28</height>
+            <label></label><font>font10</font><textcolor>FF555570</textcolor><align>right</align>
         </control>
         <control type="button" id="3009">
-            <left>860</left><top>121</top><width>210</width><height>38</height>
-            <label>Torrentio</label><font>font12</font>
+            <left>820</left><top>126</top><width>235</width><height>42</height>
+            <label>Torrentio</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onleft>3010</onleft><onup>3006</onup><ondown>1000</ondown>
         </control>
         <control type="button" id="3010">
-            <left>642</left><top>121</top><width>210</width><height>38</height>
-            <label>MediaFusion</label><font>font12</font>
+            <left>577</left><top>126</top><width>235</width><height>42</height>
+            <label>MediaFusion</label><font>font12</font><align>right</align>
             <texturefocus colordiffuse="FF1e1e30">white.png</texturefocus>
             <texturenofocus colordiffuse="FF12121e">white.png</texturenofocus>
             <textcolor>FF666680</textcolor><focusedcolor>FFffffff</focusedcolor>
             <onright>3009</onright><onup>3006</onup><ondown>1000</ondown>
         </control>
 
-        <!-- Source count (right-aligned) -->
+        <!-- Source count -->
         <control type="label" id="1001">
-            <left>50</left><top>172</top><width>1170</width><height>22</height>
-            <label></label>
-            <font>font10</font><textcolor>FF444460</textcolor>
-            <align>right</align>
+            <left>50</left><top>180</top><width>1170</width><height>22</height>
+            <label></label><font>font10</font><textcolor>FF444460</textcolor><align>right</align>
         </control>
 
         <!-- Divider -->
         <control type="image">
-            <left>50</left><top>196</top><width>1160</width><height>1</height>
+            <left>50</left><top>204</top><width>1160</width><height>1</height>
             <texture colordiffuse="FF1a1a2a">white.png</texture>
         </control>
 
@@ -151,20 +139,18 @@
         <!-- SOURCE LIST                                               -->
         <!-- ══════════════════════════════════════════════════════════ -->
         <control type="list" id="1000">
-            <left>50</left><top>206</top><width>1160</width><height>855</height>
+            <left>50</left><top>214</top><width>1160</width><height>850</height>
             <onup>3009</onup>
             <viewtype label="sources">list</viewtype>
             <pagecontrol>0</pagecontrol>
             <scrolltime>200</scrolltime>
             <itemgap>4</itemgap>
 
-            <!-- ─── UNFOCUSED CARD ─── -->
             <itemlayout width="1160" height="104">
                 <control type="image">
                     <left>0</left><top>2</top><width>1160</width><height>100</height>
                     <texture colordiffuse="FF0f0f1a">white.png</texture>
                 </control>
-                <!-- Quality badge (wider: 90px) -->
                 <control type="image">
                     <left>0</left><top>2</top><width>90</width><height>100</height>
                     <texture colordiffuse="$INFO[ListItem.Property(quality_color)]">white.png</texture>
@@ -179,31 +165,26 @@
                     <font>font13</font><textcolor>FFffffff</textcolor>
                     <aligny>center</aligny><align>center</align>
                 </control>
-                <!-- Provider -->
                 <control type="label">
                     <left>108</left><top>10</top><width>300</width><height>20</height>
                     <label>$INFO[ListItem.Property(provider)]</label>
                     <font>font10</font><textcolor>FF555570</textcolor>
                 </control>
-                <!-- Sub match -->
                 <control type="label">
-                    <left>850</left><top>8</top><width>290</width><height>24</height>
+                    <left>650</left><top>6</top><width>490</width><height>24</height>
                     <label>$INFO[ListItem.Property(sub_display)]</label>
-                    <font>font12</font><align>right</align>
+                    <font>font10</font><align>right</align>
                 </control>
-                <!-- Filename -->
                 <control type="label">
                     <left>108</left><top>32</top><width>1030</width><height>22</height>
                     <label>$INFO[ListItem.Label]</label>
                     <font>font10</font><textcolor>FFaaaabc</textcolor>
                 </control>
-                <!-- Tags -->
                 <control type="label">
                     <left>108</left><top>56</top><width>800</width><height>18</height>
                     <label>$INFO[ListItem.Property(info_tags)]</label>
                     <font>font10</font><textcolor>FF444460</textcolor>
                 </control>
-                <!-- Size -->
                 <control type="label">
                     <left>108</left><top>76</top><width>800</width><height>18</height>
                     <label>$INFO[ListItem.Property(size_display)]</label>
@@ -211,7 +192,6 @@
                 </control>
             </itemlayout>
 
-            <!-- ─── FOCUSED CARD ─── -->
             <focusedlayout width="1160" height="104">
                 <control type="image">
                     <left>-2</left><top>0</top><width>1164</width><height>104</height>
@@ -222,7 +202,6 @@
                     <left>0</left><top>2</top><width>1160</width><height>100</height>
                     <texture colordiffuse="FF16162a">white.png</texture>
                 </control>
-                <!-- Quality badge (full color) -->
                 <control type="image">
                     <left>0</left><top>2</top><width>90</width><height>100</height>
                     <texture colordiffuse="$INFO[ListItem.Property(quality_color)]">white.png</texture>
@@ -239,9 +218,9 @@
                     <font>font10</font><textcolor>FF8888a0</textcolor>
                 </control>
                 <control type="label">
-                    <left>850</left><top>8</top><width>290</width><height>24</height>
+                    <left>650</left><top>6</top><width>490</width><height>24</height>
                     <label>$INFO[ListItem.Property(sub_display)]</label>
-                    <font>font12</font><align>right</align>
+                    <font>font10</font><align>right</align>
                 </control>
                 <control type="label">
                     <left>108</left><top>32</top><width>1030</width><height>22</height>
@@ -292,15 +271,17 @@
         <control type="textbox" id="2004">
             <left>1270</left><top>658</top><width>600</width><height>200</height>
             <font>font10</font><textcolor>FF888899</textcolor>
+            <align>right</align>
         </control>
         <control type="label" id="2005">
             <left>1270</left><top>868</top><width>600</width><height>22</height>
             <label></label><font>font10</font><textcolor>FF555570</textcolor>
+            <align>right</align>
         </control>
         <control type="textbox" id="2006">
             <left>1270</left><top>898</top><width>600</width><height>160</height>
             <font>font10</font><textcolor>FF444460</textcolor>
+            <align>right</align>
         </control>
-
     </controls>
 </window>
