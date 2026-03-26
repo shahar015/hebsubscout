@@ -15,7 +15,7 @@ import threading
 import xbmc
 import xbmcgui
 
-from resources.lib.modules.utils import log, get_setting, notification
+from resources.lib.modules.utils import log, get_setting, notification, t
 from resources.lib.modules import trakt_api as trakt
 from resources.lib.modules.cache import set_bookmark, get_bookmark, mark_watched
 
@@ -146,9 +146,9 @@ class HebScoutPlayer(xbmc.Player):
         # Resume dialog
         bm = get_bookmark(self.imdb_id)
         if bm and bm.get('progress', 0) > 5:
-            if xbmcgui.Dialog().yesno('המשך צפייה',
-                    'להמשיך מ-{:.0f}%?'.format(bm['progress']),
-                    yeslabel='המשך', nolabel='מההתחלה'):
+            if xbmcgui.Dialog().yesno(t('resume_title'),
+                    t('resume_msg', bm['progress']),
+                    yeslabel=t('resume_yes'), nolabel=t('resume_no')):
                 li.setProperty('StartPercent', str(bm['progress']))
 
         self.play(url, li)
@@ -244,7 +244,7 @@ class HebScoutPlayer(xbmc.Player):
                     log('Failed to fetch subs for picker: {}'.format(e), 'ERROR')
         
         if not self._sub_matches:
-            xbmcgui.Dialog().notification('HebSubScout', 'לא נמצאו כתוביות בעברית',
+            xbmcgui.Dialog().notification('HebSubScout', t('no_heb_subs'),
                                           xbmcgui.NOTIFICATION_WARNING, 3000)
             return
         
@@ -282,7 +282,7 @@ class HebScoutPlayer(xbmc.Player):
                 name = name[:47] + '...'
             labels.append('{}% | {} [{}]'.format(score, name, prov))
         
-        choice = xbmcgui.Dialog().select('בחירת כתוביות עבריות', labels)
+        choice = xbmcgui.Dialog().select(t('pick_heb_subs'), labels)
         if choice < 0:
             return
         
@@ -292,12 +292,12 @@ class HebScoutPlayer(xbmc.Player):
             from service.subtitles.hebsubscout.downloader import download_subtitle
             
             progress = xbmcgui.DialogProgress()
-            progress.create('HebSubScout', 'מוריד כתוביות...')
-            
+            progress.create('HebSubScout', t('downloading_subs'))
+
             path = download_subtitle(
                 provider=selected.get('provider', ''),
                 subtitle_id=selected.get('subtitle_id', ''),
-                progress_callback=lambda p: progress.update(p, 'מוריד... {}%'.format(p))
+                progress_callback=lambda p: progress.update(p, t('downloading_pct', p))
             )
             
             progress.close()
@@ -307,8 +307,7 @@ class HebScoutPlayer(xbmc.Player):
                 self.subtitle_name = selected.get('subtitle_name', '')
                 log('Fallback picker: applied {}'.format(path))
         except ImportError:
-            xbmcgui.Dialog().ok('HebSubScout', 'שירות הכתוביות לא מותקן\n'
-                                'התקן את service.subtitles.hebsubscout מהמאגר')
+            xbmcgui.Dialog().ok('HebSubScout', t('sub_service_missing'))
 
     def onPlayBackPaused(self):
         if not self._playing:
@@ -373,9 +372,9 @@ class HebScoutPlayer(xbmc.Player):
             return
         ni = self._next_episode_info
         ns, ne, nt = ni.get('season'), ni.get('episode'), ni.get('title', '')
-        should = xbmcgui.Dialog().yesno('פרק הבא',
-            'S{:02d}E{:02d} - {}\n\nלהפעיל?'.format(ns, ne, nt),
-            yeslabel='הפעל', nolabel='עצור', autoclose=15000)
+        should = xbmcgui.Dialog().yesno(t('next_ep_title'),
+            'S{:02d}E{:02d} - {}'.format(ns, ne, nt),
+            yeslabel=t('next_ep_play'), nolabel=t('next_ep_stop'), autoclose=15000)
         if should or should is None:
             try:
                 url = self._resolve_func(self.imdb_id, ns, ne)

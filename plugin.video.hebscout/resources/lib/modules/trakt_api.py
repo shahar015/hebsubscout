@@ -9,7 +9,7 @@ watchlist, collections, ratings, next episodes.
 import time
 import json
 from resources.lib.modules.utils import (
-    http_get, http_post, log, get_setting, set_setting, notification
+    http_get, http_post, log, get_setting, set_setting, notification, t
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key, mark_watched as local_mark_watched
 
@@ -75,7 +75,7 @@ def authorize():
     }, headers={'Content-Type': 'application/json'})
 
     if not data:
-        notification('Trakt authorization failed')
+        notification(t('trakt_auth_failed'))
         return False
 
     user_code = data['user_code']
@@ -86,8 +86,8 @@ def authorize():
 
     progress = xbmcgui.DialogProgress()
     progress.create(
-        'Trakt Authorization',
-        'Go to: {}\nEnter code: [COLOR lime]{}[/COLOR]'.format(verify_url, user_code)
+        t('trakt_auth_title'),
+        t('trakt_auth_go_to', verify_url, user_code)
     )
 
     start = time.time()
@@ -113,11 +113,11 @@ def authorize():
             set_setting('trakt_refresh', token_data.get('refresh_token', ''))
             set_setting('trakt_expiry', str(time.time() + token_data.get('expires_in', 7776000)))
             progress.close()
-            notification('Trakt authorized successfully!')
+            notification(t('trakt_auth_success'))
             return True
 
     progress.close()
-    notification('Trakt authorization timed out')
+    notification(t('trakt_timed_out'))
     return False
 
 
@@ -151,7 +151,7 @@ def refresh_token():
 def revoke():
     set_setting('trakt_token', '')
     set_setting('trakt_refresh', '')
-    notification('Trakt account removed')
+    notification(t('trakt_removed'))
 
 
 # =========================================================================

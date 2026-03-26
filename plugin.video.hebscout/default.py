@@ -29,7 +29,7 @@ from resources.lib.modules.cache import is_watched, cache_clear
 from resources.lib.modules.utils import (
     log, notification, ADDON, ADDON_NAME, ADDON_FANART,
     progress_dialog, input_dialog, select_dialog, yesno_dialog,
-    get_setting, set_setting
+    get_setting, set_setting, t, is_hebrew
 )
 
 HANDLE = int(sys.argv[1])
@@ -99,7 +99,7 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     # Context menu
     cm = context_items or []
     if imdb and trakt.is_authorized():
-        cm.append(('Trakt Watchlist +', 'RunPlugin({})'.format(
+        cm.append((t('trakt_watchlist_add'), 'RunPlugin({})'.format(
             url_for(action='trakt_watchlist_add', imdb_id=imdb, media_type=media_type))))
     li.addContextMenuItems(cm)
     
@@ -128,17 +128,17 @@ def end_dir(content='videos', sort=None):
 # =========================================================================
 
 def main_menu():
-    add_dir('[COLOR lime]סרטים[/COLOR] / Movies', 'movies_menu', poster='DefaultMovies.png')
-    add_dir('[COLOR lime]סדרות[/COLOR] / TV Shows', 'shows_menu', poster='DefaultTVShows.png')
-    
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('movies')), 'movies_menu', poster='DefaultMovies.png')
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('tv_shows')), 'shows_menu', poster='DefaultTVShows.png')
+
     if trakt.is_authorized():
-        add_dir('[COLOR cyan]המשך צפייה[/COLOR] / Up Next', 'trakt_next_up')
-        add_dir('[COLOR cyan]רשימת צפייה[/COLOR] / My Watchlist', 'trakt_watchlist_menu')
-        add_dir('[COLOR cyan]היסטוריה[/COLOR] / Watch Progress', 'trakt_progress')
-    
-    add_dir('[COLOR yellow]חיפוש[/COLOR] / Search', 'search')
-    add_dir('שחקנים / Popular People', 'people_popular')
-    add_dir('[COLOR orange]כלים[/COLOR] / Tools', 'tools_menu')
+        add_dir('[COLOR cyan]{}[/COLOR]'.format(t('up_next')), 'trakt_next_up')
+        add_dir('[COLOR cyan]{}[/COLOR]'.format(t('my_watchlist')), 'trakt_watchlist_menu')
+        add_dir('[COLOR cyan]{}[/COLOR]'.format(t('watch_progress')), 'trakt_progress')
+
+    add_dir('[COLOR yellow]{}[/COLOR]'.format(t('search')), 'search')
+    add_dir(t('popular_people'), 'people_popular')
+    add_dir('[COLOR orange]{}[/COLOR]'.format(t('tools')), 'tools_menu')
     end_dir(content='')
 
 
@@ -147,13 +147,13 @@ def main_menu():
 # =========================================================================
 
 def movies_menu():
-    add_dir('טרנדינג / Trending', 'movies_trending')
-    add_dir('פופולרי / Popular', 'movies_popular')
-    add_dir('מדורג / Top Rated', 'movies_top_rated')
-    add_dir('בקולנוע / Now Playing', 'movies_now_playing')
-    add_dir('בקרוב / Upcoming', 'movies_upcoming')
-    add_dir('ז\'אנרים / Genres', 'movies_genres')
-    add_dir('חיפוש / Search Movies', 'movies_search')
+    add_dir(t('trending'), 'movies_trending')
+    add_dir(t('popular'), 'movies_popular')
+    add_dir(t('top_rated'), 'movies_top_rated')
+    add_dir(t('now_playing'), 'movies_now_playing')
+    add_dir(t('upcoming'), 'movies_upcoming')
+    add_dir(t('genres'), 'movies_genres')
+    add_dir(t('search_movies'), 'movies_search')
     end_dir(content='')
 
 
@@ -162,7 +162,7 @@ def list_movies(func, page=1, **kwargs):
     for m in items:
         add_item(m, action='movie_sources', is_folder=True)
     if page < total_pages:
-        add_dir('[COLOR yellow]עמוד הבא >[/COLOR]', kwargs.get('list_action', 'movies_trending'),
+        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), kwargs.get('list_action', 'movies_trending'),
                 page=str(page + 1), **{k: v for k, v in kwargs.items() if k != 'list_action'})
     end_dir(content='movies')
 
@@ -179,12 +179,12 @@ def movies_genres():
 # =========================================================================
 
 def shows_menu():
-    add_dir('טרנדינג / Trending', 'shows_trending')
-    add_dir('פופולרי / Popular', 'shows_popular')
-    add_dir('מדורג / Top Rated', 'shows_top_rated')
-    add_dir('משודר היום / Airing Today', 'shows_airing_today')
-    add_dir('ז\'אנרים / Genres', 'shows_genres')
-    add_dir('חיפוש / Search Shows', 'shows_search')
+    add_dir(t('trending'), 'shows_trending')
+    add_dir(t('popular'), 'shows_popular')
+    add_dir(t('top_rated'), 'shows_top_rated')
+    add_dir(t('airing_today'), 'shows_airing_today')
+    add_dir(t('genres'), 'shows_genres')
+    add_dir(t('search_shows'), 'shows_search')
     end_dir(content='')
 
 
@@ -193,7 +193,7 @@ def list_shows(func, page=1, **kwargs):
     for s in items:
         add_item(s, action='show_seasons', is_folder=True)
     if page < total_pages:
-        add_dir('[COLOR yellow]עמוד הבא >[/COLOR]', kwargs.get('list_action', 'shows_trending'),
+        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), kwargs.get('list_action', 'shows_trending'),
                 page=str(page + 1))
     end_dir(content='tvshows')
 
@@ -201,10 +201,10 @@ def list_shows(func, page=1, **kwargs):
 def show_seasons(tmdb_id):
     details = tmdb.show_details(tmdb_id)
     if not details:
-        notification('Show not found')
+        notification(t('show_not_found'))
         return
     for s in details.get('seasons_data', []):
-        label = '{} ({} episodes)'.format(s['name'], s['episode_count'])
+        label = t('season_label', s['name'], s['episode_count'])
         add_dir(label, 'show_episodes', tmdb_id=str(tmdb_id),
                 season=str(s['season_number']),
                 poster=s.get('poster', details.get('poster', '')),
@@ -266,11 +266,11 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
             imdb_id = details.get('imdb_id', '')
     
     if not imdb_id:
-        notification('IMDB ID not found')
+        notification(t('imdb_not_found'))
         return
-    
+
     # Progress dialog
-    progress = progress_dialog('HebScout', 'מחפש מקורות...')
+    progress = progress_dialog('HebScout', t('searching_sources'))
     
     def on_progress(pct, msg):
         if not progress.iscanceled():
@@ -286,7 +286,7 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
     progress.close()
     
     if not sources:
-        notification('לא נמצאו מקורות / No sources found')
+        notification(t('no_sources_found'))
         return
     
     # Auto-play: pick first RD-cached source with best Hebrew sub match
@@ -310,7 +310,7 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
     
     # Manual selection
     labels = [build_source_label(s) for s in filtered]
-    choice = select_dialog('בחר מקור / Select Source ({})'.format(len(filtered)), labels)
+    choice = select_dialog('{} ({})'.format(t('select_source'), len(filtered)), labels)
     
     if choice < 0:
         return
@@ -338,27 +338,27 @@ def _apply_source_filters(sources):
         subs_any = sum(1 for s in sources if s.get('has_hebrew_subs'))
         
         options = [
-            '[COLOR lime]▶ הצג הכל ({} מקורות)[/COLOR]'.format(total),
+            '[COLOR lime]▶ {} ({} {})[/COLOR]'.format(t('show_all'), total, t('found_sources', '').strip()),
         ]
-        
+
         # Quality filters
         for q in ['4K', '1080p', '720p', '480p', 'SD']:
             if q_counts.get(q, 0) > 0:
-                options.append('[COLOR cyan]איכות: {}[/COLOR] ({})'.format(q, q_counts[q]))
-        
+                options.append('[COLOR cyan]{}: {}[/COLOR] ({})'.format(t('quality'), q, q_counts[q]))
+
         # RD filter
         if cached_count > 0:
-            options.append('[COLOR cyan]RD Cached בלבד[/COLOR] ({})'.format(cached_count))
-        
+            options.append('[COLOR cyan]{}[/COLOR] ({})'.format(t('rd_cached_only'), cached_count))
+
         # Hebrew subtitle filters
         if subs_100 > 0:
-            options.append('[COLOR lime]עב 100% / כתוביות מובנות[/COLOR] ({})'.format(subs_100))
+            options.append('[COLOR lime]עב 100% / {}[/COLOR] ({})'.format(t('subs_100'), subs_100))
         if subs_70 > 0:
-            options.append('[COLOR yellow]עב 70%+ התאמה[/COLOR] ({})'.format(subs_70))
+            options.append('[COLOR yellow]עב {}[/COLOR] ({})'.format(t('subs_70'), subs_70))
         if subs_any > 0:
-            options.append('[COLOR orange]עב כלשהי[/COLOR] ({})'.format(subs_any))
-        
-        choice = select_dialog('סינון מקורות / Filter Sources', options)
+            options.append('[COLOR orange]עב {}[/COLOR] ({})'.format(t('subs_any'), subs_any))
+
+        choice = select_dialog(t('filter_sources'), options)
         
         if choice < 0:
             return None  # Cancelled
@@ -366,26 +366,34 @@ def _apply_source_filters(sources):
         if choice == 0:
             return sources  # Show all
         
-        # Parse the filter choice
-        label = options[choice]
-        
-        # Quality filters
-        for q in ['4K', '1080p', '720p', '480p', 'SD']:
-            if 'איכות: {}'.format(q) in label:
-                return [s for s in sources if s.get('quality') == q]
-        
+        # Parse the filter choice by index offset
+        idx = choice - 1  # 0 was "show all"
+        # Count quality filters
+        quality_list = [q for q in ['4K', '1080p', '720p', '480p', 'SD'] if q_counts.get(q, 0) > 0]
+        if idx < len(quality_list):
+            return [s for s in sources if s.get('quality') == quality_list[idx]]
+        idx -= len(quality_list)
+
         # RD cached
-        if 'RD Cached' in label:
-            return [s for s in sources if s.get('rd_cached')]
-        
+        if cached_count > 0:
+            if idx == 0:
+                return [s for s in sources if s.get('rd_cached')]
+            idx -= 1
+
         # Sub filters
-        if '100%' in label or 'מובנות' in label:
-            return [s for s in sources if s.get('best_match_pct', 0) >= 95]
-        if '70%' in label:
-            return [s for s in sources if s.get('best_match_pct', 0) >= 70]
-        if 'עב כלשהי' in label:
-            return [s for s in sources if s.get('has_hebrew_subs')]
-        
+        if subs_100 > 0:
+            if idx == 0:
+                return [s for s in sources if s.get('best_match_pct', 0) >= 95]
+            idx -= 1
+        if subs_70 > 0:
+            if idx == 0:
+                return [s for s in sources if s.get('best_match_pct', 0) >= 70]
+            idx -= 1
+        if subs_any > 0:
+            if idx == 0:
+                return [s for s in sources if s.get('has_hebrew_subs')]
+            idx -= 1
+
         return sources  # Fallback: show all
 
 
@@ -404,45 +412,41 @@ def _check_setup():
     
     # First-run: need Real Debrid
     result = xbmcgui.Dialog().yesno(
-        'HebScout - הגדרה ראשונה',
-        'ברוך הבא ל-HebScout!\n\n'
-        'נדרש חיבור Real Debrid להפעלת מקורות.\n'
-        'יש לך חשבון Real Debrid?',
-        yeslabel='חבר עכשיו',
-        nolabel='מאוחר יותר'
+        t('first_run_title'),
+        t('first_run_welcome'),
+        yeslabel=t('connect_now'),
+        nolabel=t('later')
     )
     if result:
         rd.authorize()
     else:
         return False
-    
+
     # Offer Trakt (optional)
     if not trakt.is_authorized():
         result = xbmcgui.Dialog().yesno(
-            'HebScout - Trakt (אופציונלי)',
-            'רוצה לחבר Trakt?\n\n'
-            'מעקב התקדמות צפייה, רשימות צפייה,\n'
-            'פרק הבא, והמלצות אישיות.',
-            yeslabel='חבר Trakt',
-            nolabel='דלג'
+            t('trakt_optional_title'),
+            t('trakt_optional_msg'),
+            yeslabel=t('connect_trakt'),
+            nolabel=t('skip')
         )
         if result:
             trakt.authorize()
-    
+
     return rd.is_authorized()
 
 
 def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
                  media_type, poster, fanart):
     """Resolve and play a selected source."""
-    progress = progress_dialog('HebScout', 'מחבר למקור...')
+    progress = progress_dialog('HebScout', t('connecting_source'))
     progress.update(30)
-    
+
     url = resolve_source(source)
     progress.close()
-    
+
     if not url:
-        notification('Failed to resolve source')
+        notification(t('failed_resolve'))
         return
     
     # Build next episode info for TV
@@ -490,7 +494,7 @@ def _get_next_episode_info(tmdb_id, current_season, current_episode):
                 return {
                     'season': current_season + 1,
                     'episode': 1,
-                    'title': 'Season {} Episode 1'.format(current_season + 1),
+                    'title': t('next_season_ep', current_season + 1),
                     'has_next': True,
                 }
     return None
@@ -531,8 +535,8 @@ def trakt_next_up():
 
 
 def trakt_watchlist_menu():
-    add_dir('סרטים / Movies', 'trakt_watchlist_movies')
-    add_dir('סדרות / Shows', 'trakt_watchlist_shows')
+    add_dir(t('wl_movies'), 'trakt_watchlist_movies')
+    add_dir(t('wl_shows'), 'trakt_watchlist_shows')
     end_dir(content='')
 
 
@@ -599,11 +603,11 @@ def trakt_progress():
 # =========================================================================
 
 def search():
-    query = input_dialog('חיפוש / Search')
+    query = input_dialog(t('search_prompt'))
     if not query:
         return
-    add_dir('[COLOR lime]סרטים / Movies[/COLOR]', 'movies_search_results', query=query)
-    add_dir('[COLOR lime]סדרות / TV Shows[/COLOR]', 'shows_search_results', query=query)
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_movies')), 'movies_search_results', query=query)
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_shows')), 'shows_search_results', query=query)
     end_dir(content='')
 
 
@@ -613,13 +617,13 @@ def search():
 
 def tools_menu():
     # Account status
-    rd_status = '[COLOR lime]Connected[/COLOR]' if rd.is_authorized() else '[COLOR red]Not Connected[/COLOR]'
-    trakt_status = '[COLOR lime]Connected[/COLOR]' if trakt.is_authorized() else '[COLOR red]Not Connected[/COLOR]'
-    
+    rd_status = '[COLOR lime]{}[/COLOR]'.format(t('connected')) if rd.is_authorized() else '[COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    trakt_status = '[COLOR lime]{}[/COLOR]'.format(t('connected')) if trakt.is_authorized() else '[COLOR red]{}[/COLOR]'.format(t('not_connected'))
+
     add_dir('Real Debrid: {}'.format(rd_status), 'rd_auth')
     add_dir('Trakt: {}'.format(trakt_status), 'trakt_auth')
-    add_dir('נקה מטמון / Clear Cache', 'clear_cache')
-    add_dir('הגדרות / Settings', 'settings')
+    add_dir(t('clear_cache'), 'clear_cache')
+    add_dir(t('settings'), 'settings')
     end_dir(content='')
 
 
@@ -664,7 +668,7 @@ def router(params):
     elif action == 'movies_genre':
         list_movies(tmdb.movies_genre, page, genre_id=int(genre_id), list_action='movies_genre')
     elif action == 'movies_search':
-        query = input_dialog('חפש סרט / Search Movie')
+        query = input_dialog(t('search_movies_prompt'))
         if query:
             list_movies(tmdb.movies_search, page, query=query, list_action='movies_search')
     elif action == 'movies_search_results':
@@ -688,7 +692,7 @@ def router(params):
     elif action == 'shows_genre':
         list_shows(tmdb.shows_genre, page, genre_id=int(genre_id), list_action='shows_genre')
     elif action == 'shows_search':
-        query = input_dialog('חפש סדרה / Search Show')
+        query = input_dialog(t('search_shows_prompt'))
         if query:
             list_shows(tmdb.shows_search, page, query=query, list_action='shows_search')
     elif action == 'shows_search_results':
@@ -733,26 +737,26 @@ def router(params):
         trakt_progress()
     elif action == 'trakt_watchlist_add':
         trakt.add_to_watchlist(media_type, imdb_id)
-        notification('Added to Trakt Watchlist')
+        notification(t('added_watchlist'))
     
     # Tools
     elif action == 'tools_menu':
         tools_menu()
     elif action == 'rd_auth':
         if rd.is_authorized():
-            if yesno_dialog('Real Debrid', 'Disconnect Real Debrid?'):
+            if yesno_dialog('Real Debrid', t('disconnect_rd')):
                 rd.revoke()
         else:
             rd.authorize()
     elif action == 'trakt_auth':
         if trakt.is_authorized():
-            if yesno_dialog('Trakt', 'Disconnect Trakt?'):
+            if yesno_dialog('Trakt', t('disconnect_trakt')):
                 trakt.revoke()
         else:
             trakt.authorize()
     elif action == 'clear_cache':
         cache_clear()
-        notification('Cache cleared')
+        notification(t('cache_cleared'))
     elif action == 'settings':
         ADDON.openSettings()
     
@@ -766,7 +770,7 @@ def router(params):
         if _player and _player._playing:
             _player.show_subtitle_picker()
         else:
-            notification('לא מתנגן כרגע / Not playing')
+            notification(t('not_playing'))
 
 
 if __name__ == '__main__':

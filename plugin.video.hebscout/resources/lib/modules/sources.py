@@ -10,7 +10,7 @@ Orchestrates the full source pipeline:
 """
 
 import threading
-from resources.lib.modules.utils import log, get_setting, notification
+from resources.lib.modules.utils import log, get_setting, notification, t
 from resources.lib.modules import realdebrid as rd
 from resources.lib.scrapers import scrape_all
 
@@ -39,7 +39,7 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
             progress_callback(pct, msg)
 
     # --- Step 1: Scrape ---
-    update(5, 'מחפש מקורות...' if get_setting('language') == 'he' else 'Scraping sources...')
+    update(5, t('scraping_sources'))
     
     sources = scrape_all(
         imdb_id=imdb_id,
@@ -55,12 +55,12 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
     )
 
     if not sources:
-        update(100, 'No sources found')
+        update(100, t('no_sources'))
         return []
 
     # --- Step 2: Check RD cache ---
     if rd.is_authorized():
-        update(45, 'בודק זמינות Real Debrid...' if get_setting('language') == 'he' else 'Checking RD cache...')
+        update(45, t('checking_rd'))
         
         hashes = [s['hash'] for s in sources if s.get('hash')]
         if hashes:
@@ -79,11 +79,11 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
             cached_count = sum(1 for s in sources if s.get('rd_cached'))
             log('RD cache: {}/{} sources cached'.format(cached_count, len(hashes)))
     
-    update(65, 'Found {} sources'.format(len(sources)))
+    update(65, t('found_sources', len(sources)))
 
     # --- Step 3: HebSubScout enrichment ---
     if HEBSUBSCOUT_AVAILABLE and get_setting('enable_hebsubscout') != 'false':
-        update(70, 'בודק כתוביות בעברית...' if get_setting('language') == 'he' else 'Checking Hebrew subs...')
+        update(70, t('checking_subs'))
         
         try:
             scout = SubScout(settings={
@@ -98,7 +98,7 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
         except Exception as e:
             log('HebSubScout enrichment failed: {}'.format(e), 'ERROR')
     
-    update(95, 'Ready - {} sources'.format(len(sources)))
+    update(95, t('ready_sources', len(sources)))
     return sources
 
 
@@ -159,7 +159,7 @@ def resolve_source(source):
     Returns playable URL string or None.
     """
     if not rd.is_authorized():
-        notification('Real Debrid not authorized')
+        notification(t('rd_not_authorized'))
         return None
     
     rd.refresh_token()

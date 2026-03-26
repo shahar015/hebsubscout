@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
     <category label="כללי / General">
+        <setting id="ui_language" type="labelenum" label="שפת ממשק / UI Language" values="עברית|English" default="עברית"/>
         <setting id="auto_play" type="bool" label="הפעלה אוטומטית / Auto Play" default="false"/>
         <setting id="auto_next_episode" type="bool" label="פרק הבא אוטומטי / Auto Next Episode" default="true"/>
     </category>

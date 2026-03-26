@@ -102,6 +102,14 @@ Hebrew subtitles and auto-applies them during playback.
 Works standalone as a Kodi subtitle service, and integrates deeply
 with the HebScout video addon for seamless subtitle matching.
         </description>
+        <description lang="he">
+הורדת כתוביות עבריות אוטומטית מבית HebSubScout.
+מחפש ב-Wizdom.xyz, Ktuvit.me ו-OpenSubtitles את הכתוביות העבריות
+המתאימות ביותר ומחיל אותן אוטומטית בזמן הצפייה.
+
+עובד כשירות כתוביות עצמאי בקודי, ומשתלב לעומק
+עם תוסף הווידאו HebScout להתאמת כתוביות חלקה.
+        </description>
         <platform>all</platform>
         <license>GPL-3.0</license>
         <language>he</language>

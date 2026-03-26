@@ -8,7 +8,7 @@ Authorization, torrent cache checking, link unrestricting, and streaming.
 import time
 import json
 from resources.lib.modules.utils import (
-    http_get, http_post, log, get_setting, set_setting, notification
+    http_get, http_post, log, get_setting, set_setting, notification, t
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key
 
@@ -71,7 +71,7 @@ def authorize():
     url = '{}/device/code?client_id={}&new_credentials=yes'.format(OAUTH_BASE, CLIENT_ID)
     data = http_get(url)
     if not data:
-        notification('Real Debrid authorization failed')
+        notification(t('rd_auth_failed'))
         return False
 
     device_code = data['device_code']
@@ -82,8 +82,8 @@ def authorize():
 
     progress = xbmcgui.DialogProgress()
     progress.create(
-        'Real Debrid Authorization',
-        'Go to: {}\nEnter code: [COLOR lime]{}[/COLOR]'.format(verify_url, user_code)
+        t('rd_auth_title'),
+        t('rd_auth_go_to', verify_url, user_code)
     )
 
     start = time.time()
@@ -116,11 +116,11 @@ def authorize():
                 set_setting('rd_client_secret', cred['client_secret'])
                 set_setting('rd_expiry', str(time.time() + token_data.get('expires_in', 86400)))
                 progress.close()
-                notification('Real Debrid authorized successfully!')
+                notification(t('rd_auth_success'))
                 return True
 
     progress.close()
-    notification('Authorization timed out')
+    notification(t('auth_timed_out'))
     return False
 
 
@@ -155,7 +155,7 @@ def revoke():
     set_setting('rd_refresh', '')
     set_setting('rd_client_id', '')
     set_setting('rd_client_secret', '')
-    notification('Real Debrid account removed')
+    notification(t('rd_removed'))
 
 
 # =========================================================================
