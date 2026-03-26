@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window type="dialog">
+<window>
     <defaultcontrol always="true">1000</defaultcontrol>
     <backgroundcolor>FF000000</backgroundcolor>
     <coordinates>
@@ -76,7 +76,7 @@
             <label></label><font>font12</font>
         </control>
         <control type="button" id="3006">
-            <left>150</left><top>68</top><width>100</width><height>36</height>
+            <left>150</left><top>68</top><width>145</width><height>36</height>
             <label>Default</label><font>font12</font>
             <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
@@ -84,7 +84,7 @@
             <onright>3007</onright><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3007">
-            <left>258</left><top>68</top><width>100</width><height>36</height>
+            <left>303</left><top>68</top><width>100</width><height>36</height>
             <label>Size</label><font>font12</font>
             <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
@@ -92,7 +92,7 @@
             <onleft>3006</onleft><onright>3008</onright><onup>3001</onup><ondown>3009</ondown>
         </control>
         <control type="button" id="3008">
-            <left>366</left><top>68</top><width>100</width><height>36</height>
+            <left>411</left><top>68</top><width>145</width><height>36</height>
             <label>Sub %</label><font>font12</font>
             <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
@@ -106,7 +106,7 @@
             <label></label><font>font12</font>
         </control>
         <control type="button" id="3009">
-            <left>150</left><top>114</top><width>120</width><height>36</height>
+            <left>150</left><top>114</top><width>135</width><height>36</height>
             <label>Torrentio</label><font>font12</font>
             <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
@@ -114,7 +114,7 @@
             <onright>3010</onright><onup>3006</onup><ondown>1000</ondown>
         </control>
         <control type="button" id="3010">
-            <left>278</left><top>114</top><width>130</width><height>36</height>
+            <left>293</left><top>114</top><width>155</width><height>36</height>
             <label>MediaFusion</label><font>font12</font>
             <texturefocus colordiffuse="FF444466">white.png</texturefocus>
             <texturenofocus colordiffuse="FF222240">white.png</texturenofocus>
