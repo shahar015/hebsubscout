@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="context.hebsubscout"
+       name="HebSubScout Context Menu"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.hebsubscout" version="1.0.0"/>
+    </requires>
+    <extension point="kodi.context.item">
+        <menu id="kodi.core.main">
+            <item library="context_check.py">
+                <label>בדוק כתוביות בעברית / Check Hebrew Subs</label>
+                <visible>Player.HasMedia | Container.Content(movies) | Container.Content(tvshows) | Container.Content(episodes)</visible>
+            </item>
+        </menu>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">Check Hebrew subtitle availability from context menu</summary>
+        <summary lang="he">בדוק זמינות כתוביות בעברית מתפריט הקשר</summary>
+        <description lang="en">
+Adds a "Check Hebrew Subs" option to the right-click context menu
+for any movie or TV show in Kodi. Works with ALL video addons
+(POV, Twilight, Umbrella, Seren, etc.) without any modification.
+
+Simply highlight a title, right-click (or long-press), and select
+"Check Hebrew Subs" to see if Hebrew subtitles are available.
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+    </extension>
+</addon>

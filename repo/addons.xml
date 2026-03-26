@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+<addon id="repository.hebsubscout"
+       name="HebSubScout Repository"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <extension point="xbmc.addon.repository" name="HebSubScout Repository">
+        <dir>
+            <info compressed="false">https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">HebSubScout Repository</summary>
+        <summary lang="he">מאגר HebSubScout</summary>
+        <description lang="en">
+Official repository for HebSubScout addons.
+
+Contains:
+- HebScout (video addon with TMDB, Real Debrid, Trakt, Hebrew sub matching)
+- HebSubScout Module (shared library for Hebrew subtitle intelligence)
+- HebSubScout Context Menu (right-click subtitle check for any addon)
+
+Install this repository, then install HebScout from "Install from repository".
+All dependencies resolve automatically.
+        </description>
+        <description lang="he">
+המאגר הרשמי של HebSubScout.
+
+מכיל:
+- HebScout (הרחבת וידאו עם TMDB, Real Debrid, Trakt, התאמת כתוביות עבריות)
+- מודול HebSubScout (ספרייה משותפת לאינטליגנציית כתוביות)
+- תפריט הקשר HebSubScout (בדיקת כתוביות בלחיצה ימנית)
+
+התקן את המאגר הזה, ואז התקן את HebScout מתוך "התקנה ממאגר".
+כל התלויות יותקנו אוטומטית.
+        </description>
+        <platform>all</platform>
+    </extension>
+</addon>
+<addon id="script.module.hebsubscout"
+       name="HebSubScout Module"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.module" library="lib"/>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">Hebrew Subtitle Scout - shared module for subtitle matching</summary>
+        <summary lang="he">סקאוט כתוביות עברית - מודול משותף להתאמת כתוביות</summary>
+        <description lang="en">
+A shared Python module that any Kodi video addon can import to check
+Hebrew subtitle availability BEFORE source selection.
+
+Features:
+- Searches Wizdom.xyz, Ktuvit.me (ScrewZira), and OpenSubtitles
+- Fuzzy-matches source release names against subtitle release names
+- Shows match confidence percentage (0-100%)
+- Learning database that improves over time
+- Built-in caching to avoid API hammering
+- Simple 5-line integration for addon developers
+
+For addon developers: from hebsubscout import SubScout
+        </description>
+        <description lang="he">
+מודול פייתון משותף שכל הרחבת וידאו בקודי יכולה לייבא
+כדי לבדוק זמינות כתוביות בעברית לפני בחירת מקור.
+
+תכונות:
+- חיפוש ב-Wizdom, Ktuvit ו-OpenSubtitles
+- התאמה חכמה של שמות גרסאות
+- אחוזי התאמה (0-100%)
+- מאגר לומד שמשתפר עם הזמן
+- קאשינג מובנה
+- אינטגרציה של 5 שורות למפתחי הרחבות
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+        <website>https://github.com/hebsubscout</website>
+        <source>https://github.com/shahar015/hebsubscout</source>
+    </extension>
+</addon>
+<addon id="service.subtitles.hebsubscout"
+       name="HebSubScout Subtitles"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.hebsubscout" version="1.0.0"/>
+    </requires>
+    <extension point="xbmc.subtitle.module" library="service.py"/>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">Hebrew subtitle service powered by HebSubScout</summary>
+        <summary lang="he">שירות כתוביות עבריות מבית HebSubScout</summary>
+        <description lang="en">
+Automatic Hebrew subtitle downloading powered by HebSubScout.
+Searches Wizdom.xyz, Ktuvit.me, and OpenSubtitles for the best matching
+Hebrew subtitles and auto-applies them during playback.
+
+Works standalone as a Kodi subtitle service, and integrates deeply
+with the HebScout video addon for seamless subtitle matching.
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+        <language>he</language>
+    </extension>
+</addon>
+<addon id="plugin.video.hebscout"
+       name="HebScout"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.hebsubscout" version="1.0.0"/>
+        <import addon="service.subtitles.hebsubscout" version="1.0.0" optional="true"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">HebScout - Stream with Hebrew subtitle intelligence</summary>
+        <summary lang="he">HebScout - צפייה עם אינטליגנציית כתוביות עבריות</summary>
+        <description lang="en">
+A full-featured video addon built from the ground up for the Israeli Kodi community.
+
+Features:
+- TMDB browsing: Trending, Popular, Top Rated, Search, Genres, Discover
+- Real Debrid source scraping and playback (built-in + external scrapers)
+- Trakt integration: watch progress, watchlist, scrobbling, collections
+- HebSubScout: see Hebrew subtitle match percentage on every source BEFORE you pick
+- Auto-play, Next Episode, Resume support
+- Hebrew UI with full RTL support
+- Learning subtitle database that gets smarter over time
+
+The first addon built natively on the HebSubScout module.
+        </description>
+        <description lang="he">
+הרחבת וידאו מלאה שנבנתה מהיסוד עבור קהילת הקודי הישראלית.
+
+תכונות:
+- דפדוף TMDB: טרנדינג, פופולרי, מדורג, חיפוש, ז'אנרים
+- סריקת מקורות Real Debrid והפעלה (מובנה + סורקים חיצוניים)
+- שילוב Trakt: התקדמות צפייה, רשימת צפייה, סקרובלינג, אוספים
+- HebSubScout: ראה אחוז התאמת כתוביות עבריות על כל מקור לפני שתבחר
+- הפעלה אוטומטית, פרק הבא, המשך צפייה
+- ממשק בעברית עם תמיכה מלאה ב-RTL
+- מאגר כתוביות לומד שמשתפר עם הזמן
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+    </extension>
+</addon>
+<addon id="context.hebsubscout"
+       name="HebSubScout Context Menu"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="script.module.hebsubscout" version="1.0.0"/>
+    </requires>
+    <extension point="kodi.context.item">
+        <menu id="kodi.core.main">
+            <item library="context_check.py">
+                <label>בדוק כתוביות בעברית / Check Hebrew Subs</label>
+                <visible>Player.HasMedia | Container.Content(movies) | Container.Content(tvshows) | Container.Content(episodes)</visible>
+            </item>
+        </menu>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">Check Hebrew subtitle availability from context menu</summary>
+        <summary lang="he">בדוק זמינות כתוביות בעברית מתפריט הקשר</summary>
+        <description lang="en">
+Adds a "Check Hebrew Subs" option to the right-click context menu
+for any movie or TV show in Kodi. Works with ALL video addons
+(POV, Twilight, Umbrella, Seren, etc.) without any modification.
+
+Simply highlight a title, right-click (or long-press), and select
+"Check Hebrew Subs" to see if Hebrew subtitles are available.
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+    </extension>
+</addon>
+</addons>

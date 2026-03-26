@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="כללי / General">
+        <setting id="tmdb_api_key" type="text" label="TMDB API Key" default=""/>
+        <setting id="tmdb_language" type="labelenum" label="שפת TMDB / TMDB Language" values="he-IL|en-US|ar-SA|ru-RU|fr-FR" default="he-IL"/>
+        <setting id="auto_play" type="bool" label="הפעלה אוטומטית / Auto Play" default="false"/>
+        <setting id="auto_next_episode" type="bool" label="פרק הבא אוטומטי / Auto Next Episode" default="true"/>
+    </category>
+    <category label="Real Debrid">
+        <setting id="rd_token" type="text" label="Token" default="" visible="false"/>
+        <setting id="rd_refresh" type="text" label="Refresh Token" default="" visible="false"/>
+        <setting id="rd_client_id" type="text" label="Client ID" default="" visible="false"/>
+        <setting id="rd_client_secret" type="text" label="Client Secret" default="" visible="false"/>
+        <setting id="rd_expiry" type="text" label="Expiry" default="" visible="false"/>
+    </category>
+    <category label="Trakt">
+        <setting id="trakt_client_id" type="text" label="Trakt Client ID (optional)" default=""/>
+        <setting id="trakt_client_secret" type="text" label="Trakt Client Secret (optional)" default=""/>
+        <setting id="trakt_token" type="text" label="Token" default="" visible="false"/>
+        <setting id="trakt_refresh" type="text" label="Refresh Token" default="" visible="false"/>
+        <setting id="trakt_expiry" type="text" label="Expiry" default="" visible="false"/>
+    </category>
+    <category label="כתוביות / HebSubScout">
+        <setting id="enable_hebsubscout" type="bool" label="בדוק כתוביות עבריות / Check Hebrew Subs" default="true"/>
+        <setting id="auto_subs" type="bool" label="הורד כתוביות אוטומטית / Auto Download Subs" default="true"/>
+        <setting id="min_match_score" type="slider" label="סף התאמה / Min Match %" default="40" range="10,10,90" option="int"/>
+    </category>
+    <category label="מקורות / Sources">
+        <setting id="enable_torrentio" type="bool" label="Torrentio" default="true"/>
+        <setting id="enable_mediafusion" type="bool" label="MediaFusion" default="true"/>
+        <setting id="enable_external_scrapers" type="bool" label="External Scrapers (CocoScrapers)" default="true"/>
+    </category>
+</settings>

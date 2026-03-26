@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.module.hebsubscout"
+       name="HebSubScout Module"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.module" library="lib"/>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">Hebrew Subtitle Scout - shared module for subtitle matching</summary>
+        <summary lang="he">סקאוט כתוביות עברית - מודול משותף להתאמת כתוביות</summary>
+        <description lang="en">
+A shared Python module that any Kodi video addon can import to check
+Hebrew subtitle availability BEFORE source selection.
+
+Features:
+- Searches Wizdom.xyz, Ktuvit.me (ScrewZira), and OpenSubtitles
+- Fuzzy-matches source release names against subtitle release names
+- Shows match confidence percentage (0-100%)
+- Learning database that improves over time
+- Built-in caching to avoid API hammering
+- Simple 5-line integration for addon developers
+
+For addon developers: from hebsubscout import SubScout
+        </description>
+        <description lang="he">
+מודול פייתון משותף שכל הרחבת וידאו בקודי יכולה לייבא
+כדי לבדוק זמינות כתוביות בעברית לפני בחירת מקור.
+
+תכונות:
+- חיפוש ב-Wizdom, Ktuvit ו-OpenSubtitles
+- התאמה חכמה של שמות גרסאות
+- אחוזי התאמה (0-100%)
+- מאגר לומד שמשתפר עם הזמן
+- קאשינג מובנה
+- אינטגרציה של 5 שורות למפתחי הרחבות
+        </description>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+        <website>https://github.com/hebsubscout</website>
+        <source>https://github.com/shahar015/hebsubscout</source>
+    </extension>
+</addon>

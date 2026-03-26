@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.hebsubscout"
+       name="HebSubScout Repository"
+       version="1.0.0"
+       provider-name="HebSubScout Community">
+    <extension point="xbmc.addon.repository" name="HebSubScout Repository">
+        <dir>
+            <info compressed="false">https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/shahar015/hebsubscout/main/repo/</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">HebSubScout Repository</summary>
+        <summary lang="he">מאגר HebSubScout</summary>
+        <description lang="en">
+Official repository for HebSubScout addons.
+
+Contains:
+- HebScout (video addon with TMDB, Real Debrid, Trakt, Hebrew sub matching)
+- HebSubScout Module (shared library for Hebrew subtitle intelligence)
+- HebSubScout Context Menu (right-click subtitle check for any addon)
+
+Install this repository, then install HebScout from "Install from repository".
+All dependencies resolve automatically.
+        </description>
+        <description lang="he">
+המאגר הרשמי של HebSubScout.
+
+מכיל:
+- HebScout (הרחבת וידאו עם TMDB, Real Debrid, Trakt, התאמת כתוביות עבריות)
+- מודול HebSubScout (ספרייה משותפת לאינטליגנציית כתוביות)
+- תפריט הקשר HebSubScout (בדיקת כתוביות בלחיצה ימנית)
+
+התקן את המאגר הזה, ואז התקן את HebScout מתוך "התקנה ממאגר".
+כל התלויות יותקנו אוטומטית.
+        </description>
+        <platform>all</platform>
+    </extension>
+</addon>
