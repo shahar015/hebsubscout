@@ -158,12 +158,13 @@ def movies_menu():
 
 
 def list_movies(func, page=1, **kwargs):
+    list_action = kwargs.pop('list_action', 'movies_trending')
     items, total_pages = func(page=page, **kwargs)
     for m in items:
         add_item(m, action='movie_sources', is_folder=True)
     if page < total_pages:
-        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), kwargs.get('list_action', 'movies_trending'),
-                page=str(page + 1), **{k: v for k, v in kwargs.items() if k != 'list_action'})
+        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), list_action,
+                page=str(page + 1), **kwargs)
     end_dir(content='movies')
 
 
@@ -189,11 +190,12 @@ def shows_menu():
 
 
 def list_shows(func, page=1, **kwargs):
+    list_action = kwargs.pop('list_action', 'shows_trending')
     items, total_pages = func(page=page, **kwargs)
     for s in items:
         add_item(s, action='show_seasons', is_folder=True)
     if page < total_pages:
-        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), kwargs.get('list_action', 'shows_trending'),
+        add_dir('[COLOR yellow]{}[/COLOR]'.format(t('next_page')), list_action,
                 page=str(page + 1))
     end_dir(content='tvshows')
 
