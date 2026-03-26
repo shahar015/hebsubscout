@@ -2,6 +2,7 @@
 """
 Utility Module - shared helpers
 """
+import os
 import sys
 import json
 
@@ -271,6 +272,23 @@ def progress_dialog(heading, message=''):
     return d
 
 
+def _get_white_texture():
+    """Create a 1x1 white PNG for use as a solid-color texture base."""
+    import xbmcvfs
+    profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+    os.makedirs(profile, exist_ok=True)
+    path = os.path.join(profile, 'white.png')
+    if not os.path.exists(path):
+        # Minimal 1x1 white PNG (67 bytes)
+        import base64
+        data = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+        )
+        with open(path, 'wb') as f:
+            f.write(data)
+    return path
+
+
 class QRAuthDialog(xbmcgui.WindowDialog):
     """
     Custom auth dialog with QR code, URL, and code display.
@@ -280,30 +298,28 @@ class QRAuthDialog(xbmcgui.WindowDialog):
     def __init__(self, heading, verify_url, user_code):
         super().__init__()
         self.cancelled = False
-        self._heading = heading
-        self._verify_url = verify_url
-        self._user_code = user_code
-        self._progress_bar = None
-        self._pct_label = None
+        tex = _get_white_texture()
 
-        # Dialog dimensions (centered)
+        # Dialog dimensions (centered, 1280x720 safe)
         w, h = 700, 520
-        x = (1920 - w) // 2
-        y = (1080 - h) // 2
+        x = (self.getWidth() - w) // 2
+        y = (self.getHeight() - h) // 2
+
+        # Border (green outline)
+        border = xbmcgui.ControlImage(x - 2, y - 2, w + 4, h + 4, tex, colorDiffuse='FF00d4aa')
+        self.addControl(border)
 
         # Background
-        self.addControl(xbmcgui.ControlImage(x, y, w, h, '', colorDiffuse='FF1a1a2e'))
-        # Border
-        self.addControl(xbmcgui.ControlImage(x - 2, y - 2, w + 4, h + 4, '', colorDiffuse='FF00d4aa'))
-        self.addControl(xbmcgui.ControlImage(x, y, w, h, '', colorDiffuse='FF1a1a2e'))
+        bg = xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF1a1a2e')
+        self.addControl(bg)
 
         # Heading
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 15, w, 40, self._heading,
-            font='font14', textColor='FF00d4aa', alignment=0x00000002  # center
+            x, y + 15, w, 40, heading,
+            font='font13', textColor='FF00d4aa', alignment=0x00000002
         ))
 
-        # QR code image (from API)
+        # QR code image
         qr_size = 220
         qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=1a1a2e&color=ffffff&data={}'.format(
             quote_plus(verify_url)
@@ -320,7 +336,7 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         # URL
         self.addControl(xbmcgui.ControlLabel(
             x, y + 330, w, 35, '[COLOR cyan]{}[/COLOR]'.format(verify_url),
-            font='font14', alignment=0x00000002
+            font='font13', alignment=0x00000002
         ))
 
         # "Enter code:" label
@@ -332,23 +348,19 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         # Code (large, colored)
         self.addControl(xbmcgui.ControlLabel(
             x, y + 405, w, 50, '[COLOR lime]{}[/COLOR]'.format(user_code),
-            font='font30', alignment=0x00000002
+            font='font_MainMenu', alignment=0x00000002
         ))
 
         # Progress bar background
         bar_w, bar_h = 500, 8
         bar_x = x + (w - bar_w) // 2
         bar_y = y + h - 30
-        self.addControl(xbmcgui.ControlImage(bar_x, bar_y, bar_w, bar_h, '', colorDiffuse='FF333333'))
-        self._progress_bar = xbmcgui.ControlImage(bar_x, bar_y, 1, bar_h, '', colorDiffuse='FF00d4aa')
+        self.addControl(xbmcgui.ControlImage(bar_x, bar_y, bar_w, bar_h, tex, colorDiffuse='FF333333'))
+        self._progress_bar = xbmcgui.ControlImage(bar_x, bar_y, 1, bar_h, tex, colorDiffuse='FF00d4aa')
         self.addControl(self._progress_bar)
-        self._bar_x = bar_x
-        self._bar_y = bar_y
         self._bar_w = bar_w
-        self._bar_h = bar_h
 
     def update(self, pct):
-        """Update progress bar percentage."""
         pw = max(1, int(self._bar_w * pct / 100))
         try:
             self._progress_bar.setWidth(pw)
@@ -356,7 +368,7 @@ class QRAuthDialog(xbmcgui.WindowDialog):
             pass
 
     def onAction(self, action):
-        if action.getId() in (9, 10, 92, 216):  # Back, previous menu, ESC
+        if action.getId() in (9, 10, 92, 216):
             self.cancelled = True
             self.close()
 
