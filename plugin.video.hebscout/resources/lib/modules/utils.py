@@ -306,14 +306,17 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         # WindowDialog uses 1280x720 coordinate system (NOT 1920x1080)
         SW, SH = 1280, 720
 
-        # Full-screen solid black background
+        # Full-screen dimmer (two layers for guaranteed opacity)
         self.addControl(xbmcgui.ControlImage(0, 0, SW, SH, tex, colorDiffuse='FF000000'))
+        self.addControl(xbmcgui.ControlImage(0, 0, SW, SH, tex, colorDiffuse='EE000000'))
 
-        # Dialog panel (centered)
+        # Dialog panel (centered, lighter so text is readable)
         w, h = 460, 400
         x = (SW - w) // 2
         y = (SH - h) // 2
-        self.addControl(xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF0f0f24'))
+        self.addControl(xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF1a1a35'))
+        # Second layer to ensure opacity
+        self.addControl(xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF1a1a35'))
 
         # Heading
         self.addControl(xbmcgui.ControlLabel(
