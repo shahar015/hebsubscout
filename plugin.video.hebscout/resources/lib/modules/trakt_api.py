@@ -9,7 +9,7 @@ watchlist, collections, ratings, next episodes.
 import time
 import json
 from resources.lib.modules.utils import (
-    http_get, http_post, log, get_setting, set_setting, notification, t
+    http_get, http_post, log, get_setting, set_setting, notification, t, QRAuthDialog
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key, mark_watched as local_mark_watched
 
@@ -80,22 +80,19 @@ def authorize():
     interval = data.get('interval', 5)
     expires_in = data.get('expires_in', 600)
 
-    progress = xbmcgui.DialogProgress()
-    progress.create(
-        t('trakt_auth_title'),
-        t('trakt_auth_go_to', verify_url, user_code)
-    )
+    dialog = QRAuthDialog(t('trakt_auth_title'), verify_url, user_code)
+    dialog.show()
 
     start = time.time()
     client_secret = get_setting('trakt_client_secret') or CLIENT_SECRET
 
     while time.time() - start < expires_in:
-        if progress.iscanceled():
-            progress.close()
+        if dialog.iscanceled():
+            dialog.close()
             return False
 
         pct = int(((time.time() - start) / expires_in) * 100)
-        progress.update(pct)
+        dialog.update(pct)
         time.sleep(interval)
 
         token_data = http_post('{}/oauth/device/token'.format(BASE), {
@@ -108,11 +105,11 @@ def authorize():
             set_setting('trakt_token', token_data['access_token'])
             set_setting('trakt_refresh', token_data.get('refresh_token', ''))
             set_setting('trakt_expiry', str(time.time() + token_data.get('expires_in', 7776000)))
-            progress.close()
+            dialog.close()
             notification(t('trakt_auth_success'))
             return True
 
-    progress.close()
+    dialog.close()
     notification(t('trakt_timed_out'))
     return False
 

@@ -145,6 +145,9 @@ _STRINGS = {
     # Season/episode labels
     'season_label': {'he': '{} ({} פרקים)', 'en': '{} ({} episodes)'},
     'next_season_ep': {'he': 'עונה {} פרק 1', 'en': 'Season {} Episode 1'},
+    # QR Auth dialog
+    'scan_or_visit': {'he': 'סרוק או גש ל:', 'en': 'Scan or go to:'},
+    'enter_code': {'he': 'הכנס קוד:', 'en': 'Enter code:'},
     # Yes/No defaults
     'yes': {'he': 'כן', 'en': 'Yes'},
     'no': {'he': 'לא', 'en': 'No'},
@@ -266,3 +269,96 @@ def progress_dialog(heading, message=''):
     d = xbmcgui.DialogProgress()
     d.create(heading, message)
     return d
+
+
+class QRAuthDialog(xbmcgui.WindowDialog):
+    """
+    Custom auth dialog with QR code, URL, and code display.
+    Used for Real Debrid and Trakt device authorization.
+    """
+
+    def __init__(self, heading, verify_url, user_code):
+        super().__init__()
+        self.cancelled = False
+        self._heading = heading
+        self._verify_url = verify_url
+        self._user_code = user_code
+        self._progress_bar = None
+        self._pct_label = None
+
+        # Dialog dimensions (centered)
+        w, h = 700, 520
+        x = (1920 - w) // 2
+        y = (1080 - h) // 2
+
+        # Background
+        self.addControl(xbmcgui.ControlImage(x, y, w, h, '', colorDiffuse='FF1a1a2e'))
+        # Border
+        self.addControl(xbmcgui.ControlImage(x - 2, y - 2, w + 4, h + 4, '', colorDiffuse='FF00d4aa'))
+        self.addControl(xbmcgui.ControlImage(x, y, w, h, '', colorDiffuse='FF1a1a2e'))
+
+        # Heading
+        self.addControl(xbmcgui.ControlLabel(
+            x, y + 15, w, 40, self._heading,
+            font='font14', textColor='FF00d4aa', alignment=0x00000002  # center
+        ))
+
+        # QR code image (from API)
+        qr_size = 220
+        qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=1a1a2e&color=ffffff&data={}'.format(
+            quote_plus(verify_url)
+        )
+        qr_x = x + (w - qr_size) // 2
+        self.addControl(xbmcgui.ControlImage(qr_x, y + 65, qr_size, qr_size, qr_url))
+
+        # "Scan or go to:" label
+        self.addControl(xbmcgui.ControlLabel(
+            x, y + 300, w, 30, t('scan_or_visit'),
+            font='font12', textColor='FFaaaaaa', alignment=0x00000002
+        ))
+
+        # URL
+        self.addControl(xbmcgui.ControlLabel(
+            x, y + 330, w, 35, '[COLOR cyan]{}[/COLOR]'.format(verify_url),
+            font='font14', alignment=0x00000002
+        ))
+
+        # "Enter code:" label
+        self.addControl(xbmcgui.ControlLabel(
+            x, y + 375, w, 30, t('enter_code'),
+            font='font12', textColor='FFaaaaaa', alignment=0x00000002
+        ))
+
+        # Code (large, colored)
+        self.addControl(xbmcgui.ControlLabel(
+            x, y + 405, w, 50, '[COLOR lime]{}[/COLOR]'.format(user_code),
+            font='font30', alignment=0x00000002
+        ))
+
+        # Progress bar background
+        bar_w, bar_h = 500, 8
+        bar_x = x + (w - bar_w) // 2
+        bar_y = y + h - 30
+        self.addControl(xbmcgui.ControlImage(bar_x, bar_y, bar_w, bar_h, '', colorDiffuse='FF333333'))
+        self._progress_bar = xbmcgui.ControlImage(bar_x, bar_y, 1, bar_h, '', colorDiffuse='FF00d4aa')
+        self.addControl(self._progress_bar)
+        self._bar_x = bar_x
+        self._bar_y = bar_y
+        self._bar_w = bar_w
+        self._bar_h = bar_h
+
+    def update(self, pct):
+        """Update progress bar percentage."""
+        pw = max(1, int(self._bar_w * pct / 100))
+        try:
+            self._progress_bar.setWidth(pw)
+        except Exception:
+            pass
+
+    def onAction(self, action):
+        if action.getId() in (9, 10, 92, 216):  # Back, previous menu, ESC
+            self.cancelled = True
+            self.close()
+
+    def iscanceled(self):
+        return self.cancelled

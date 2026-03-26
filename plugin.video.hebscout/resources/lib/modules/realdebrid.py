@@ -8,7 +8,7 @@ Authorization, torrent cache checking, link unrestricting, and streaming.
 import time
 import json
 from resources.lib.modules.utils import (
-    http_get, http_post, log, get_setting, set_setting, notification, t
+    http_get, http_post, log, get_setting, set_setting, notification, t, QRAuthDialog
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key
 
@@ -76,20 +76,17 @@ def authorize():
     interval = data.get('interval', 5)
     expires_in = data.get('expires_in', 600)
 
-    progress = xbmcgui.DialogProgress()
-    progress.create(
-        t('rd_auth_title'),
-        t('rd_auth_go_to', verify_url, user_code)
-    )
+    dialog = QRAuthDialog(t('rd_auth_title'), verify_url, user_code)
+    dialog.show()
 
     start = time.time()
     while time.time() - start < expires_in:
-        if progress.iscanceled():
-            progress.close()
+        if dialog.iscanceled():
+            dialog.close()
             return False
 
         pct = int(((time.time() - start) / expires_in) * 100)
-        progress.update(pct)
+        dialog.update(pct)
         time.sleep(interval)
 
         # Poll for credentials
@@ -120,11 +117,11 @@ def authorize():
                 set_setting('rd_client_id', cred['client_id'])
                 set_setting('rd_client_secret', cred['client_secret'])
                 set_setting('rd_expiry', str(time.time() + token_data.get('expires_in', 86400)))
-                progress.close()
+                dialog.close()
                 notification(t('rd_auth_success'))
                 return True
 
-    progress.close()
+    dialog.close()
     notification(t('auth_timed_out'))
     return False
 
