@@ -77,10 +77,12 @@ def authorize():
     user_code = data['user_code']
     device_code = data['device_code']
     verify_url = data.get('verification_url', 'https://trakt.tv/activate')
+    # Trakt supports code in URL — pre-fills the input field
+    qr_url = '{}/{}'.format(verify_url, user_code)
     interval = data.get('interval', 5)
     expires_in = data.get('expires_in', 600)
 
-    dialog = QRAuthDialog(t('trakt_auth_title'), verify_url, user_code)
+    dialog = QRAuthDialog(t('trakt_auth_title'), qr_url, user_code)
     dialog.show()
 
     start = time.time()

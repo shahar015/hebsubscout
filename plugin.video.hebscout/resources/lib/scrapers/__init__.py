@@ -30,15 +30,26 @@ def _detect_quality(name):
 
 
 def _detect_info(name):
-    """Extract codec, audio, etc. from release name."""
+    """Extract codec, audio, HDR, and feature tags from release name."""
     info = []
     name_lower = name.lower()
+    # Codec
     if 'hevc' in name_lower or 'x265' in name_lower or 'h265' in name_lower:
         info.append('HEVC')
     elif 'x264' in name_lower or 'h264' in name_lower:
         info.append('x264')
-    if 'hdr' in name_lower:
+    elif 'av1' in name_lower:
+        info.append('AV1')
+    # HDR / Dolby Vision
+    if any(x in name_lower for x in ('dolby.vision', 'dolbyvision', '.dv.', ' dv ', 'dovi')):
+        info.append('DV')
+    if 'hdr10+' in name_lower or 'hdr10plus' in name_lower:
+        info.append('HDR10+')
+    elif 'hdr10' in name_lower:
+        info.append('HDR10')
+    elif 'hdr' in name_lower:
         info.append('HDR')
+    # Release type
     if 'remux' in name_lower:
         info.append('REMUX')
     if 'bluray' in name_lower or 'blu-ray' in name_lower:
@@ -47,12 +58,19 @@ def _detect_info(name):
         info.append('WEB-DL')
     elif 'webrip' in name_lower:
         info.append('WEBRip')
+    # Audio
     if 'atmos' in name_lower:
         info.append('Atmos')
+    if 'truehd' in name_lower:
+        info.append('TrueHD')
+    if 'dts-hd' in name_lower or 'dtshd' in name_lower:
+        info.append('DTS-HD')
     elif 'dts' in name_lower:
         info.append('DTS')
-    elif 'dd5' in name_lower or 'ac3' in name_lower:
+    if 'dd5' in name_lower or 'ac3' in name_lower:
         info.append('DD5.1')
+    elif 'aac' in name_lower:
+        info.append('AAC')
     return info
 
 

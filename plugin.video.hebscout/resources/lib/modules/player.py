@@ -99,6 +99,60 @@ class ProgressTracker(threading.Thread):
                 pass  # Player may have been destroyed
 
 
+class SubtitleOSDOverlay(xbmcgui.WindowDialog):
+    """Small CC button overlay during playback. Opens subtitle picker."""
+
+    def __init__(self, player):
+        super().__init__()
+        self._player = player
+        self._visible = False
+
+        try:
+            from resources.lib.modules.utils import _get_white_texture
+            tex = _get_white_texture()
+        except Exception:
+            tex = ''
+
+        # Small button at bottom-right
+        bx, by, bw, bh = 1740, 990, 140, 50
+        if tex:
+            self.addControl(xbmcgui.ControlImage(bx, by, bw, bh, tex, colorDiffuse='AA000000'))
+            self.addControl(xbmcgui.ControlImage(bx, by, bw, 2, tex, colorDiffuse='FF00d4aa'))
+        self.addControl(xbmcgui.ControlLabel(
+            bx, by + 10, bw, 30, '[COLOR cyan]CC[/COLOR] [COLOR FFdddddd]עב[/COLOR]',
+            font='font13', alignment=0x00000002
+        ))
+
+    def onAction(self, action):
+        aid = action.getId()
+        # Subtitle key (T) or Select/Enter
+        if aid in (25, 7, 100):
+            if self._player and self._player._playing:
+                self.close()
+                self._player.show_subtitle_picker()
+                return
+        # Close on back/escape
+        if aid in (9, 10, 92, 216):
+            self.close()
+
+    def show_briefly(self, seconds=5):
+        """Show overlay then auto-hide after N seconds."""
+        self._visible = True
+        self.show()
+
+        def auto_hide():
+            import time as _time
+            _time.sleep(seconds)
+            if self._visible:
+                try:
+                    self.close()
+                    self._visible = False
+                except Exception:
+                    pass
+
+        threading.Thread(target=auto_hide, daemon=True).start()
+
+
 class HebScoutPlayer(xbmc.Player):
     """
     Custom player with Netflix-style progress saving.
@@ -123,6 +177,7 @@ class HebScoutPlayer(xbmc.Player):
         self._progress_tracker = None
         self._sub_matches = []      # All subtitle matches from HebSubScout
         self._auto_sub_applied = False
+        self._osd_overlay = None
 
     def play_source(self, url, metadata, next_episode_info=None, resolve_func=None):
         self.media_type = metadata.get('media_type', 'movie')
@@ -185,6 +240,13 @@ class HebScoutPlayer(xbmc.Player):
         # Immediate first save
         set_bookmark(self.imdb_id, self.season, self.episode, self._get_progress())
         
+        # Show subtitle OSD button briefly
+        try:
+            self._osd_overlay = SubtitleOSDOverlay(self)
+            self._osd_overlay.show_briefly(5)
+        except Exception:
+            pass
+
         # === AUTO-DOWNLOAD BEST MATCHING SUBTITLE ===
         if self._sub_matches and not self._auto_sub_applied and get_setting('auto_subs') != 'false':
             self._auto_apply_best_subtitle()
@@ -204,13 +266,20 @@ class HebScoutPlayer(xbmc.Player):
         
         def do_auto_sub():
             try:
+                notification(t('sub_search_start'), time=2000)
+
                 download_subtitle = _import_subtitle_downloader()
                 if not download_subtitle:
                     log('Subtitle service not installed - cannot auto-download', 'WARNING')
+                    notification(t('no_heb_subs'), time=3000)
                     return
 
+                num_subs = len(self._sub_matches)
+                best_pct = best.get('score', 0)
+                notification(t('sub_found', num_subs, best_pct), time=3000)
+
                 log('Auto-downloading subtitle: {} ({}%) from {}'.format(
-                    best.get('subtitle_name', ''), best.get('score', 0), best.get('provider', '')))
+                    best.get('subtitle_name', ''), best_pct, best.get('provider', '')))
 
                 path = download_subtitle(
                     provider=best.get('provider', ''),
@@ -221,6 +290,7 @@ class HebScoutPlayer(xbmc.Player):
                     self.setSubtitles(path)
                     self._auto_sub_applied = True
                     self.subtitle_name = best.get('subtitle_name', '')
+                    notification(t('sub_applied', best_pct), time=3000)
                     log('Auto-applied subtitle: {}'.format(path))
 
                     # Record in learning DB
@@ -362,6 +432,13 @@ class HebScoutPlayer(xbmc.Player):
         if not self._playing:
             return
         self._playing = False
+        # Close subtitle OSD overlay
+        if self._osd_overlay:
+            try:
+                self._osd_overlay.close()
+            except Exception:
+                pass
+            self._osd_overlay = None
         if self._progress_tracker:
             self._progress_tracker.stop()
             self._progress_tracker = None

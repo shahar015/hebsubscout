@@ -154,6 +154,12 @@ def show_details(tmdb_id):
     s['tvdb_id'] = data.get('external_ids', {}).get('tvdb_id', '')
     s['genres'] = [g['name'] for g in data.get('genres', [])]
     s['status'] = data.get('status', '')
+    cast = data.get('credits', {}).get('cast', [])
+    s['cast'] = [c['name'] for c in cast[:10]]
+    crew = data.get('credits', {}).get('crew', [])
+    directors = [c['name'] for c in crew if c.get('job') in ('Director', 'Series Director')]
+    creators = [c.get('name', '') for c in data.get('created_by', [])]
+    s['director'] = directors[0] if directors else (creators[0] if creators else '')
     s['seasons_data'] = []
     for sn in data.get('seasons', []):
         if sn.get('season_number', 0) == 0:

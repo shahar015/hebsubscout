@@ -1,5 +1,13 @@
 # CLAUDE.md
 
+## IMPORTANT: Session Maintenance
+**Every Claude Code session MUST update this file before ending.** Update:
+- The **Change Log** section with what was done this session
+- The **Current TODOs** section with completed/new items
+- Any architecture or file structure changes
+
+---
+
 ## Project Overview
 
 HebSubScout is a Kodi addon ecosystem built for the Israeli community. It provides video browsing (TMDB), streaming (Real Debrid), watch tracking (Trakt), and a unique Hebrew subtitle matching system that shows subtitle availability and match percentage BEFORE the user picks a source.
@@ -143,11 +151,59 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 2. Add the download function in `service.subtitles.hebsubscout/downloader.py`
 3. Register it in `scout.py`'s `__init__` and `fetch_subtitles()`
 
-## Known Limitations / TODO
+## Current TODOs
 
+- [ ] Custom source selection screen with filter chips, source cards, movie info panel (`source_select.py`)
+- [ ] Subtitle search notifications during playback (search start/found/applied)
+- [ ] Subtitle picker OSD button during playback ("CC עב" button + T key interception)
+- [ ] Subtitle picker popup during playback (picker.py already exists, needs trigger)
 - Scraper APIs (Torrentio/MediaFusion) may need RD token in URL for cached-only results
 - Wizdom/Ktuvit download endpoints need live testing — response formats may differ from documentation
-- Subtitle picker overlay (`picker.py`) positioning may need adjustment per skin/resolution
 - No external scraper module hot-loading yet (CocoScrapers integration is basic)
-- The `{resources` artifact directory should be cleaned up (empty directory from initial build)
 - No icon.png or fanart.jpg assets yet for the addons
+
+## Key UI Architecture
+
+- **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — full-screen dimmer + centered dialog with QR code from api.qrserver.com, URL, device code, progress bar
+- **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowDialog)` — full-screen dark overlay, left panel (filter chips + scrollable source cards), right panel (poster + plot + cast)
+- **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback, shows subs with match %, download progress, auto-close
+- **Translation system:** `utils.py` → `t(key, *args)` function with `_STRINGS` dict (Hebrew/English), controlled by `ui_language` setting
+- **White texture helper:** `utils.py` → `_get_white_texture()` creates 1x1 white PNG for WindowDialog solid-color backgrounds via colorDiffuse
+
+## Change Log
+
+### 2026-03-26 — Session 1: Initial setup
+- Initial release v1.0.0
+
+### 2026-03-26 — Session 2: API keys, i18n, bug fixes, refactoring
+- Embedded TMDB/Trakt API keys (removed manual key entry)
+- Simplified first-run setup (only RD auth required, Trakt optional)
+- Added Hebrew/English UI language toggle with `t()` translation system (~70 strings)
+- Fixed: list_action kwarg leaking into TMDB API calls
+- Fixed: deprecated `setInfo()` → use InfoTag API (Kodi 21 compat)
+- Fixed: subtitle service import paths (use xbmcaddon path resolution)
+- Fixed: picker.py wrong import path
+- Fixed: next-episode dict key mismatch causing TypeError
+- Fixed: service.py log() signature (1 arg → 2 args)
+- Fixed: os.makedirs('') edge case in matcher.py
+- Fixed: Real Debrid auth (form-encoded POST, not JSON, for token endpoint)
+- Removed all Python 2 compatibility shims
+- Refactored: list_movies/list_shows → shared _list_items helper
+- Refactored: scrape_torrentio/scrape_mediafusion → shared _scrape_stremio
+- Refactored: 14 TMDB list functions → _list() helper
+- Refactored: filter dispatch to use (label, func) pairs instead of index math
+- Refactored: cache.py DDL runs once at init, named columns in SELECT
+- Added QR code auth dialogs for RD and Trakt
+- Added GitHub Pages directory index.html files for Kodi repo browsing
+- Added Hebrew description to subtitle service addon.xml
+- Version bumped to 1.0.2
+
+### 2026-03-26 — Session 3: Major UI overhaul (in progress)
+- Fixed QR dialog visuals (dimmer layer, safe fonts)
+- Added device code to Trakt QR URL
+- Extended feature detection (DV, HDR10+)
+- Added cast/director to show_details()
+- NEW: Custom source selection screen (source_select.py)
+- Added subtitle search notifications during playback
+- Added subtitle picker OSD button during playback
+- Version bumped to 1.0.3

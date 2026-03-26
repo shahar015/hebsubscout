@@ -27,4 +27,10 @@
         <setting id="enable_mediafusion" type="bool" label="MediaFusion" default="true"/>
         <setting id="enable_external_scrapers" type="bool" label="External Scrapers (CocoScrapers)" default="true"/>
     </category>
+    <category label="מסננים / Filters">
+        <setting id="filter_quality" type="text" label="Quality Filters" default="4K|1080p|720p|480p|SD" visible="false"/>
+        <setting id="filter_subs" type="text" label="Subtitle Filter" default="All" visible="false"/>
+        <setting id="filter_features" type="text" label="Feature Filters" default="" visible="false"/>
+        <setting id="filter_sort" type="text" label="Sort By" default="default" visible="false"/>
+    </category>
 </settings>

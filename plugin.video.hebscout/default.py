@@ -19,7 +19,7 @@ import xbmcaddon
 sys.path.insert(0, xbmcaddon.Addon().getAddonInfo('path') + '/resources/lib')
 
 from resources.lib.modules import tmdb, realdebrid as rd, trakt_api as trakt
-from resources.lib.modules.sources import get_sources, build_source_label, resolve_source
+from resources.lib.modules.sources import get_sources, resolve_source
 from resources.lib.modules.player import HebScoutPlayer
 from resources.lib.modules.cache import is_watched, cache_clear
 from resources.lib.modules.utils import (
@@ -253,43 +253,66 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
     # First-run check: make sure API keys are configured
     if not _check_setup():
         return
-    
-    # Get IMDB ID if we only have TMDB
-    if not imdb_id and tmdb_id:
+
+    # Fetch full TMDB details for the info panel
+    details = None
+    if tmdb_id:
         if media_type == 'movie':
             details = tmdb.movie_details(tmdb_id)
         else:
             details = tmdb.show_details(tmdb_id)
-        if details:
+        if details and not imdb_id:
             imdb_id = details.get('imdb_id', '')
-    
+    elif imdb_id and not tmdb_id:
+        # We have IMDB but no TMDB — can't fetch details easily, use what we have
+        pass
+
     if not imdb_id:
         notification(t('imdb_not_found'))
         return
 
+    # Build metadata for the source selection screen
+    metadata = {
+        'title': title, 'year': year, 'poster': poster, 'fanart': fanart,
+        'media_type': media_type,
+    }
+    if details:
+        metadata.update({
+            'title': details.get('title', title),
+            'year': details.get('year', year),
+            'poster': details.get('poster', poster),
+            'fanart': details.get('fanart', fanart),
+            'plot': details.get('plot', ''),
+            'rating': details.get('rating', 0),
+            'genres': details.get('genres', []),
+            'cast': details.get('cast', []),
+            'director': details.get('director', ''),
+            'tagline': details.get('tagline', ''),
+        })
+
     # Progress dialog
     progress = progress_dialog('HebScout', t('searching_sources'))
-    
+
     def on_progress(pct, msg):
         if not progress.iscanceled():
             progress.update(pct, msg)
-    
+
     sources = get_sources(
         imdb_id=imdb_id, tmdb_id=tmdb_id, title=title, year=year,
         season=int(season) if season else None,
         episode=int(episode) if episode else None,
         progress_callback=on_progress
     )
-    
+
     progress.close()
-    
+
     if not sources:
         notification(t('no_sources_found'))
         return
-    
+
     # Auto-play: pick first RD-cached source with best Hebrew sub match
     should_auto = auto_play or get_setting('auto_play') == 'true'
-    
+
     if should_auto:
         best = None
         for s in sources:
@@ -300,79 +323,19 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
             best = sources[0]
         _play_source(best, imdb_id, tmdb_id, title, year, season, episode, media_type, poster, fanart)
         return
-    
-    # --- SOURCE FILTERS ---
-    filtered = _apply_source_filters(sources)
-    if filtered is None:
-        return  # User cancelled
-    
-    # Manual selection
-    labels = [build_source_label(s) for s in filtered]
-    choice = select_dialog('{} ({})'.format(t('select_source'), len(filtered)), labels)
-    
-    if choice < 0:
+
+    # Custom source selection screen
+    from resources.lib.modules.source_select import SourceSelectDialog
+    dialog = SourceSelectDialog(sources, metadata)
+    dialog.doModal()
+    chosen = dialog.selected_source
+    del dialog
+
+    if not chosen:
         return
-    
-    _play_source(filtered[choice], imdb_id, tmdb_id, title, year, season, episode,
+
+    _play_source(chosen, imdb_id, tmdb_id, title, year, season, episode,
                  media_type, poster, fanart)
-
-
-def _apply_source_filters(sources):
-    """
-    Show filter options above the source list.
-    Returns filtered list, or None if user cancels.
-    """
-    while True:
-        total = len(sources)
-        q_counts = {}
-        for s in sources:
-            q = s.get('quality', 'SD')
-            q_counts[q] = q_counts.get(q, 0) + 1
-
-        cached_count = sum(1 for s in sources if s.get('rd_cached'))
-        subs_100 = sum(1 for s in sources if s.get('best_match_pct', 0) >= 95)
-        subs_70 = sum(1 for s in sources if s.get('best_match_pct', 0) >= 70)
-        subs_any = sum(1 for s in sources if s.get('has_hebrew_subs'))
-
-        # Build parallel lists: labels for display, filters for execution
-        filters = [
-            ('[COLOR lime]▶ {} ({})[/COLOR]'.format(t('show_all'), total), lambda ss: ss),
-        ]
-
-        for q in ['4K', '1080p', '720p', '480p', 'SD']:
-            if q_counts.get(q, 0) > 0:
-                filters.append((
-                    '[COLOR cyan]{}: {}[/COLOR] ({})'.format(t('quality'), q, q_counts[q]),
-                    lambda ss, _q=q: [s for s in ss if s.get('quality') == _q],
-                ))
-
-        if cached_count > 0:
-            filters.append((
-                '[COLOR cyan]{}[/COLOR] ({})'.format(t('rd_cached_only'), cached_count),
-                lambda ss: [s for s in ss if s.get('rd_cached')],
-            ))
-        if subs_100 > 0:
-            filters.append((
-                '[COLOR lime]עב 100% / {}[/COLOR] ({})'.format(t('subs_100'), subs_100),
-                lambda ss: [s for s in ss if s.get('best_match_pct', 0) >= 95],
-            ))
-        if subs_70 > 0:
-            filters.append((
-                '[COLOR yellow]עב {}[/COLOR] ({})'.format(t('subs_70'), subs_70),
-                lambda ss: [s for s in ss if s.get('best_match_pct', 0) >= 70],
-            ))
-        if subs_any > 0:
-            filters.append((
-                '[COLOR orange]עב {}[/COLOR] ({})'.format(t('subs_any'), subs_any),
-                lambda ss: [s for s in ss if s.get('has_hebrew_subs')],
-            ))
-
-        labels = [f[0] for f in filters]
-        choice = select_dialog(t('filter_sources'), labels)
-
-        if choice < 0:
-            return None
-        return filters[choice][1](sources)
 
 
 # =========================================================================

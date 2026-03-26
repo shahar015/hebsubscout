@@ -136,6 +136,9 @@ _STRINGS = {
     'next_ep_play': {'he': 'הפעל', 'en': 'Play'},
     'next_ep_stop': {'he': 'עצור', 'en': 'Stop'},
     'no_heb_subs': {'he': 'לא נמצאו כתוביות בעברית', 'en': 'No Hebrew subtitles found'},
+    'sub_search_start': {'he': 'מחפש כתוביות עבריות...', 'en': 'Searching Hebrew subs...'},
+    'sub_found': {'he': 'נמצאו {} כתוביות, התאמה {}%', 'en': 'Found {} subs, best match {}%'},
+    'sub_applied': {'he': 'כתוביות הופעלו ({}%)', 'en': 'Subtitles applied ({}%)'},
     'pick_heb_subs': {'he': 'בחירת כתוביות עבריות', 'en': 'Pick Hebrew Subtitles'},
     'downloading_subs': {'he': 'מוריד כתוביות...', 'en': 'Downloading subtitles...'},
     'downloading_pct': {'he': 'מוריד... {}%', 'en': 'Downloading... {}%'},
@@ -300,17 +303,21 @@ class QRAuthDialog(xbmcgui.WindowDialog):
         self.cancelled = False
         tex = _get_white_texture()
 
-        # Dialog dimensions (centered, 1280x720 safe)
+        # Full-screen dimmer (blocks background content)
+        dimmer = xbmcgui.ControlImage(0, 0, 1920, 1080, tex, colorDiffuse='DD000000')
+        self.addControl(dimmer)
+
+        # Dialog dimensions (centered)
         w, h = 700, 520
-        x = (self.getWidth() - w) // 2
-        y = (self.getHeight() - h) // 2
+        x = (1920 - w) // 2
+        y = (1080 - h) // 2
 
         # Border (green outline)
-        border = xbmcgui.ControlImage(x - 2, y - 2, w + 4, h + 4, tex, colorDiffuse='FF00d4aa')
+        border = xbmcgui.ControlImage(x - 3, y - 3, w + 6, h + 6, tex, colorDiffuse='FF00d4aa')
         self.addControl(border)
 
-        # Background
-        bg = xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF1a1a2e')
+        # Background (solid dark)
+        bg = xbmcgui.ControlImage(x, y, w, h, tex, colorDiffuse='FF111122')
         self.addControl(bg)
 
         # Heading
@@ -319,9 +326,9 @@ class QRAuthDialog(xbmcgui.WindowDialog):
             font='font13', textColor='FF00d4aa', alignment=0x00000002
         ))
 
-        # QR code image
+        # QR code image (white on dark background)
         qr_size = 220
-        qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=1a1a2e&color=ffffff&data={}'.format(
+        qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=111122&color=ffffff&data={}'.format(
             quote_plus(verify_url)
         )
         qr_x = x + (w - qr_size) // 2
@@ -345,16 +352,16 @@ class QRAuthDialog(xbmcgui.WindowDialog):
             font='font12', textColor='FFaaaaaa', alignment=0x00000002
         ))
 
-        # Code (large, colored)
+        # Code (large, bright white on dark bg)
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 405, w, 50, '[COLOR lime]{}[/COLOR]'.format(user_code),
-            font='font_MainMenu', alignment=0x00000002
+            x, y + 410, w, 55, '[COLOR lime]{}[/COLOR]'.format(user_code),
+            font='font13', textColor='FFffffff', alignment=0x00000002
         ))
 
         # Progress bar background
-        bar_w, bar_h = 500, 8
+        bar_w, bar_h = 500, 6
         bar_x = x + (w - bar_w) // 2
-        bar_y = y + h - 30
+        bar_y = y + h - 25
         self.addControl(xbmcgui.ControlImage(bar_x, bar_y, bar_w, bar_h, tex, colorDiffuse='FF333333'))
         self._progress_bar = xbmcgui.ControlImage(bar_x, bar_y, 1, bar_h, tex, colorDiffuse='FF00d4aa')
         self.addControl(self._progress_bar)
