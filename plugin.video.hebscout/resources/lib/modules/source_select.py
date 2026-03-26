@@ -218,7 +218,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 has_subs = src.get('has_hebrew_subs', False)
                 he = is_hebrew()
                 if has_subs:
-                    sub_text = '{} אחוזי התאמה לכתוביות'.format(sub_pct) if he else '{}% Sub Match'.format(sub_pct)
+                    sub_text = '{}% התאמה לכתוביות'.format(sub_pct) if he else '{}% Sub Match'.format(sub_pct)
                     if sub_pct >= 90:
                         sub_display = '[COLOR FF2ecc71]{}[/COLOR]'.format(sub_text)
                     elif sub_pct >= 70:
