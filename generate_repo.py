@@ -24,6 +24,7 @@ ADDON_DIRS = [
     'service.subtitles.hebsubscout',
     'plugin.video.hebscout',
     'context.hebsubscout',
+    'skin.hebscout',
 ]
 
 REPO_DIR = 'repo'

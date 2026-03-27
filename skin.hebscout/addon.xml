@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="skin.hebscout"
+       version="1.5.0"
+       name="HebScout Skin"
+       provider-name="HebSubScout Community">
+    <requires>
+        <import addon="xbmc.gui" version="5.17.0"/>
+    </requires>
+    <extension point="xbmc.gui.skin" debugging="false">
+        <res width="1920" height="1080" aspect="16:9" default="true" folder="xml"/>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">HebScout Skin - Estuary with Hebrew subtitle &amp; audio OSD buttons</summary>
+        <summary lang="he">עור HebScout - Estuary עם כפתורי כתוביות ושמע בנגן</summary>
+        <description lang="en">
+A modified Estuary skin with custom player OSD buttons:
+- Hebrew subtitle picker (בחירת כתוביות)
+- Audio track switcher (החלף שמע)
+- Skip intro/recap (דלג על הפתיח)
+
+Based on Kodi's default Estuary skin. Switch to this skin to get
+HebScout player integration.
+        </description>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
+        <platform>all</platform>
+        <license>GPL-2.0-or-later</license>
+    </extension>
+</addon>

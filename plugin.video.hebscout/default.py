@@ -737,12 +737,22 @@ def trakt_progress():
 # =========================================================================
 
 def search():
-    query = input_dialog(t('search_prompt'))
-    if not query:
-        return
-    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_movies')), 'movies_search_results', query=query)
-    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_shows')), 'shows_search_results', query=query)
+    """Show search history + new search option."""
+    from resources.lib.modules.cache import get_search_history
+    history = get_search_history()
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('new_search')), 'search_new')
+    for q in history:
+        add_dir('[COLOR gray]{}[/COLOR]'.format(q), 'search_execute', query=q)
     end_dir(content='')
+
+
+def search_new():
+    query = input_dialog(t('search_prompt'))
+    if query:
+        from resources.lib.modules.cache import add_search_history
+        add_search_history(query)
+        xbmc.executebuiltin('Container.Update({}?{})'.format(
+            BASE_URL, urlencode({'action': 'search', 'query': query})))
 
 
 # =========================================================================
@@ -750,14 +760,67 @@ def search():
 # =========================================================================
 
 def tools_menu():
-    # Account status
-    rd_status = '[COLOR lime]{}[/COLOR]'.format(t('connected')) if rd.is_authorized() else '[COLOR red]{}[/COLOR]'.format(t('not_connected'))
-    trakt_status = '[COLOR lime]{}[/COLOR]'.format(t('connected')) if trakt.is_authorized() else '[COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    # ── Accounts ──
+    add_dir('[COLOR orange]{}[/COLOR]'.format(t('accounts_header')), 'noop')
 
-    add_dir('Real Debrid: {}'.format(rd_status), 'rd_auth')
-    add_dir('Trakt: {}'.format(trakt_status), 'trakt_auth')
+    # Real Debrid
+    if rd.is_authorized():
+        try:
+            info = rd.user_info()
+            expiry = info.get('expiration', '')[:10] if info else ''
+            rd_label = 'Real Debrid: [COLOR lime]{}[/COLOR]'.format(
+                t('premium_until', expiry) if expiry else t('connected'))
+        except Exception:
+            rd_label = 'Real Debrid: [COLOR lime]{}[/COLOR]'.format(t('connected'))
+    else:
+        rd_label = 'Real Debrid: [COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    add_dir(rd_label, 'rd_auth')
+
+    # Trakt
+    if trakt.is_authorized():
+        try:
+            user = trakt.get_user_settings()
+            username = user.get('user', {}).get('username', '') if user else ''
+            trakt_label = 'Trakt: [COLOR lime]{}[/COLOR]'.format(
+                t('user_label', username) if username else t('connected'))
+        except Exception:
+            trakt_label = 'Trakt: [COLOR lime]{}[/COLOR]'.format(t('connected'))
+    else:
+        trakt_label = 'Trakt: [COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    add_dir(trakt_label, 'trakt_auth')
+
+    # Ktuvit
+    ktuvit_email = get_setting('ktuvit_email')
+    if ktuvit_email:
+        ktuvit_label = 'Ktuvit: [COLOR lime]{}[/COLOR]'.format(ktuvit_email)
+    else:
+        ktuvit_label = 'Ktuvit: [COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    add_dir(ktuvit_label, 'ktuvit_setup')
+
+    # ── Quick Settings ──
+    add_dir('[COLOR orange]{}[/COLOR]'.format(t('toggles_header')), 'noop')
+
+    auto_subs = get_setting('auto_subs') != 'false'
+    auto_play = get_setting('auto_play') == 'true'
+    auto_next = get_setting('auto_next_episode') != 'false'
+
+    add_dir('{}: [COLOR {}]{}[/COLOR]'.format(
+        t('auto_subs_toggle'), 'lime' if auto_subs else 'red',
+        t('on') if auto_subs else t('off')), 'toggle_setting', key='auto_subs')
+    add_dir('{}: [COLOR {}]{}[/COLOR]'.format(
+        t('auto_play_toggle'), 'lime' if auto_play else 'red',
+        t('on') if auto_play else t('off')), 'toggle_setting', key='auto_play')
+    add_dir('{}: [COLOR {}]{}[/COLOR]'.format(
+        t('auto_next_toggle'), 'lime' if auto_next else 'red',
+        t('on') if auto_next else t('off')), 'toggle_setting', key='auto_next_episode')
+    add_dir(t('language_toggle'), 'toggle_setting', key='ui_language')
+
+    # ── System ──
+    add_dir('[COLOR orange]{}[/COLOR]'.format(t('system_header')), 'noop')
     add_dir(t('clear_cache'), 'clear_cache')
+    add_dir(t('clear_search_history'), 'clear_search_history')
     add_dir(t('settings'), 'settings')
+    add_dir('[COLOR gray]{}[/COLOR]'.format(t('version_info', ADDON.getAddonInfo('version'))), 'noop')
     end_dir(content='')
 
 
@@ -842,7 +905,17 @@ def router(params):
     # Search
     elif action == 'search':
         search()
-    
+    elif action == 'search_new':
+        search_new()
+    elif action == 'search_execute':
+        query = params.get('query', '')
+        if query:
+            from resources.lib.modules.cache import add_search_history
+            add_search_history(query)
+            add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_movies')), 'movies_search_results', query=query)
+            add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_shows')), 'shows_search_results', query=query)
+            end_dir(content='')
+
     # People
     elif action == 'people_popular':
         people, _ = tmdb.people_popular(page)
@@ -877,6 +950,28 @@ def router(params):
     elif action == 'trakt_watchlist_add':
         trakt.add_to_watchlist(media_type, imdb_id)
         notification(t('added_watchlist'))
+    elif action == 'mark_watched':
+        from resources.lib.modules.cache import mark_watched as local_mark_watched
+        s = int(params.get('season', 0))
+        e = int(params.get('episode', 0))
+        local_mark_watched(imdb_id, s, e)
+        if trakt.is_authorized():
+            if media_type == 'movie' or (s == 0 and e == 0):
+                trakt.mark_movie_watched(imdb_id)
+            else:
+                trakt.mark_episode_watched(imdb_id, s, e)
+    elif action == 'movie_similar':
+        results = tmdb.movie_recommendations(tmdb_id)
+        if results:
+            for m in results:
+                add_item(m, action='movie_sources', is_folder=True)
+        end_dir(content='movies')
+    elif action == 'show_similar':
+        results = tmdb.show_recommendations(tmdb_id)
+        if results:
+            for s in results:
+                add_item(s, action='show_seasons', is_folder=True)
+        end_dir(content='tvshows')
     
     # Tools
     elif action == 'tools_menu':
@@ -896,6 +991,35 @@ def router(params):
     elif action == 'clear_cache':
         cache_clear()
         notification(t('cache_cleared'))
+    elif action == 'clear_search_history':
+        from resources.lib.modules.cache import clear_search_history
+        clear_search_history()
+        notification(t('history_cleared'))
+    elif action == 'toggle_setting':
+        key = params.get('key', '')
+        if key == 'ui_language':
+            current = get_setting('ui_language') or 'Hebrew'
+            new_val = 'English' if current == 'Hebrew' else 'Hebrew'
+            set_setting('ui_language', new_val)
+        else:
+            current = get_setting(key)
+            new_val = 'false' if current != 'false' else 'true'
+            set_setting(key, new_val)
+        xbmc.executebuiltin('Container.Refresh')
+    elif action == 'ktuvit_setup':
+        import hashlib
+        email = xbmcgui.Dialog().input(t('ktuvit_email_prompt'))
+        if email:
+            password = xbmcgui.Dialog().input(t('ktuvit_password_prompt'),
+                                              type=xbmcgui.INPUT_ALPHANUM,
+                                              option=xbmcgui.ALPHANUM_HIDE_INPUT)
+            if password:
+                set_setting('ktuvit_email', email)
+                set_setting('ktuvit_password', hashlib.sha256(password.encode()).hexdigest())
+                notification(t('ktuvit_saved'))
+        xbmc.executebuiltin('Container.Refresh')
+    elif action == 'noop':
+        pass
     elif action == 'settings':
         ADDON.openSettings()
     
@@ -904,6 +1028,16 @@ def router(params):
         source_selection(imdb_id, tmdb_id, title, year, season=season, episode=episode,
                          media_type=media_type, poster=poster, fanart=fanart, auto_play=True)
     
+    # Skip intro (called from skin OSD button)
+    elif action == 'skip_intro':
+        try:
+            end_sec = int(xbmcgui.Window(10000).getProperty('hebscout.intro_end') or '0')
+            if end_sec > 0 and _player and _player._playing:
+                _player.seekTime(end_sec)
+                log('Skip intro: seeked to {}s'.format(end_sec))
+        except Exception:
+            pass
+
     # Subtitle picker (called during playback)
     elif action == 'subtitle_picker':
         if _player and _player._playing:

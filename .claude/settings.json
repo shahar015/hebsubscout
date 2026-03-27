@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''plugin.video.hebscout/default.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''default.py OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''plugin.video.hebscout/resources/lib/modules/tmdb.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''tmdb.py OK''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''context.hebsubscout/context_check.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''context_check.py OK''\\)\")",
+      "WebFetch(domain:api.introdb.app)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''plugin.video.hebscout/resources/lib/modules/player.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''player.py OK''\\)\")",
+      "Bash(find 'C:\\\\Program Files' -path */skin.estuary/addon.xml)",
+      "Bash(find C:UsersshahaAppDataRoamingKodi -name addon.xml -path *skin*)",
+      "Bash(curl -sL \"https://fonts.google.com/download?family=Heebo\" -o /tmp/heebo.zip)",
+      "Bash(unzip -o /tmp/heebo.zip -d /tmp/heebo)",
+      "Bash(cp /tmp/heebo/static/Heebo-Regular.ttf skin.hebscout/fonts/)",
+      "Bash(cp /tmp/heebo/Heebo-VariableFont_wght.ttf skin.hebscout/fonts/Heebo-Regular.ttf)",
+      "Bash(ls -la skin.hebscout/fonts/Heebo*)",
+      "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/heebo/Heebo%5Bwght%5D.ttf\" -o skin.hebscout/fonts/Heebo-Regular.ttf)"
+    ]
+  }
+}

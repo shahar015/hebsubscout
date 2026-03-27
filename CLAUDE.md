@@ -86,7 +86,8 @@ hebsubscout/
 - **No build step**: Kodi runs raw Python files. No compilation, no bundling, no .env files.
 - **API keys are hardcoded**: TMDB key and Trakt Client ID/Secret ship in source code. This is standard for all Kodi addons (POV, Seren, Umbrella all do this). These are app identifiers, not user secrets. User-specific tokens (RD, Trakt OAuth) are stored in Kodi's local settings.
 - **Dependency auto-resolution**: Installing `plugin.video.hebscout` from the repository auto-installs `script.module.hebsubscout` (required) and `service.subtitles.hebsubscout` (optional).
-- **Netflix-style progress**: Background thread saves playback position to SQLite every 30 seconds. Survives crashes and power outages.
+- **Netflix-style progress**: Background thread saves playback position to SQLite every 5 seconds. Survives crashes and power outages.
+- **Continue Watching / History**: Trakt-first, local SQLite fallback. When Trakt is connected, menus pull from Trakt API (`sync/playback` and `sync/watched`). When not connected, falls back to local SQLite. Only ONE "המשך צפייה" and ONE "היסטוריה" in the menu — never both sources at once.
 
 ## API Credentials (hardcoded, not secrets)
 
@@ -104,9 +105,25 @@ hebsubscout/
 | Ktuvit.me | `www.ktuvit.me` | Cookie-based login (email + hashed password) | Hebrew subtitle search. Old `api.screwzira.com` is DEAD (bot wall). Uses HTML scraping. |
 | OpenSubtitles | `api.opensubtitles.com/api/v1` | API key header | Hebrew subtitle search (optional) |
 | Real Debrid | `api.real-debrid.com/rest/1.0` | Bearer token | Torrent cache check, link unrestrict, streaming. OAuth token endpoint requires form-encoded POST (not JSON). Device auth returns `direct_verification_url` for QR codes. |
-| Trakt | `api.trakt.tv` | Bearer token + Client ID | Scrobbling, watchlist, progress, history. Device auth URL supports `trakt.tv/activate/{code}` for QR pre-fill. |
+| Trakt | `api.trakt.tv` | Bearer token + Client ID | Scrobbling, watchlist, progress, history. Device auth URL supports `trakt.tv/activate/{code}` for QR pre-fill. **Scrobble requires >= 1.0% progress.** |
 | Torrentio | `torrentio.strem.fun` | None (public) | Source scraping (torrent search) |
 | MediaFusion | `mediafusion.elfhosted.com` | May need auth (returns 403 currently) | Source scraping (torrent search) |
+
+## Trakt Scrobble Flow (CRITICAL — match POV/Twilight behavior)
+
+The correct scrobble flow (verified by studying kodi7rd/repository Twilight addon):
+1. **`scrobble/start`** — called **ONCE** when playback starts (after progress >= 1%). Never repeated on a timer.
+2. **`scrobble/pause`** — called on user pause AND on playback stop (< 80%). This is what saves the resume point to `sync/playback` (powers "Continue Watching").
+3. **`scrobble/stop`** — called ONLY when playback ends at >= 80% (marks as watched).
+4. **`scrobble/start`** again — only on resume from pause or seek (re-starts the session).
+
+**Key gotchas:**
+- Trakt rejects scrobble calls with progress < 1.0%: `"Progress should be at least 1.0% to pause."`
+- Calling `scrobble/start` every N seconds **resets the session** — Trakt may discard the subsequent pause if the session is too short
+- `scrobble/stop` does NOT save a resume point — it only marks as watched if >= 80%
+- `scrobble/pause` is the only way to save a resume point to `sync/playback`
+- Trakt website "Continue Watching" may not show all items from `sync/playback` API — the website has its own filtering
+- Our `_handle_end()` must use `_last_known_progress` because `getTime()` fails after player is destroyed
 
 ## Development Workflow
 
@@ -179,27 +196,36 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 
 ## Current TODOs
 
-### Working (verified in Kodi):
-- [x] QR auth dialog: centered, dark opaque background, QR code visible (1280x720 coords)
-- [x] RD QR: uses `direct_verification_url` for auto-authorize
-- [x] Trakt QR: URL includes device code (`trakt.tv/activate/{CODE}`)
-- [x] QR dialog cancel works (xbmc.sleep in 200ms increments)
-- [x] Source selection screen: WindowXMLDialog with XML skin, native ControlList scroll/focus
-- [x] Wizdom API: fixed endpoints (`/api/search?action=by_id`), TV nested parsing works
-- [x] Subtitle match % shows on source cards
-- [x] Filter buttons (quality/sort/provider) with label-based selected state
-- [x] Source screen: cinematic dark redesign v1.1.0
+### Working (verified — v1.2.x complete):
+- [x] QR auth dialogs (RD + Trakt) with cancel support
+- [x] Source selection screen: WindowXMLDialog, cinematic dark theme, filters, scroll
+- [x] Wizdom subtitle search + auto-download + auto-apply during playback
+- [x] Ktuvit login (no errors with credentials)
+- [x] Subtitle match % on source cards
+- [x] Filter buttons (quality/sort/provider) with dim/bright selected state
+- [x] Default all qualities selected on fresh install
+- [x] Progress tracking: local SQLite saves every 5s, survives player destruction
+- [x] Trakt scrobble: start once, pause on stop saves resume point to sync/playback
+- [x] Continue watching + History: Trakt-first, local SQLite fallback, single menu each
+- [x] Resume dialog ("continue from X%?")
+- [x] Player controls work during playback (no WindowDialog stealing input)
+- [x] icon.png + fanart.jpg on all 5 addons
+- [x] Source card padding (116px height)
 
-### Needs testing:
-- [ ] Subtitle search notifications during playback (start/found/applied)
-- [ ] Subtitle picker OSD button ("CC עב") during playback
-- [ ] Ktuvit provider with credentials (login + HTML scraping)
-- [ ] Subtitle download/apply flow end-to-end
+### v1.5 (requires custom skin):
+- [ ] Player OSD buttons ("בחירת כתוביות", "החלף שמע") — needs custom VideoOSD.xml skin
+- [ ] Subtitle picker triggered from OSD during playback
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
+- RD `instantAvailability` was removed by RD in Nov 2024. Cache check disabled (addMagnet workaround too slow). Cached sources still play instantly when clicked.
 - Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
 - No icon.png or fanart.jpg assets yet for the addons
+- **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback. It captures focus and blocks play/pause/seek. Use built-in Kodi OSD or a custom skin instead.
+- Trakt requires >= 1.0% progress for scrobble calls — guard all scrobble calls
+- `getTime()` throws "Kodi is not playing any media file" after player is destroyed — always use `_last_known_progress` as fallback
+- Translation keys must be unique Hebrew strings — `up_next` and `continue_watching` both translated to "המשך צפייה" causing duplicate menu entries
+- Display labels with `[COLOR]` markup leak into URL params if passed as the title — always separate display label from data title
 - Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
 - 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
 - Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
@@ -218,7 +244,7 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - **QR Auth Dialog:** `utils.py` → `QRAuthDialog(WindowDialog)` — 1280x720 coords, full-screen double-layer black bg + centered panel, QR from api.qrserver.com, xbmc.sleep(200) for responsive cancel
 - **Source Selection Screen:** `source_select.py` → `SourceSelectDialog(WindowXMLDialog)` — XML skin at `resources/skins/Default/1080i/source_select.xml`. Cinematic dark theme. Native ControlList for scroll/focus. All filter buttons in XML, labels managed by Python `setLabel()`. Left panel: quality/sort/provider filters + source cards. Right panel: poster + title + rating + genres + plot + director + cast.
 - **Subtitle Picker:** `picker.py` → `SubtitlePickerWindow(WindowDialog)` — top-right floating overlay during playback (1280x720 coords)
-- **Subtitle OSD Button:** `player.py` → `SubtitleOSDOverlay(WindowDialog)` — small "CC עב" button at bottom-right during playback, auto-hides after 5s
+- **Player OSD Buttons:** DEFERRED to v1.5 (custom skin). WindowDialog overlays steal player input — cannot be used during playback.
 - **Translation system:** `utils.py` → `t(key, *args)` function with `_STRINGS` dict (Hebrew/English)
 - **White texture:** `resources/skins/Default/media/white.png` — 16x16 solid white PNG for colorDiffuse tinting. `_get_white_texture()` returns absolute path for programmatic controls.
 
@@ -305,3 +331,24 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.1.8: Added debug logging to Trakt scrobble payload to diagnose 422 errors
 - v1.1.8: Ensured episode field always included in scrobble payload (season + number)
 - v1.1.8: Removed broken SubtitleOSDOverlay (WindowDialog can't capture input over video player)
+
+### 2026-03-27 — Session 5: Trakt scrobble fix + progress tracking + menu consolidation
+- v1.1.9: Fix bookmark overwrite on stop (`_last_known_progress` fallback when `getTime()` fails)
+- v1.1.9: ProgressTracker updates `_last_known_progress` on every save; `_handle_end` won't overwrite with 0%
+- v1.2.0: CRITICAL fix — removed WindowDialog OSD overlay that stole all player input (play/pause/seek broken)
+- v1.2.0: Trakt 422 fix: guard all scrobble calls with `progress >= 1.0` (Trakt error: "Progress should be at least 1.0%")
+- v1.2.0: Lower continue watching threshold from 5% to 1%
+- v1.2.0: Fix title pollution — `[COLOR]` markup no longer leaks from display labels into URL params
+- v1.2.1: Unified menus (Trakt-first, local fallback): ONE "המשך צפייה" + ONE "היסטוריה"
+- v1.2.1: Continue watching pulls from `trakt.playback_progress()` when connected, local SQLite otherwise
+- v1.2.1: History pulls from `trakt.watched_movies()` + `watched_shows()` when connected
+- v1.2.1: Removed duplicate "watch progress" Trakt menu entry
+- v1.2.2: Fix `up_next` Hebrew translation: was "המשך צפייה" (duplicate), now "פרק הבא"
+- v1.2.2: Use `scrobble/pause` (not `scrobble/stop`) when user stops mid-watch — pause saves resume point
+- v1.2.3: Send `scrobble/start` ONCE when progress reaches 1% — not every 5s (was resetting Trakt session)
+- v1.2.3: Log full Trakt response bodies for debugging (confirmed scrobble works: Trakt returns show/episode IDs)
+- v1.2.3: Verified scrobble flow matches POV/Twilight (kodi7rd): start once → pause to save → stop only at >= 80%
+- v1.2.4: Added icon.png (256x256) and fanart.jpg (1920x1080) to all 5 addons with `<assets>` in addon.xml
+- v1.2.5: Replaced dead `instantAvailability` with addMagnet workaround (3 API calls per source)
+- v1.2.6: Disabled RD cache check (addMagnet too slow — 30 API calls for 10 sources). Source card height 104→116px for padding
+- v1.2.7: Default all qualities selected on fresh install. Dim unselected filter buttons (FF333345) for clear on/off distinction

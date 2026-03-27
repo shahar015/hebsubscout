@@ -102,6 +102,9 @@ def movies_genre(genre_id, page=1):
 def movies_search(query, page=1):
     return _list('search/movie', _parse_movie, page, cache_hours=1, query=query)
 
+def movie_recommendations(tmdb_id, page=1):
+    items, _ = _list('movie/{}/recommendations'.format(tmdb_id), _parse_movie, page, cache_hours=24)
+    return items
 
 def movie_details(tmdb_id):
     """Full movie details including IMDB ID."""
@@ -142,6 +145,10 @@ def shows_genre(genre_id, page=1):
 
 def shows_search(query, page=1):
     return _list('search/tv', _parse_show, page, cache_hours=1, query=query)
+
+def show_recommendations(tmdb_id, page=1):
+    items, _ = _list('tv/{}/recommendations'.format(tmdb_id), _parse_show, page, cache_hours=24)
+    return items
 
 
 def show_details(tmdb_id):

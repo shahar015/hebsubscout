@@ -119,6 +119,54 @@ def cache_clear():
         pass
 
 
+def _ensure_search_history_table():
+    try:
+        conn = _get_conn()
+        conn.execute("""CREATE TABLE IF NOT EXISTS search_history (
+            query TEXT PRIMARY KEY, created TEXT DEFAULT CURRENT_TIMESTAMP)""")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def add_search_history(query):
+    """Save a search query to history (max 20, most recent first)."""
+    _ensure_search_history_table()
+    try:
+        conn = _get_conn()
+        conn.execute("INSERT OR REPLACE INTO search_history (query, created) VALUES (?, CURRENT_TIMESTAMP)", (query,))
+        # Keep only last 20
+        conn.execute("DELETE FROM search_history WHERE query NOT IN (SELECT query FROM search_history ORDER BY created DESC LIMIT 20)")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def get_search_history():
+    """Get search history, most recent first."""
+    _ensure_search_history_table()
+    try:
+        conn = _get_conn()
+        rows = conn.execute("SELECT query FROM search_history ORDER BY created DESC LIMIT 20").fetchall()
+        conn.close()
+        return [r[0] for r in rows]
+    except Exception:
+        return []
+
+
+def clear_search_history():
+    """Clear all search history entries."""
+    try:
+        conn = _get_conn()
+        conn.execute("DROP TABLE IF EXISTS search_history")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
 def set_bookmark(imdb_id, season, episode, progress, paused_at='',
                  title='', poster='', fanart='', media_type='', tmdb_id=''):
     try:

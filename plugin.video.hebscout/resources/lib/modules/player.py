@@ -17,9 +17,11 @@ import xbmc
 import xbmcgui
 import xbmcaddon
 
-from resources.lib.modules.utils import log, get_setting, notification, t
+from resources.lib.modules.utils import log, get_setting, notification, t, http_get
 from resources.lib.modules import trakt_api as trakt
 from resources.lib.modules.cache import set_bookmark, get_bookmark, mark_watched
+
+INTRODB_BASE = 'https://api.theintrodb.org/v2'
 
 try:
     from hebsubscout import SubScout
@@ -129,6 +131,92 @@ class PlayerActionMonitor(threading.Thread):
             self._stop_event.wait(0.5)
 
 
+def _fetch_intro_segments(imdb_id, season=None, episode=None):
+    """
+    Fetch intro/recap/credits timestamps from TheIntroDB.
+    Returns dict with keys: intro, recap, credits, preview.
+    Each value is a list of {start: seconds, end: seconds}.
+    Returns empty dict if no data.
+    """
+    try:
+        params = 'imdb_id={}'.format(imdb_id)
+        if season is not None and episode is not None:
+            params += '&season={}&episode={}'.format(season, episode)
+        url = '{}/media?{}'.format(INTRODB_BASE, params)
+        data = http_get(url, timeout=5)
+        if not data:
+            return {}
+        result = {}
+        for key in ('intro', 'recap', 'credits', 'preview'):
+            segments = data.get(key, [])
+            if segments:
+                result[key] = [{'start': s['start_ms'] / 1000.0, 'end': s['end_ms'] / 1000.0}
+                               for s in segments if 'start_ms' in s and 'end_ms' in s]
+        if result:
+            log('IntroDB: found segments for {} — {}'.format(imdb_id, list(result.keys())))
+        return result
+    except Exception as e:
+        log('IntroDB fetch failed: {}'.format(e), 'ERROR')
+        return {}
+
+
+class SkipIntroMonitor(threading.Thread):
+    """
+    Monitors playback position and sets Kodi window properties when the player
+    is inside an intro/recap segment. The skin uses these properties for button visibility.
+
+    Properties set on Window(home):
+    - hebscout.skip_intro = "true" when inside intro segment
+    - hebscout.intro_end = seconds to seek to when skip is pressed
+    """
+
+    def __init__(self, player, segments):
+        super().__init__(daemon=True)
+        self._player = player
+        self._segments = segments  # {intro: [{start, end}], recap: [...]}
+        self._stop_event = threading.Event()
+        self._window = xbmcgui.Window(10000)  # Home window for properties
+
+    def stop(self):
+        self._stop_event.set()
+        self._clear_properties()
+
+    def _clear_properties(self):
+        try:
+            self._window.clearProperty('hebscout.skip_intro')
+            self._window.clearProperty('hebscout.intro_end')
+        except Exception:
+            pass
+
+    def run(self):
+        log('SkipIntroMonitor started')
+        # Combine intro + recap segments
+        skip_segments = self._segments.get('intro', []) + self._segments.get('recap', [])
+        if not skip_segments:
+            return
+
+        while not self._stop_event.is_set():
+            try:
+                pos = self._player.getTime()
+                in_segment = False
+                for seg in skip_segments:
+                    if seg['start'] <= pos <= seg['end']:
+                        self._window.setProperty('hebscout.skip_intro', 'true')
+                        self._window.setProperty('hebscout.intro_end', str(int(seg['end'])))
+                        in_segment = True
+                        break
+                if not in_segment:
+                    self._clear_properties()
+                # Stop monitoring after all segments have passed
+                max_end = max(s['end'] for s in skip_segments)
+                if pos > max_end + 5:
+                    self._clear_properties()
+                    return
+            except Exception:
+                pass  # Player may be destroyed
+            self._stop_event.wait(1.0)
+
+
 class HebScoutPlayer(xbmc.Player):
     """
     Custom player with Netflix-style progress saving.
@@ -151,6 +239,7 @@ class HebScoutPlayer(xbmc.Player):
         self._marked_watched = False
         self._total_time = 0
         self._last_known_progress = 0.0  # Survives player destruction
+        self._skip_intro_monitor = None
         self._next_episode_info = self._resolve_func = None
         self._progress_tracker = None
         self._sub_matches = []      # All subtitle matches from HebSubScout
@@ -176,6 +265,9 @@ class HebScoutPlayer(xbmc.Player):
         self._marked_watched = False
         self._auto_sub_applied = False
         self._last_known_progress = 0.0
+        if self._skip_intro_monitor:
+            self._skip_intro_monitor.stop()
+            self._skip_intro_monitor = None
         if self._osd_monitor:
             self._osd_monitor.stop()
             self._osd_monitor = None
@@ -231,6 +323,15 @@ class HebScoutPlayer(xbmc.Player):
         # Start action monitor (lightweight, no WindowDialog overlay)
         self._osd_monitor = PlayerActionMonitor(self)
         self._osd_monitor.start()
+
+        # === SKIP INTRO (TheIntroDB) — fetch in background ===
+        if self.imdb_id:
+            def _fetch_intro():
+                segs = _fetch_intro_segments(self.imdb_id, self.season, self.episode)
+                if segs and self._playing:
+                    self._skip_intro_monitor = SkipIntroMonitor(self, segs)
+                    self._skip_intro_monitor.start()
+            threading.Thread(target=_fetch_intro, daemon=True).start()
 
         # === AUTO-DOWNLOAD BEST MATCHING SUBTITLE ===
         if self._sub_matches and not self._auto_sub_applied and get_setting('auto_subs') != 'false':
@@ -417,7 +518,10 @@ class HebScoutPlayer(xbmc.Player):
         if not self._playing:
             return
         self._playing = False
-        # Stop OSD monitor
+        # Stop monitors
+        if self._skip_intro_monitor:
+            self._skip_intro_monitor.stop()
+            self._skip_intro_monitor = None
         if self._osd_monitor:
             self._osd_monitor.stop()
             self._osd_monitor = None

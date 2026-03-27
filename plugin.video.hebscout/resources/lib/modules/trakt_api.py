@@ -193,7 +193,7 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
 def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
     payload = {
         'progress': round(progress_pct, 1),
-        'app_version': '1.2.7',
+        'app_version': '1.5.0',
         'app_date': '2026-03-27',
     }
     if media_type == 'movie':
@@ -219,6 +219,11 @@ def watched_movies(page=1):
 def watched_shows():
     data = _api_get('sync/watched/shows', cache_hours=0.5)
     return data or []
+
+
+def get_user_settings():
+    """Get Trakt user profile info (username, etc.)."""
+    return _api_get('users/settings')
 
 
 def show_progress(imdb_id):
