@@ -431,9 +431,13 @@ class HebScoutPlayer(xbmc.Player):
             set_bookmark(self.imdb_id, self.season, self.episode, p)
         # else: p==0 means player was destroyed before we could read — keep existing bookmark
         if p >= 1.0 and trakt.is_authorized() and self.imdb_id and self._scrobbled_start:
-            trakt.scrobble_stop(self.media_type, self.imdb_id, p, self.season, self.episode)
             if p >= 80:
+                # Finished watching — scrobble/stop marks as watched
+                trakt.scrobble_stop(self.media_type, self.imdb_id, p, self.season, self.episode)
                 self._mark_as_watched()
+            else:
+                # Partially watched — scrobble/pause saves resume point in sync/playback
+                trakt.scrobble_pause(self.media_type, self.imdb_id, p, self.season, self.episode)
         if _scout and self.source_name and self.subtitle_name:
             _scout.record_match(self.source_name, self.subtitle_name, 'auto')
         if completed and self._next_episode_info and get_setting('auto_next_episode') != 'false':

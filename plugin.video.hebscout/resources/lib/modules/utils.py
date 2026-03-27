@@ -37,7 +37,7 @@ _STRINGS = {
     # Main menu
     'movies': {'he': 'סרטים', 'en': 'Movies'},
     'tv_shows': {'he': 'סדרות', 'en': 'TV Shows'},
-    'up_next': {'he': 'המשך צפייה', 'en': 'Up Next'},
+    'up_next': {'he': 'פרק הבא', 'en': 'Up Next'},
     'my_watchlist': {'he': 'רשימת צפייה', 'en': 'My Watchlist'},
     'watch_progress': {'he': 'היסטוריה', 'en': 'Watch Progress'},
     'continue_watching': {'he': 'המשך צפייה', 'en': 'Continue Watching'},
