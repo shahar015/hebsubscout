@@ -142,7 +142,7 @@
             <scrolltime>200</scrolltime>
             <itemgap>4</itemgap>
 
-            <itemlayout width="1160" height="104">
+            <itemlayout width="1160" height="116">
                 <control type="image">
                     <left>0</left><top>2</top><width>1160</width><height>100</height>
                     <texture colordiffuse="FF0f0f1a">white.png</texture>
@@ -188,9 +188,9 @@
                 </control>
             </itemlayout>
 
-            <focusedlayout width="1160" height="104">
+            <focusedlayout width="1160" height="116">
                 <control type="image">
-                    <left>-2</left><top>0</top><width>1164</width><height>104</height>
+                    <left>-2</left><top>0</top><width>1164</width><height>116</height>
                     <texture colordiffuse="$INFO[ListItem.Property(quality_color)]">white.png</texture>
                     <visible>Control.HasFocus(1000)</visible>
                 </control>

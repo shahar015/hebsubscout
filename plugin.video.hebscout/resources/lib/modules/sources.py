@@ -58,23 +58,11 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
         update(100, t('no_sources'))
         return []
 
-    # --- Step 2: Check RD cache ---
-    if rd.is_authorized():
-        update(45, t('checking_rd'))
-        
-        hashes = [s['hash'] for s in sources if s.get('hash')]
-        if hashes:
-            cached = rd.check_cache(hashes)  # Returns set of cached hashes
-            for src in sources:
-                h = src.get('hash', '').lower()
-                src['rd_cached'] = h in cached
-
-            # Move cached sources to top
-            sources.sort(key=lambda s: (0 if s.get('rd_cached') else 1, s.get('name', '')))
-
-            cached_count = sum(1 for s in sources if s.get('rd_cached'))
-            log('RD cache: {}/{} sources checked, {} cached'.format(
-                min(len(hashes), rd.MAX_CACHE_CHECK), len(hashes), cached_count))
+    # --- Step 2: RD cache check ---
+    # DISABLED: RD removed instantAvailability in Nov 2024.
+    # The addMagnet workaround (3 API calls per source) is too slow.
+    # Cached sources play instantly anyway when the user clicks them.
+    # TODO: Re-enable if RD adds a fast cache check endpoint.
     
     update(65, t('found_sources', len(sources)))
 
