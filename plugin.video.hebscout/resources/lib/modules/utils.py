@@ -110,6 +110,16 @@ _STRINGS = {
     },
     'connect_trakt': {'he': 'חבר Trakt', 'en': 'Connect Trakt'},
     'skip': {'he': 'דלג', 'en': 'Skip'},
+    # Ktuvit setup
+    'ktuvit_optional_title': {'he': 'HebScout - Ktuvit (אופציונלי)', 'en': 'HebScout - Ktuvit (Optional)'},
+    'ktuvit_optional_msg': {
+        'he': 'רוצה לחבר Ktuvit.me?\n\nמאגר כתוביות עברית נוסף.\nנדרש חשבון Ktuvit (אימייל + סיסמה).',
+        'en': 'Connect Ktuvit.me?\n\nAdditional Hebrew subtitle source.\nRequires Ktuvit account (email + password).',
+    },
+    'ktuvit_connect': {'he': 'חבר Ktuvit', 'en': 'Connect Ktuvit'},
+    'ktuvit_email_prompt': {'he': 'אימייל Ktuvit', 'en': 'Ktuvit Email'},
+    'ktuvit_password_prompt': {'he': 'סיסמת Ktuvit', 'en': 'Ktuvit Password'},
+    'ktuvit_saved': {'he': 'Ktuvit הוגדר בהצלחה!', 'en': 'Ktuvit configured successfully!'},
     # Real Debrid auth
     'rd_auth_failed': {'he': 'אימות Real Debrid נכשל', 'en': 'Real Debrid authorization failed'},
     'rd_auth_title': {'he': 'אימות Real Debrid', 'en': 'Real Debrid Authorization'},
@@ -310,7 +320,7 @@ class QRAuthDialog(xbmcgui.WindowDialog):
     Used for Real Debrid and Trakt device authorization.
     """
 
-    def __init__(self, heading, verify_url, user_code):
+    def __init__(self, heading, verify_url, user_code, display_url=None):
         super().__init__()
         self.cancelled = False
         tex = _get_white_texture()
@@ -336,7 +346,7 @@ class QRAuthDialog(xbmcgui.WindowDialog):
             font='font13', textColor='FF00d4aa', alignment=0x00000002
         ))
 
-        # QR code image
+        # QR code image (encode full URL for QR)
         qr_size = 160
         qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&bgcolor=0f0f24&color=ffffff&data={}'.format(
             quote_plus(verify_url)
@@ -350,9 +360,9 @@ class QRAuthDialog(xbmcgui.WindowDialog):
             font='font12', textColor='FFaaaaaa', alignment=0x00000002
         ))
 
-        # URL
+        # URL (show friendly display_url if provided, not the full QR link)
         self.addControl(xbmcgui.ControlLabel(
-            x, y + 232, w, 25, '[COLOR cyan]{}[/COLOR]'.format(verify_url),
+            x, y + 232, w, 25, '[COLOR cyan]{}[/COLOR]'.format(display_url or verify_url),
             font='font12', alignment=0x00000002
         ))
 

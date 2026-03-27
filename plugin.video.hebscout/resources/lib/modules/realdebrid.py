@@ -79,7 +79,7 @@ def authorize():
     interval = data.get('interval', 5)
     expires_in = data.get('expires_in', 600)
 
-    dialog = QRAuthDialog(t('rd_auth_title'), qr_url, user_code)
+    dialog = QRAuthDialog(t('rd_auth_title'), qr_url, user_code, display_url=verify_url)
     dialog.show()
 
     start = time.time()

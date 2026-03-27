@@ -376,6 +376,28 @@ def _check_setup():
         if result:
             trakt.authorize()
 
+    # Offer Ktuvit (optional) — extra Hebrew subtitle source
+    if not get_setting('ktuvit_email'):
+        result = xbmcgui.Dialog().yesno(
+            t('ktuvit_optional_title'),
+            t('ktuvit_optional_msg'),
+            yeslabel=t('ktuvit_connect'),
+            nolabel=t('skip')
+        )
+        if result:
+            email = xbmcgui.Dialog().input(t('ktuvit_email_prompt'))
+            if email:
+                password = xbmcgui.Dialog().input(
+                    t('ktuvit_password_prompt'),
+                    option=xbmcgui.ALPHANUM_HIDE_INPUT
+                )
+                if password:
+                    import hashlib
+                    hashed = hashlib.sha256(password.encode('utf-8')).hexdigest()
+                    set_setting('ktuvit_email', email)
+                    set_setting('ktuvit_password', hashed)
+                    notification(t('ktuvit_saved'))
+
     return rd.is_authorized()
 
 
@@ -391,14 +413,18 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
     if not url:
         notification(t('failed_resolve'))
         return
-    
+
     # Build next episode info for TV
     next_ep_info = None
     resolve_func = None
     if media_type != 'movie' and season and episode:
         next_ep_info = _get_next_episode_info(tmdb_id, int(season), int(episode))
         resolve_func = _resolve_next_episode
-    
+
+    # Tell Kodi the directory listing is done BEFORE we start the wait loop.
+    # Without this, Kodi shows a loading spinner while we wait for playback.
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+
     # Play with subtitle matches from HebSubScout enrichment
     global _player
     _player = HebScoutPlayer()
@@ -415,6 +441,22 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
         'source_name': source.get('name', ''),
         'sub_matches': source.get('all_matches', []),
     }, next_ep_info, resolve_func)
+
+    # Keep the script alive so player callbacks (onAVStarted, onPlayBackStopped, etc.)
+    # can fire. Without this, the Python interpreter exits and the player object is
+    # garbage collected, killing all callbacks (subtitle auto-download, progress tracking,
+    # Trakt scrobbling, OSD overlay, etc.).
+    monitor = xbmc.Monitor()
+    # Wait for playback to actually start (up to 30s)
+    for _ in range(60):
+        if _player._playing or monitor.abortRequested():
+            break
+        xbmc.sleep(500)
+    # Stay alive while playing
+    while not monitor.abortRequested():
+        if not _player or not _player._playing:
+            break
+        xbmc.sleep(1000)
 
 
 def _get_next_episode_info(tmdb_id, current_season, current_episode):

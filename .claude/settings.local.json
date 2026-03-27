@@ -49,7 +49,17 @@
       "WebFetch(domain:forum.kodi.tv)",
       "WebFetch(domain:alwinesch.github.io)",
       "WebFetch(domain:kodi.wiki)",
-      "Bash(unzip -o twilight.zip -d twilight_extracted)"
+      "Bash(unzip -o twilight.zip -d twilight_extracted)",
+      "Bash(ls /c/Python*/python.exe)",
+      "Read(//c/Users/shaha/AppData/Local/Programs/**)",
+      "Bash(python3 generate_repo.py)",
+      "Bash(py generate_repo.py)",
+      "Bash(py -3 generate_repo.py)",
+      "Bash(cmd.exe /c \"python generate_repo.py\")",
+      "Bash(/c/Users/shaha/AppData/Local/Microsoft/WindowsApps/python3.exe generate_repo.py)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash(find repo/ -name \"*1.1.6*\" -delete)"
     ]
   }
 }

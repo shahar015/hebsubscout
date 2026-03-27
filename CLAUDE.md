@@ -292,3 +292,9 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.1.4: Sub display "50% התאמה לכתוביות"
 - v1.1.5: Fixed player callbacks (script was exiting before onAVStarted), subtitle service now required dependency
 - v1.1.6: Removed waitForAbort loop that caused loading spinner during playback
+
+### 2026-03-27 — Session 4: Player callbacks fix + Ktuvit setup + QR fix
+- v1.1.7: Fixed player callbacks (endOfDirectory + wait loop keeps script alive without spinner)
+- v1.1.7: Fixed RD QR dialog showing full direct_verification_url — now shows friendly real-debrid.com/device
+- v1.1.7: Added Ktuvit credentials setup to first-run wizard (email + password with SHA-256 hashing)
+- v1.1.7: Subtitle OSD button ("CC עב") now appears during playback (was broken because onAVStarted never fired)
