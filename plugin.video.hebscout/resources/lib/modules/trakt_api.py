@@ -166,7 +166,8 @@ def revoke():
 
 def scrobble_start(media_type, imdb_id, progress_pct, season=None, episode=None):
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
-    log('Trakt scrobble/start: {}'.format(json.dumps(payload)))
+    has_token = bool(get_setting('trakt_token'))
+    log('Trakt scrobble/start: token={} payload={}'.format(has_token, json.dumps(payload)))
     result = _api_post('scrobble/start', payload)
     if not result:
         log('Trakt scrobble/start FAILED for {} {}'.format(media_type, imdb_id), 'ERROR')
@@ -187,7 +188,11 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
 
 
 def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
-    payload = {'progress': progress_pct}
+    payload = {
+        'progress': round(progress_pct, 1),
+        'app_version': '1.1.9',
+        'app_date': '2026-03-27',
+    }
     if media_type == 'movie':
         payload['movie'] = {'ids': {'imdb': imdb_id}}
     else:

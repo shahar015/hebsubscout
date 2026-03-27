@@ -155,6 +155,7 @@ _STRINGS = {
     'pick_heb_subs': {'he': 'בחירת כתוביות עבריות', 'en': 'Pick Hebrew Subtitles'},
     'downloading_subs': {'he': 'מוריד כתוביות...', 'en': 'Downloading subtitles...'},
     'downloading_pct': {'he': 'מוריד... {}%', 'en': 'Downloading... {}%'},
+    'audio_track': {'he': '\u05e2\u05e8\u05d5\u05e5 \u05e9\u05de\u05e2', 'en': 'Audio Track'},
     'sub_service_missing': {
         'he': 'שירות הכתוביות לא מותקן\nהתקן את service.subtitles.hebsubscout מהמאגר',
         'en': 'Subtitle service not installed\nInstall service.subtitles.hebsubscout from the repository',
@@ -237,7 +238,11 @@ def http_post(url, data, headers=None, timeout=12):
         resp = urlopen(req, timeout=timeout)
         return json.loads(resp.read().decode('utf-8'))
     except HTTPError as e:
-        log('HTTP POST {} from {}'.format(e.code, url), 'ERROR')
+        try:
+            err_body = e.read().decode('utf-8', errors='replace')[:500]
+        except Exception:
+            err_body = ''
+        log('HTTP POST {} from {} | {}'.format(e.code, url, err_body), 'ERROR')
         return None
     except Exception as e:
         log('HTTP POST failed: {} - {}'.format(url, e), 'ERROR')
