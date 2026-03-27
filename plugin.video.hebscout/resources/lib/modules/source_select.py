@@ -54,9 +54,12 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self.metadata = metadata or {}
         self.selected_source = None
 
-        # Filter state (empty = show all)
-        saved_q = get_setting('filter_quality') or ''
-        self._quality_filters = set(q for q in saved_q.split('|') if q) if saved_q else set()
+        # Filter state (default = all qualities selected)
+        saved_q = get_setting('filter_quality')
+        if saved_q:
+            self._quality_filters = set(q for q in saved_q.split('|') if q)
+        else:
+            self._quality_filters = {'4K', '1080p', '720p', '480p', 'SD'}
         self._sort_by = get_setting('filter_sort') or 'default'
         saved_p = get_setting('filter_providers') or ''
         self._provider_filters = set(p for p in saved_p.split('|') if p) if saved_p else set()
@@ -87,7 +90,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             pass
 
-        # Quality buttons
+        # Quality buttons (selected = bright color, unselected = dim)
         for btn_id, quality in QUALITY_BTNS.items():
             try:
                 ctrl = self.getControl(btn_id)
@@ -95,7 +98,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 if quality in self._quality_filters:
                     ctrl.setLabel('[COLOR {}]{}[/COLOR]'.format(color, quality))
                 else:
-                    ctrl.setLabel(quality)
+                    ctrl.setLabel('[COLOR FF333345]{}[/COLOR]'.format(quality))
             except Exception:
                 pass
 
@@ -112,7 +115,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 if self._sort_by == sort_val:
                     ctrl.setLabel('[COLOR FF9b59b6]{}[/COLOR]'.format(label))
                 else:
-                    ctrl.setLabel(label)
+                    ctrl.setLabel('[COLOR FF333345]{}[/COLOR]'.format(label))
             except Exception:
                 pass
 
@@ -124,7 +127,7 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
                 if prov in self._provider_filters:
                     ctrl.setLabel('[COLOR FF3498db]{}[/COLOR]'.format(display))
                 else:
-                    ctrl.setLabel(display)
+                    ctrl.setLabel('[COLOR FF333345]{}[/COLOR]'.format(display))
             except Exception:
                 pass
 
