@@ -127,14 +127,13 @@ def main_menu():
     add_dir('[COLOR lime]{}[/COLOR]'.format(t('movies')), 'movies_menu', poster='DefaultMovies.png')
     add_dir('[COLOR lime]{}[/COLOR]'.format(t('tv_shows')), 'shows_menu', poster='DefaultTVShows.png')
 
-    # Local continue watching (always available, uses SQLite bookmarks)
+    # Single continue watching & history (Trakt-first, local fallback)
     add_dir('[COLOR cyan]{}[/COLOR]'.format(t('continue_watching')), 'continue_watching')
     add_dir('[COLOR cyan]{}[/COLOR]'.format(t('watch_history')), 'watch_history')
 
     if trakt.is_authorized():
         add_dir('[COLOR cyan]{}[/COLOR]'.format(t('up_next')), 'trakt_next_up')
         add_dir('[COLOR cyan]{}[/COLOR]'.format(t('my_watchlist')), 'trakt_watchlist_menu')
-        add_dir('[COLOR cyan]{}[/COLOR]'.format(t('watch_progress')), 'trakt_progress')
 
     add_dir('[COLOR yellow]{}[/COLOR]'.format(t('search')), 'search')
     add_dir(t('popular_people'), 'people_popular')
@@ -503,11 +502,53 @@ def _resolve_next_episode(imdb_id, season, episode):
 
 
 # =========================================================================
-# LOCAL CONTINUE WATCHING / HISTORY (SQLite-backed, always available)
+# CONTINUE WATCHING / HISTORY (Trakt-first, local SQLite fallback)
 # =========================================================================
 
 def continue_watching():
-    """Show in-progress items from local SQLite bookmarks."""
+    """Show in-progress items. Uses Trakt when connected, local SQLite otherwise."""
+    if trakt.is_authorized():
+        _continue_watching_trakt()
+    else:
+        _continue_watching_local()
+
+
+def _continue_watching_trakt():
+    """Pull resume points from Trakt sync/playback."""
+    items = trakt.playback_progress()
+    if not items:
+        notification(t('no_sources'))
+        end_dir()
+        return
+    for item in items:
+        media_type = item.get('type', '')
+        progress_pct = item.get('progress', 0)
+        if media_type == 'movie':
+            movie = item.get('movie', {})
+            ids = movie.get('ids', {})
+            title = movie.get('title', '')
+            label = '{} [COLOR cyan]({:.0f}%)[/COLOR]'.format(title, progress_pct)
+            li = xbmcgui.ListItem(label=label)
+            params = {'action': 'movie_sources', 'imdb_id': ids.get('imdb', ''),
+                      'tmdb_id': str(ids.get('tmdb', '')), 'title': title, 'media_type': 'movie'}
+            xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, True)
+        elif media_type == 'episode':
+            show = item.get('show', {})
+            ep = item.get('episode', {})
+            ids = show.get('ids', {})
+            title = show.get('title', '')
+            label = '{} S{:02d}E{:02d} [COLOR cyan]({:.0f}%)[/COLOR]'.format(
+                title, ep.get('season', 0), ep.get('number', 0), progress_pct)
+            li = xbmcgui.ListItem(label=label)
+            params = {'action': 'episode_sources', 'imdb_id': ids.get('imdb', ''),
+                      'tmdb_id': str(ids.get('tmdb', '')), 'title': title, 'media_type': 'tv',
+                      'season': ep.get('season', 0), 'episode': ep.get('number', 0)}
+            xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, True)
+    end_dir(content='videos')
+
+
+def _continue_watching_local():
+    """Fallback: pull resume points from local SQLite bookmarks."""
     items = get_continue_watching()
     if not items:
         notification(t('no_sources'))
@@ -518,7 +559,6 @@ def continue_watching():
         progress = int(item.get('progress', 0))
         media_type = item.get('media_type', 'movie')
         action = 'episode_sources' if media_type != 'movie' else 'movie_sources'
-        # Display label has progress %, but URL title stays clean (no color markup)
         display_label = '{} [COLOR cyan]({}%)[/COLOR]'.format(title, progress)
         li = xbmcgui.ListItem(label=display_label)
         art = {}
@@ -528,12 +568,9 @@ def continue_watching():
             art['fanart'] = item['fanart']
         li.setArt(art)
         params = {
-            'action': action,
-            'imdb_id': item.get('imdb_id', ''),
-            'tmdb_id': item.get('tmdb_id', ''),
-            'title': title,  # Clean title, no markup
-            'media_type': media_type,
-            'poster': item.get('poster', ''),
+            'action': action, 'imdb_id': item.get('imdb_id', ''),
+            'tmdb_id': item.get('tmdb_id', ''), 'title': title,
+            'media_type': media_type, 'poster': item.get('poster', ''),
             'fanart': item.get('fanart', ''),
         }
         if item.get('season'):
@@ -545,7 +582,48 @@ def continue_watching():
 
 
 def watch_history():
-    """Show watched items from local SQLite history."""
+    """Show watched items. Uses Trakt when connected, local SQLite otherwise."""
+    if trakt.is_authorized():
+        _watch_history_trakt()
+    else:
+        _watch_history_local()
+
+
+def _watch_history_trakt():
+    """Pull watched history from Trakt."""
+    movies = trakt.watched_movies() or []
+    shows = trakt.watched_shows() or []
+    if not movies and not shows:
+        notification(t('no_sources'))
+        end_dir()
+        return
+    for item in movies[:25]:
+        movie = item.get('movie', {})
+        ids = movie.get('ids', {})
+        meta = {
+            'title': movie.get('title', ''),
+            'year': str(movie.get('year', '')),
+            'imdb_id': ids.get('imdb', ''),
+            'tmdb_id': str(ids.get('tmdb', '')),
+            'media_type': 'movie',
+        }
+        add_item(meta, action='movie_sources', is_folder=True)
+    for item in shows[:25]:
+        show = item.get('show', {})
+        ids = show.get('ids', {})
+        meta = {
+            'title': show.get('title', ''),
+            'year': str(show.get('year', '')),
+            'imdb_id': ids.get('imdb', ''),
+            'tmdb_id': str(ids.get('tmdb', '')),
+            'media_type': 'tv',
+        }
+        add_item(meta, action='show_seasons', is_folder=True)
+    end_dir(content='videos')
+
+
+def _watch_history_local():
+    """Fallback: pull watched history from local SQLite."""
     items = get_watch_history()
     if not items:
         notification(t('no_sources'))
@@ -795,8 +873,7 @@ def router(params):
         trakt_watchlist_movies()
     elif action == 'trakt_watchlist_shows':
         trakt_watchlist_shows()
-    elif action == 'trakt_progress':
-        trakt_progress()
+    # trakt_progress removed — merged into continue_watching
     elif action == 'trakt_watchlist_add':
         trakt.add_to_watchlist(media_type, imdb_id)
         notification(t('added_watchlist'))

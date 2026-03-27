@@ -181,7 +181,12 @@ def scrobble_pause(media_type, imdb_id, progress_pct, season=None, episode=None)
 
 def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
+    log('Trakt scrobble/stop: {}'.format(json.dumps(payload)))
     result = _api_post('scrobble/stop', payload)
+    if result:
+        log('Trakt scrobble/stop OK')
+    else:
+        log('Trakt scrobble/stop FAILED', 'ERROR')
     if progress_pct >= 80:
         local_mark_watched(imdb_id, season or 0, episode or 0)
     return result
@@ -190,7 +195,7 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
 def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
     payload = {
         'progress': round(progress_pct, 1),
-        'app_version': '1.2.0',
+        'app_version': '1.2.1',
         'app_date': '2026-03-27',
     }
     if media_type == 'movie':

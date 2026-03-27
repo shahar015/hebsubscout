@@ -421,6 +421,8 @@ class HebScoutPlayer(xbmc.Player):
             self._progress_tracker.stop()
             self._progress_tracker = None
         p = 100.0 if completed else self._get_progress()
+        log('_handle_end: completed={} progress={:.1f}% last_known={:.1f}% scrobbled={}'.format(
+            completed, p, self._last_known_progress, self._scrobbled_start))
         # _get_progress may return _last_known_progress if player is already destroyed
         # But if even that is 0, don't overwrite a good bookmark
         if p >= 90:
