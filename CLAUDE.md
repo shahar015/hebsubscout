@@ -298,3 +298,10 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.1.7: Fixed RD QR dialog showing full direct_verification_url — now shows friendly real-debrid.com/device
 - v1.1.7: Added Ktuvit credentials setup to first-run wizard (email + password with SHA-256 hashing)
 - v1.1.7: Subtitle OSD button ("CC עב") now appears during playback (was broken because onAVStarted never fired)
+- v1.1.8: Added local "המשך צפייה" (continue watching) + "היסטוריה" (history) menus from SQLite bookmarks
+- v1.1.8: Changed progress save interval from 30s to 5s for more reliable resume
+- v1.1.8: Bookmark table now stores title/poster/fanart/media_type metadata for display
+- v1.1.8: Added Trakt token refresh before API calls (refresh_token() in _api_get/_api_post)
+- v1.1.8: Added debug logging to Trakt scrobble payload to diagnose 422 errors
+- v1.1.8: Ensured episode field always included in scrobble payload (season + number)
+- v1.1.8: Removed broken SubtitleOSDOverlay (WindowDialog can't capture input over video player)

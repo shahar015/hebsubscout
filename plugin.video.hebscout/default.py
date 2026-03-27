@@ -21,7 +21,7 @@ sys.path.insert(0, xbmcaddon.Addon().getAddonInfo('path') + '/resources/lib')
 from resources.lib.modules import tmdb, realdebrid as rd, trakt_api as trakt
 from resources.lib.modules.sources import get_sources, resolve_source
 from resources.lib.modules.player import HebScoutPlayer
-from resources.lib.modules.cache import is_watched, cache_clear
+from resources.lib.modules.cache import is_watched, cache_clear, get_continue_watching, get_watch_history
 from resources.lib.modules.utils import (
     log, notification, ADDON, ADDON_NAME, ADDON_FANART,
     progress_dialog, input_dialog, select_dialog, yesno_dialog,
@@ -126,6 +126,10 @@ def end_dir(content='videos', sort=None):
 def main_menu():
     add_dir('[COLOR lime]{}[/COLOR]'.format(t('movies')), 'movies_menu', poster='DefaultMovies.png')
     add_dir('[COLOR lime]{}[/COLOR]'.format(t('tv_shows')), 'shows_menu', poster='DefaultTVShows.png')
+
+    # Local continue watching (always available, uses SQLite bookmarks)
+    add_dir('[COLOR cyan]{}[/COLOR]'.format(t('continue_watching')), 'continue_watching')
+    add_dir('[COLOR cyan]{}[/COLOR]'.format(t('watch_history')), 'watch_history')
 
     if trakt.is_authorized():
         add_dir('[COLOR cyan]{}[/COLOR]'.format(t('up_next')), 'trakt_next_up')
@@ -499,6 +503,61 @@ def _resolve_next_episode(imdb_id, season, episode):
 
 
 # =========================================================================
+# LOCAL CONTINUE WATCHING / HISTORY (SQLite-backed, always available)
+# =========================================================================
+
+def continue_watching():
+    """Show in-progress items from local SQLite bookmarks."""
+    items = get_continue_watching()
+    if not items:
+        notification(t('no_sources'))
+        end_dir()
+        return
+    for item in items:
+        title = item.get('title', '')
+        progress = int(item.get('progress', 0))
+        media_type = item.get('media_type', 'movie')
+        action = 'episode_sources' if media_type != 'movie' else 'movie_sources'
+        meta = {
+            'title': '{} [COLOR cyan]({}%)[/COLOR]'.format(title, progress),
+            'imdb_id': item.get('imdb_id', ''),
+            'tmdb_id': item.get('tmdb_id', ''),
+            'poster': item.get('poster', ''),
+            'fanart': item.get('fanart', ''),
+            'media_type': media_type,
+            'season_number': item.get('season', 0),
+            'episode_number': item.get('episode', 0),
+        }
+        add_item(meta, action=action, is_folder=True)
+    end_dir()
+
+
+def watch_history():
+    """Show watched items from local SQLite history."""
+    items = get_watch_history()
+    if not items:
+        notification(t('no_sources'))
+        end_dir()
+        return
+    for item in items:
+        title = item.get('title', '')
+        media_type = item.get('media_type', 'movie')
+        action = 'episode_sources' if media_type != 'movie' else 'movie_sources'
+        meta = {
+            'title': title,
+            'imdb_id': item.get('imdb_id', ''),
+            'tmdb_id': item.get('tmdb_id', ''),
+            'poster': item.get('poster', ''),
+            'fanart': item.get('fanart', ''),
+            'media_type': media_type,
+            'season_number': item.get('season', 0),
+            'episode_number': item.get('episode', 0),
+        }
+        add_item(meta, action=action, is_folder=True)
+    end_dir()
+
+
+# =========================================================================
 # TRAKT SECTIONS
 # =========================================================================
 
@@ -709,6 +768,12 @@ def router(params):
             add_item(s, action='show_seasons', is_folder=True)
         end_dir(content='videos')
     
+    # Local continue watching / history
+    elif action == 'continue_watching':
+        continue_watching()
+    elif action == 'watch_history':
+        watch_history()
+
     # Trakt
     elif action == 'trakt_next_up':
         trakt_next_up()

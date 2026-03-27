@@ -59,7 +59,11 @@
       "Bash(/c/Users/shaha/AppData/Local/Microsoft/WindowsApps/python3.exe generate_repo.py)",
       "Read(//c/Program Files/**)",
       "Read(//c/Program Files \\(x86\\)/**)",
-      "Bash(find repo/ -name \"*1.1.6*\" -delete)"
+      "Bash(find repo/ -name \"*1.1.6*\" -delete)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:trakt.docs.apiary.io)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }

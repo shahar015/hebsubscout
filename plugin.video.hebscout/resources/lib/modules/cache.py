@@ -46,9 +46,21 @@ def _get_conn():
                 episode INTEGER,
                 progress REAL,
                 paused_at TEXT,
-                updated REAL
+                updated REAL,
+                title TEXT DEFAULT '',
+                poster TEXT DEFAULT '',
+                fanart TEXT DEFAULT '',
+                media_type TEXT DEFAULT 'movie',
+                tmdb_id TEXT DEFAULT ''
             )
         """)
+        # Add new columns if upgrading from older schema
+        for col, coltype in [('title', 'TEXT'), ('poster', 'TEXT'), ('fanart', 'TEXT'),
+                              ('media_type', 'TEXT'), ('tmdb_id', 'TEXT')]:
+            try:
+                conn.execute("ALTER TABLE trakt_bookmarks ADD COLUMN {} {} DEFAULT ''".format(col, coltype))
+            except Exception:
+                pass  # Column already exists
         conn.execute("""
             CREATE TABLE IF NOT EXISTS watched (
                 imdb_id TEXT,
@@ -107,12 +119,27 @@ def cache_clear():
         pass
 
 
-def set_bookmark(imdb_id, season, episode, progress, paused_at=''):
+def set_bookmark(imdb_id, season, episode, progress, paused_at='',
+                 title='', poster='', fanart='', media_type='', tmdb_id=''):
     try:
         conn = _get_conn()
+        # Use UPSERT to preserve metadata from initial save when periodic saves omit it
+        existing = conn.execute(
+            "SELECT title, poster, fanart, media_type, tmdb_id FROM trakt_bookmarks WHERE imdb_id=?",
+            (imdb_id,)
+        ).fetchone()
+        if existing:
+            title = title or existing[0] or ''
+            poster = poster or existing[1] or ''
+            fanart = fanart or existing[2] or ''
+            media_type = media_type or existing[3] or 'movie'
+            tmdb_id = tmdb_id or existing[4] or ''
         conn.execute(
-            "INSERT OR REPLACE INTO trakt_bookmarks (imdb_id, season, episode, progress, paused_at, updated) VALUES (?,?,?,?,?,?)",
-            (imdb_id, season or 0, episode or 0, progress, paused_at, time.time())
+            "INSERT OR REPLACE INTO trakt_bookmarks "
+            "(imdb_id, season, episode, progress, paused_at, updated, title, poster, fanart, media_type, tmdb_id) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (imdb_id, season or 0, episode or 0, progress, paused_at, time.time(),
+             title, poster, fanart, media_type or 'movie', tmdb_id)
         )
         conn.commit()
         conn.close()
@@ -124,16 +151,54 @@ def get_bookmark(imdb_id):
     try:
         conn = _get_conn()
         row = conn.execute(
-            "SELECT imdb_id, season, episode, progress, paused_at FROM trakt_bookmarks WHERE imdb_id=?",
+            "SELECT imdb_id, season, episode, progress, paused_at, title, poster, fanart, media_type, tmdb_id "
+            "FROM trakt_bookmarks WHERE imdb_id=?",
             (imdb_id,)
         ).fetchone()
         conn.close()
         if row:
             return {'imdb_id': row[0], 'season': row[1], 'episode': row[2],
-                    'progress': row[3], 'paused_at': row[4]}
+                    'progress': row[3], 'paused_at': row[4], 'title': row[5] or '',
+                    'poster': row[6] or '', 'fanart': row[7] or '',
+                    'media_type': row[8] or 'movie', 'tmdb_id': row[9] or ''}
     except Exception:
         pass
     return None
+
+
+def get_continue_watching():
+    """Get all in-progress items (5-90% watched), most recent first."""
+    try:
+        conn = _get_conn()
+        rows = conn.execute(
+            "SELECT imdb_id, season, episode, progress, title, poster, fanart, media_type, tmdb_id "
+            "FROM trakt_bookmarks WHERE progress > 5 AND progress < 90 "
+            "ORDER BY updated DESC LIMIT 50"
+        ).fetchall()
+        conn.close()
+        return [{'imdb_id': r[0], 'season': r[1], 'episode': r[2], 'progress': r[3],
+                 'title': r[4] or '', 'poster': r[5] or '', 'fanart': r[6] or '',
+                 'media_type': r[7] or 'movie', 'tmdb_id': r[8] or ''} for r in rows]
+    except Exception:
+        return []
+
+
+def get_watch_history():
+    """Get recently watched items (from watched table), most recent first."""
+    try:
+        conn = _get_conn()
+        rows = conn.execute(
+            "SELECT w.imdb_id, w.season, w.episode, w.watched_at, "
+            "b.title, b.poster, b.fanart, b.media_type, b.tmdb_id "
+            "FROM watched w LEFT JOIN trakt_bookmarks b ON w.imdb_id = b.imdb_id "
+            "ORDER BY w.watched_at DESC LIMIT 50"
+        ).fetchall()
+        conn.close()
+        return [{'imdb_id': r[0], 'season': r[1], 'episode': r[2], 'watched_at': r[3],
+                 'title': r[4] or '', 'poster': r[5] or '', 'fanart': r[6] or '',
+                 'media_type': r[7] or 'movie', 'tmdb_id': r[8] or ''} for r in rows]
+    except Exception:
+        return []
 
 
 def mark_watched(imdb_id, season=0, episode=0):

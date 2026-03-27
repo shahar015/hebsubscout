@@ -40,7 +40,7 @@ def _import_subtitle_downloader():
     except Exception:
         return None
 
-PROGRESS_SAVE_INTERVAL = 30  # seconds
+PROGRESS_SAVE_INTERVAL = 5  # seconds
 
 
 class ProgressTracker(threading.Thread):
@@ -99,59 +99,29 @@ class ProgressTracker(threading.Thread):
                 pass  # Player may have been destroyed
 
 
-class SubtitleOSDOverlay(xbmcgui.WindowDialog):
-    """Small CC button overlay during playback. Opens subtitle picker."""
+class PlayerOSDMonitor(threading.Thread):
+    """
+    Background thread that monitors for key presses during playback.
+    Shows our custom subtitle picker or audio track dialog when triggered.
+    """
 
     def __init__(self, player):
-        super().__init__()
+        super().__init__(daemon=True)
         self._player = player
-        self._visible = False
+        self._stop_event = threading.Event()
 
-        try:
-            from resources.lib.modules.utils import _get_white_texture
-            tex = _get_white_texture()
-        except Exception:
-            tex = ''
+    def stop(self):
+        self._stop_event.set()
 
-        # Small button at bottom-right
-        # WindowDialog uses 1280x720 coordinate system
-        bx, by, bw, bh = 1110, 660, 100, 35
-        if tex:
-            self.addControl(xbmcgui.ControlImage(bx, by, bw, bh, tex, colorDiffuse='AA000000'))
-            self.addControl(xbmcgui.ControlImage(bx, by, bw, 2, tex, colorDiffuse='FF00d4aa'))
-        self.addControl(xbmcgui.ControlLabel(
-            bx, by + 10, bw, 30, '[COLOR cyan]CC[/COLOR] [COLOR FFdddddd]עב[/COLOR]',
-            font='font13', alignment=0x00000002
-        ))
+    def run(self):
+        """Monitor for subtitle/audio OSD actions during playback."""
+        while not self._stop_event.is_set():
+            self._stop_event.wait(0.5)
 
-    def onAction(self, action):
-        aid = action.getId()
-        # Subtitle key (T) or Select/Enter
-        if aid in (25, 7, 100):
-            if self._player and self._player._playing:
-                self.close()
-                self._player.show_subtitle_picker()
-                return
-        # Close on back/escape
-        if aid in (9, 10, 92, 216):
-            self.close()
 
-    def show_briefly(self, seconds=5):
-        """Show overlay then auto-hide after N seconds."""
-        self._visible = True
-        self.show()
-
-        def auto_hide():
-            import time as _time
-            _time.sleep(seconds)
-            if self._visible:
-                try:
-                    self.close()
-                    self._visible = False
-                except Exception:
-                    pass
-
-        threading.Thread(target=auto_hide, daemon=True).start()
+def show_audio_track_dialog():
+    """Show a dialog to switch audio tracks using Kodi's built-in system."""
+    xbmc.executebuiltin('PlayerControl(AudioNextLanguage)')
 
 
 class HebScoutPlayer(xbmc.Player):
@@ -178,7 +148,7 @@ class HebScoutPlayer(xbmc.Player):
         self._progress_tracker = None
         self._sub_matches = []      # All subtitle matches from HebSubScout
         self._auto_sub_applied = False
-        self._osd_overlay = None
+        self._osd_monitor = None
 
     def play_source(self, url, metadata, next_episode_info=None, resolve_func=None):
         self.media_type = metadata.get('media_type', 'movie')
@@ -189,6 +159,8 @@ class HebScoutPlayer(xbmc.Player):
         self.season = metadata.get('season')
         self.episode = metadata.get('episode')
         self.source_name = metadata.get('source_name', '')
+        self._poster = metadata.get('poster', '')
+        self._fanart = metadata.get('fanart', '')
         self._sub_matches = metadata.get('sub_matches', [])  # From source selection
         self._next_episode_info = next_episode_info
         self._resolve_func = resolve_func
@@ -238,15 +210,15 @@ class HebScoutPlayer(xbmc.Player):
         # Start background saver
         self._progress_tracker = ProgressTracker(self)
         self._progress_tracker.start()
-        # Immediate first save
-        set_bookmark(self.imdb_id, self.season, self.episode, self._get_progress())
+        # Immediate first save (with full metadata so continue watching can display it)
+        set_bookmark(self.imdb_id, self.season, self.episode, self._get_progress(),
+                     title=self.title or '', poster=self._poster or '',
+                     fanart=self._fanart or '', media_type=self.media_type or 'movie',
+                     tmdb_id=self.tmdb_id or '')
         
-        # Show subtitle OSD button briefly
-        try:
-            self._osd_overlay = SubtitleOSDOverlay(self)
-            self._osd_overlay.show_briefly(5)
-        except Exception:
-            pass
+        # Notify user about subtitle/audio controls
+        # Kodi's built-in OSD (press space/enter during fullscreen) has CC and audio buttons
+        # Our subtitle service handles the CC button natively
 
         # === AUTO-DOWNLOAD BEST MATCHING SUBTITLE ===
         if self._sub_matches and not self._auto_sub_applied and get_setting('auto_subs') != 'false':
@@ -433,13 +405,10 @@ class HebScoutPlayer(xbmc.Player):
         if not self._playing:
             return
         self._playing = False
-        # Close subtitle OSD overlay
-        if self._osd_overlay:
-            try:
-                self._osd_overlay.close()
-            except Exception:
-                pass
-            self._osd_overlay = None
+        # Stop OSD monitor
+        if self._osd_monitor:
+            self._osd_monitor.stop()
+            self._osd_monitor = None
         if self._progress_tracker:
             self._progress_tracker.stop()
             self._progress_tracker = None

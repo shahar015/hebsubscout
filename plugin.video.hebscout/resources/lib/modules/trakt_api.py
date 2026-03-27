@@ -37,6 +37,8 @@ def _headers(auth=True):
 
 
 def _api_get(path, auth=True, cache_hours=0):
+    if auth:
+        refresh_token()
     key = make_key('trakt', path, str(auth))
     if cache_hours > 0:
         cached = cache_get(key)
@@ -50,6 +52,8 @@ def _api_get(path, auth=True, cache_hours=0):
 
 
 def _api_post(path, data, auth=True):
+    if auth:
+        refresh_token()
     url = '{}/{}'.format(BASE, path)
     return http_post(url, data, headers=_headers(auth))
 
@@ -162,7 +166,11 @@ def revoke():
 
 def scrobble_start(media_type, imdb_id, progress_pct, season=None, episode=None):
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
-    return _api_post('scrobble/start', payload)
+    log('Trakt scrobble/start: {}'.format(json.dumps(payload)))
+    result = _api_post('scrobble/start', payload)
+    if not result:
+        log('Trakt scrobble/start FAILED for {} {}'.format(media_type, imdb_id), 'ERROR')
+    return result
 
 
 def scrobble_pause(media_type, imdb_id, progress_pct, season=None, episode=None):
@@ -184,8 +192,10 @@ def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
         payload['movie'] = {'ids': {'imdb': imdb_id}}
     else:
         payload['show'] = {'ids': {'imdb': imdb_id}}
-        if season is not None and episode is not None:
-            payload['episode'] = {'season': season, 'number': episode}
+        payload['episode'] = {
+            'season': int(season) if season is not None else 1,
+            'number': int(episode) if episode is not None else 1
+        }
     return payload
 
 
