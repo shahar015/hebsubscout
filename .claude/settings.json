@@ -14,7 +14,8 @@
       "Bash(cp /tmp/heebo/Heebo-VariableFont_wght.ttf skin.hebscout/fonts/Heebo-Regular.ttf)",
       "Bash(ls -la skin.hebscout/fonts/Heebo*)",
       "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/heebo/Heebo%5Bwght%5D.ttf\" -o skin.hebscout/fonts/Heebo-Regular.ttf)",
-      "Bash(ls repo/repository.hebsubscout/*.zip)"
+      "Bash(ls repo/repository.hebsubscout/*.zip)",
+      "Bash(python -c \"import xml.etree.ElementTree as ET; ET.parse\\(''skin.hebscout/xml/VideoOSD.xml''\\); print\\(''XML valid''\\)\")"
     ]
   }
 }
