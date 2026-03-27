@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.hebscout"
        name="HebScout"
-       version="1.5.2"
+       version="1.5.3"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.hebsubscout" version="1.5.2"/>
-        <import addon="service.subtitles.hebsubscout" version="1.5.2"/>
+        <import addon="script.module.hebsubscout" version="1.5.3"/>
+        <import addon="service.subtitles.hebsubscout" version="1.5.3"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>

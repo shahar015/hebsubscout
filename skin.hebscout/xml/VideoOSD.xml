@@ -146,7 +146,7 @@
 					<ondown condition="Control.HasFocus(255)">13103</ondown>
 					<onleft>608</onleft>
 					<onright>600</onright>
-t				<!-- HebScout: Skip Intro/Recap -->
+					<!-- HebScout: Skip Intro/Recap -->
 					<control type="radiobutton" id="700010">
 						<include content="OSDButton">
 							<param name="texture" value="osd/fullscreen/buttons/next.png"/>

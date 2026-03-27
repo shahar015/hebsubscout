@@ -13,7 +13,8 @@
       "Bash(cp /tmp/heebo/static/Heebo-Regular.ttf skin.hebscout/fonts/)",
       "Bash(cp /tmp/heebo/Heebo-VariableFont_wght.ttf skin.hebscout/fonts/Heebo-Regular.ttf)",
       "Bash(ls -la skin.hebscout/fonts/Heebo*)",
-      "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/heebo/Heebo%5Bwght%5D.ttf\" -o skin.hebscout/fonts/Heebo-Regular.ttf)"
+      "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/heebo/Heebo%5Bwght%5D.ttf\" -o skin.hebscout/fonts/Heebo-Regular.ttf)",
+      "Bash(ls repo/repository.hebsubscout/*.zip)"
     ]
   }
 }
