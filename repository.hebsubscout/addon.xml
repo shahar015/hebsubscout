@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.hebsubscout"
        name="HebSubScout Repository"
-       version="1.2.3"
+       version="1.2.4"
        provider-name="HebSubScout Community">
     <extension point="xbmc.addon.repository" name="HebSubScout Repository">
         <dir>
@@ -35,6 +35,10 @@ All dependencies resolve automatically.
 התקן את המאגר הזה, ואז התקן את HebScout מתוך "התקנה ממאגר".
 כל התלויות יותקנו אוטומטית.
         </description>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
         <platform>all</platform>
     </extension>
 </addon>
