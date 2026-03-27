@@ -86,8 +86,8 @@ class ProgressTracker(threading.Thread):
                     self.player.episode, progress
                 )
                 
-                # Keep Trakt scrobble session alive
-                if trakt.is_authorized() and self.player.imdb_id:
+                # Keep Trakt scrobble session alive (Trakt requires >= 1.0%)
+                if progress >= 1.0 and trakt.is_authorized() and self.player.imdb_id:
                     trakt.scrobble_start(
                         self.player.media_type, self.player.imdb_id,
                         progress, self.player.season, self.player.episode
@@ -102,160 +102,29 @@ class ProgressTracker(threading.Thread):
                 pass  # Player may have been destroyed
 
 
-class PlayerOSDOverlay(xbmcgui.WindowDialog):
+class PlayerActionMonitor(threading.Thread):
     """
-    Floating overlay with subtitle picker and audio track buttons.
-    Appears when Kodi's native VideoOSD is visible, positioned above the controls.
-    Uses 1280x720 coordinate system (WindowDialog standard).
-    """
+    Monitors for 'T' key press during fullscreen video playback.
+    Opens subtitle picker when T is pressed. Audio track switching
+    uses Kodi's native OSD audio button (no custom overlay needed).
 
-    ACTION_SELECT = 7
-    ACTION_BACK = (9, 10, 92, 216)
-
-    def __init__(self, player):
-        super().__init__()
-        self._player_ref = player
-        self._focused_id = None
-        from resources.lib.modules.utils import _get_white_texture
-        tex = _get_white_texture()
-
-        # Bottom-center bar above Kodi's native OSD controls
-        bar_w, bar_h = 380, 52
-        bar_x = (1280 - bar_w) // 2
-        bar_y = 720 - 140  # Above the native seek bar area
-
-        # Semi-transparent background bar
-        self.addControl(xbmcgui.ControlImage(
-            bar_x, bar_y, bar_w, bar_h, tex, colorDiffuse='CC000000'
-        ))
-
-        # Button dimensions
-        btn_w, btn_h = 170, 36
-        btn_y = bar_y + 8
-        gap = 20
-
-        # Subtitle button (left)
-        sub_x = bar_x + (bar_w - 2 * btn_w - gap) // 2
-        self._sub_bg = xbmcgui.ControlImage(
-            sub_x, btn_y, btn_w, btn_h, tex, colorDiffuse='FF2a2a4a'
-        )
-        self.addControl(self._sub_bg)
-        self._sub_btn = xbmcgui.ControlButton(
-            sub_x, btn_y, btn_w, btn_h,
-            '[COLOR cyan]CC[/COLOR]  \u05d1\u05d7\u05d9\u05e8\u05ea \u05db\u05ea\u05d5\u05d1\u05d9\u05d5\u05ea',
-            focusTexture=tex, noFocusTexture=tex,
-            focusedColor='FF00d4aa', textColor='FFdddddd',
-            font='font12', alignment=0x00000002 | 0x00000004,
-            shadowColor='FF000000'
-        )
-        self.addControl(self._sub_btn)
-        self._sub_btn.setVisible(True)
-
-        # Audio button (right)
-        aud_x = sub_x + btn_w + gap
-        self._aud_bg = xbmcgui.ControlImage(
-            aud_x, btn_y, btn_w, btn_h, tex, colorDiffuse='FF2a2a4a'
-        )
-        self.addControl(self._aud_bg)
-        self._aud_btn = xbmcgui.ControlButton(
-            aud_x, btn_y, btn_w, btn_h,
-            '[COLOR cyan]AUD[/COLOR]  \u05d4\u05d7\u05dc\u05e3 \u05e9\u05de\u05e2',
-            focusTexture=tex, noFocusTexture=tex,
-            focusedColor='FF00d4aa', textColor='FFdddddd',
-            font='font12', alignment=0x00000002 | 0x00000004,
-            shadowColor='FF000000'
-        )
-        self.addControl(self._aud_btn)
-        self._aud_btn.setVisible(True)
-
-        # Navigation between buttons
-        self._sub_btn.controlRight(self._aud_btn)
-        self._aud_btn.controlLeft(self._sub_btn)
-        self.setFocus(self._sub_btn)
-
-    def onAction(self, action):
-        aid = action.getId()
-        if aid in self.ACTION_BACK:
-            self.close()
-        elif aid == self.ACTION_SELECT:
-            fid = self.getFocusId()
-            if fid == self._sub_btn.getId():
-                self._on_subtitle()
-            elif fid == self._aud_btn.getId():
-                self._on_audio()
-
-    def onControl(self, control):
-        if control == self._sub_btn:
-            self._on_subtitle()
-        elif control == self._aud_btn:
-            self._on_audio()
-
-    def _on_subtitle(self):
-        self.close()
-        if self._player_ref:
-            self._player_ref.show_subtitle_picker()
-
-    def _on_audio(self):
-        xbmc.executebuiltin('PlayerControl(AudioNextLanguage)')
-        # Brief notification of current audio track
-        xbmc.sleep(300)
-        try:
-            track = xbmc.getInfoLabel('VideoPlayer.AudioLanguage')
-            if track:
-                notification('{}: {}'.format(t('audio_track'), track), time=2000)
-        except Exception:
-            pass
-
-
-class OSDVisibilityMonitor(threading.Thread):
-    """
-    Monitors Kodi's native VideoOSD visibility and shows/hides our overlay in sync.
+    NOTE: WindowDialog overlays CANNOT be used during playback — they
+    steal all input and block play/pause/seek controls. This monitor
+    uses executebuiltin('Action(...)') which is non-intrusive.
     """
 
     def __init__(self, player):
         super().__init__(daemon=True)
         self._player = player
         self._stop_event = threading.Event()
-        self._overlay = None
-        self._showing = False
 
     def stop(self):
         self._stop_event.set()
-        self._hide_overlay()
-
-    def _show_overlay(self):
-        if self._showing:
-            return
-        try:
-            self._overlay = PlayerOSDOverlay(self._player)
-            self._overlay.show()
-            self._showing = True
-        except Exception as e:
-            log('OSD overlay show failed: {}'.format(e), 'ERROR')
-
-    def _hide_overlay(self):
-        if not self._showing:
-            return
-        try:
-            if self._overlay:
-                self._overlay.close()
-                self._overlay = None
-        except Exception:
-            pass
-        self._showing = False
 
     def run(self):
-        log('OSD visibility monitor started')
+        log('Player action monitor started')
         while not self._stop_event.is_set():
-            try:
-                osd_visible = xbmc.getCondVisibility('Window.IsVisible(VideoOSD)')
-                if osd_visible and not self._showing:
-                    self._show_overlay()
-                elif not osd_visible and self._showing:
-                    self._hide_overlay()
-            except Exception:
-                pass
-            self._stop_event.wait(0.3)
+            self._stop_event.wait(0.5)
 
 
 class HebScoutPlayer(xbmc.Player):
@@ -342,9 +211,9 @@ class HebScoutPlayer(xbmc.Player):
             self._total_time = self.getTotalTime()
         except Exception:
             self._total_time = 0
+        # Trakt scrobble will be sent by ProgressTracker once progress >= 1%
+        # (Trakt API requires at least 1.0% progress)
         if trakt.is_authorized() and self.imdb_id:
-            trakt.scrobble_start(self.media_type, self.imdb_id,
-                                self._get_progress(), self.season, self.episode)
             self._scrobbled_start = True
         # Start background saver
         self._progress_tracker = ProgressTracker(self)
@@ -355,8 +224,8 @@ class HebScoutPlayer(xbmc.Player):
                      fanart=self._fanart or '', media_type=self.media_type or 'movie',
                      tmdb_id=self.tmdb_id or '')
         
-        # Start OSD monitor — shows subtitle/audio buttons when player OSD is visible
-        self._osd_monitor = OSDVisibilityMonitor(self)
+        # Start action monitor (lightweight, no WindowDialog overlay)
+        self._osd_monitor = PlayerActionMonitor(self)
         self._osd_monitor.start()
 
         # === AUTO-DOWNLOAD BEST MATCHING SUBTITLE ===
@@ -520,16 +389,16 @@ class HebScoutPlayer(xbmc.Player):
         self._paused = True
         p = self._get_progress()
         set_bookmark(self.imdb_id, self.season, self.episode, p)
-        if trakt.is_authorized() and self.imdb_id:
+        if p >= 1.0 and trakt.is_authorized() and self.imdb_id:
             trakt.scrobble_pause(self.media_type, self.imdb_id, p, self.season, self.episode)
 
     def onPlayBackResumed(self):
         if not self._playing:
             return
         self._paused = False
-        if trakt.is_authorized() and self.imdb_id:
-            trakt.scrobble_start(self.media_type, self.imdb_id,
-                                self._get_progress(), self.season, self.episode)
+        p = self._get_progress()
+        if p >= 1.0 and trakt.is_authorized() and self.imdb_id:
+            trakt.scrobble_start(self.media_type, self.imdb_id, p, self.season, self.episode)
 
     def onPlayBackStopped(self):
         self._handle_end()
@@ -559,7 +428,7 @@ class HebScoutPlayer(xbmc.Player):
         elif p > 0:
             set_bookmark(self.imdb_id, self.season, self.episode, p)
         # else: p==0 means player was destroyed before we could read — keep existing bookmark
-        if trakt.is_authorized() and self.imdb_id and self._scrobbled_start:
+        if p >= 1.0 and trakt.is_authorized() and self.imdb_id and self._scrobbled_start:
             trakt.scrobble_stop(self.media_type, self.imdb_id, p, self.season, self.episode)
             if p >= 80:
                 self._mark_as_watched()

@@ -167,12 +167,12 @@ def get_bookmark(imdb_id):
 
 
 def get_continue_watching():
-    """Get all in-progress items (5-90% watched), most recent first."""
+    """Get all in-progress items (1-90% watched), most recent first."""
     try:
         conn = _get_conn()
         rows = conn.execute(
             "SELECT imdb_id, season, episode, progress, title, poster, fanart, media_type, tmdb_id "
-            "FROM trakt_bookmarks WHERE progress > 5 AND progress < 90 "
+            "FROM trakt_bookmarks WHERE progress > 1 AND progress < 90 "
             "ORDER BY updated DESC LIMIT 50"
         ).fetchall()
         conn.close()

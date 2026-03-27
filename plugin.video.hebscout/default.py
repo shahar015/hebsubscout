@@ -518,17 +518,29 @@ def continue_watching():
         progress = int(item.get('progress', 0))
         media_type = item.get('media_type', 'movie')
         action = 'episode_sources' if media_type != 'movie' else 'movie_sources'
-        meta = {
-            'title': '{} [COLOR cyan]({}%)[/COLOR]'.format(title, progress),
+        # Display label has progress %, but URL title stays clean (no color markup)
+        display_label = '{} [COLOR cyan]({}%)[/COLOR]'.format(title, progress)
+        li = xbmcgui.ListItem(label=display_label)
+        art = {}
+        if item.get('poster'):
+            art['poster'] = art['thumb'] = item['poster']
+        if item.get('fanart'):
+            art['fanart'] = item['fanart']
+        li.setArt(art)
+        params = {
+            'action': action,
             'imdb_id': item.get('imdb_id', ''),
             'tmdb_id': item.get('tmdb_id', ''),
+            'title': title,  # Clean title, no markup
+            'media_type': media_type,
             'poster': item.get('poster', ''),
             'fanart': item.get('fanart', ''),
-            'media_type': media_type,
-            'season_number': item.get('season', 0),
-            'episode_number': item.get('episode', 0),
         }
-        add_item(meta, action=action, is_folder=True)
+        if item.get('season'):
+            params['season'] = item['season']
+        if item.get('episode'):
+            params['episode'] = item['episode']
+        xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, True)
     end_dir()
 
 
