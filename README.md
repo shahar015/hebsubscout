@@ -14,7 +14,7 @@ A complete Kodi addon ecosystem built for the Israeli community. Browse, stream,
 
 ## Install
 
-1. Kodi → Settings → File Manager → Add Source → `https://shahar015.github.io/hebsubscout`
+1. Kodi → Settings → File Manager → Add Source → `https://shahar015.github.io/hebsubscout/repo`
 2. Add-ons → Install from zip → `repository.hebsubscout-1.0.0.zip`
 3. Add-ons → Install from repository → HebSubScout Repository → Video add-ons → **HebScout** → Install
 
