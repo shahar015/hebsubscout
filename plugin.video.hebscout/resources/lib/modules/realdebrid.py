@@ -181,34 +181,43 @@ def revoke():
 # TORRENT CACHE CHECK (the key feature for source scraping)
 # =========================================================================
 
+MAX_CACHE_CHECK = 10  # Only check top N sources (each requires 3 API calls)
+
+
 def check_cache(hashes):
     """
-    Check which torrent hashes are instantly available on RD.
-    
+    Check which torrent hashes are instantly available (cached) on RD.
+
+    Uses addMagnet → torrent_info → delete workaround since RD removed
+    the instantAvailability endpoint in Nov 2024.
+
+    Only checks the first MAX_CACHE_CHECK hashes to avoid API rate limits
+    (each check requires 3 API calls: add, info, delete).
+
     Args:
-        hashes: list of info_hash strings
-    
+        hashes: list of info_hash strings (only first 10 are checked)
+
     Returns:
-        dict mapping hash -> list of file variants available
+        set of lowercase hashes that are cached
     """
     if not hashes:
-        return {}
+        return set()
     refresh_token()
 
-    # RD accepts up to 200 hashes per request
-    results = {}
-    for i in range(0, len(hashes), 100):
-        batch = hashes[i:i+100]
-        hash_str = '/'.join(batch)
-        data = _api_get('torrents/instantAvailability/{}'.format(hash_str))
-        if data:
-            for h in batch:
-                h_lower = h.lower()
-                if h_lower in data and data[h_lower]:
-                    rd_data = data[h_lower].get('rd', [])
-                    if rd_data:
-                        results[h_lower] = rd_data
-    return results
+    cached = set()
+    for h in hashes[:MAX_CACHE_CHECK]:
+        magnet = 'magnet:?xt=urn:btih:{}'.format(h)
+        try:
+            tid = add_magnet(magnet)
+            if not tid:
+                continue
+            info = torrent_info(tid)
+            if info and info.get('status') == 'downloaded':
+                cached.add(h.lower())
+            delete_torrent(tid)
+        except Exception as e:
+            log('RD cache check failed for {}: {}'.format(h[:8], e), 'ERROR')
+    return cached
 
 
 # =========================================================================

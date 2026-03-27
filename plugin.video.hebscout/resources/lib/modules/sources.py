@@ -64,20 +64,17 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
         
         hashes = [s['hash'] for s in sources if s.get('hash')]
         if hashes:
-            cached = rd.check_cache(hashes)
+            cached = rd.check_cache(hashes)  # Returns set of cached hashes
             for src in sources:
                 h = src.get('hash', '').lower()
-                if h in cached:
-                    src['rd_cached'] = True
-                    src['rd_variants'] = cached[h]
-                else:
-                    src['rd_cached'] = False
-            
+                src['rd_cached'] = h in cached
+
             # Move cached sources to top
             sources.sort(key=lambda s: (0 if s.get('rd_cached') else 1, s.get('name', '')))
-            
+
             cached_count = sum(1 for s in sources if s.get('rd_cached'))
-            log('RD cache: {}/{} sources cached'.format(cached_count, len(hashes)))
+            log('RD cache: {}/{} sources checked, {} cached'.format(
+                min(len(hashes), rd.MAX_CACHE_CHECK), len(hashes), cached_count))
     
     update(65, t('found_sources', len(sources)))
 
