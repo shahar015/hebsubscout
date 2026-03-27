@@ -85,14 +85,16 @@ class ProgressTracker(threading.Thread):
                     self.player.imdb_id, self.player.season,
                     self.player.episode, progress
                 )
-                
-                # Keep Trakt scrobble session alive (Trakt requires >= 1.0%)
-                if progress >= 1.0 and trakt.is_authorized() and self.player.imdb_id:
-                    trakt.scrobble_start(
-                        self.player.media_type, self.player.imdb_id,
-                        progress, self.player.season, self.player.episode
-                    )
-                
+
+                # Send delayed scrobble/start ONCE (Trakt session stays alive, no repeated starts)
+                if not self.player._scrobble_sent and progress >= 1.0:
+                    if trakt.is_authorized() and self.player.imdb_id:
+                        trakt.scrobble_start(
+                            self.player.media_type, self.player.imdb_id,
+                            progress, self.player.season, self.player.episode
+                        )
+                        self.player._scrobble_sent = True
+
                 log('Auto-saved: {:.1f}% ({})'.format(progress, self.player.title))
                 
                 # Auto-mark watched at 90%
@@ -145,6 +147,7 @@ class HebScoutPlayer(xbmc.Player):
         self.title = self.year = self.source_name = self.subtitle_name = None
         self.season = self.episode = None
         self._playing = self._paused = self._scrobbled_start = False
+        self._scrobble_sent = False  # True after first scrobble/start sent to Trakt
         self._marked_watched = False
         self._total_time = 0
         self._last_known_progress = 0.0  # Survives player destruction
@@ -169,6 +172,7 @@ class HebScoutPlayer(xbmc.Player):
         self._next_episode_info = next_episode_info
         self._resolve_func = resolve_func
         self._playing = self._paused = self._scrobbled_start = False
+        self._scrobble_sent = False
         self._marked_watched = False
         self._auto_sub_applied = False
         self._last_known_progress = 0.0

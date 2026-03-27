@@ -166,11 +166,9 @@ def revoke():
 
 def scrobble_start(media_type, imdb_id, progress_pct, season=None, episode=None):
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
-    has_token = bool(get_setting('trakt_token'))
-    log('Trakt scrobble/start: token={} payload={}'.format(has_token, json.dumps(payload)))
+    log('Trakt scrobble/start: {}'.format(json.dumps(payload)))
     result = _api_post('scrobble/start', payload)
-    if not result:
-        log('Trakt scrobble/start FAILED for {} {}'.format(media_type, imdb_id), 'ERROR')
+    log('Trakt scrobble/start response: {}'.format(json.dumps(result) if result else 'FAILED'))
     return result
 
 
@@ -178,10 +176,7 @@ def scrobble_pause(media_type, imdb_id, progress_pct, season=None, episode=None)
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
     log('Trakt scrobble/pause: {}'.format(json.dumps(payload)))
     result = _api_post('scrobble/pause', payload)
-    if result:
-        log('Trakt scrobble/pause OK')
-    else:
-        log('Trakt scrobble/pause FAILED', 'ERROR')
+    log('Trakt scrobble/pause response: {}'.format(json.dumps(result) if result else 'FAILED'))
     return result
 
 
@@ -189,10 +184,7 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
     payload = _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode)
     log('Trakt scrobble/stop: {}'.format(json.dumps(payload)))
     result = _api_post('scrobble/stop', payload)
-    if result:
-        log('Trakt scrobble/stop OK')
-    else:
-        log('Trakt scrobble/stop FAILED', 'ERROR')
+    log('Trakt scrobble/stop response: {}'.format(json.dumps(result) if result else 'FAILED'))
     if progress_pct >= 80:
         local_mark_watched(imdb_id, season or 0, episode or 0)
     return result
@@ -201,7 +193,7 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
 def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
     payload = {
         'progress': round(progress_pct, 1),
-        'app_version': '1.2.2',
+        'app_version': '1.2.3',
         'app_date': '2026-03-27',
     }
     if media_type == 'movie':
