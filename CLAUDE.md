@@ -227,7 +227,7 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [ ] Only 1 sub shown (auto-downloaded) — need to show ALL available Hebrew subs from Wizdom/Ktuvit
 - [ ] Skin home screen background is black when no item highlighted — set default fanart
 - [ ] Source card feature tags (H.265, 4K, HDR10, DOLBY, etc.) — need own row + feature filter
-- [ ] Context menu visibility was fixed but needs testing
+- [ ] Context menu addon not registering at all — "HebScout" entry doesn't appear in right-click menu for movies or episodes. May need Kodi restart, or the `kodi.context.item` extension point isn't being loaded. Investigate addon installation status.
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
