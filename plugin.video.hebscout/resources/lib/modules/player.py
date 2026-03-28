@@ -320,6 +320,10 @@ class HebScoutPlayer(xbmc.Player):
                      fanart=self._fanart or '', media_type=self.media_type or 'movie',
                      tmdb_id=self.tmdb_id or '')
         
+        # Store source name as window property so subtitle picker (RunPlugin) can read it
+        if self.source_name:
+            xbmcgui.Window(10000).setProperty('hebscout.source_name', self.source_name)
+
         # Start action monitor (lightweight, no WindowDialog overlay)
         self._osd_monitor = PlayerActionMonitor(self)
         self._osd_monitor.start()
@@ -548,6 +552,11 @@ class HebScoutPlayer(xbmc.Player):
                 trakt.scrobble_pause(self.media_type, self.imdb_id, p, self.season, self.episode)
         if _scout and self.source_name and self.subtitle_name:
             _scout.record_match(self.source_name, self.subtitle_name, 'auto')
+        # Clear source name window property
+        try:
+            xbmcgui.Window(10000).clearProperty('hebscout.source_name')
+        except Exception:
+            pass
         # Refresh the container so watched/progress indicators update
         xbmc.executebuiltin('Container.Refresh')
         if completed and self._next_episode_info and get_setting('auto_next_episode') != 'false':

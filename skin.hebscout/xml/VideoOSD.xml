@@ -146,10 +146,10 @@
 					<ondown condition="Control.HasFocus(255)">13103</ondown>
 					<onleft>608</onleft>
 					<onright>600</onright>
-					<!-- HebScout: Skip Intro/Recap (text, teal, only visible during intro/chapter 1) -->
+					<!-- HebScout: Skip Intro/Recap (text, teal, only visible when IntroDB has data) -->
 					<control type="button" id="700010">
 						<width>170</width>
-						<height>46</height>
+						<height>76</height>
 						<label>דלג על הפתיח</label>
 						<font>font12</font>
 						<align>center</align>
@@ -159,12 +159,12 @@
 						<texturefocus colordiffuse="FF00d4aa" border="3">-</texturefocus>
 						<texturenofocus colordiffuse="44FFFFFF" border="1">-</texturenofocus>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=skip_intro)</onclick>
-						<visible>[!String.IsEmpty(Window(home).Property(hebscout.skip_intro))] | [Player.ChapterCount + Integer.IsEqual(Player.Chapter,1) + Integer.IsGreater(Player.ChapterCount,1)]</visible>
+						<visible>!String.IsEmpty(Window(home).Property(hebscout.skip_intro))</visible>
 					</control>
 					<!-- HebScout: Subtitle Picker (text button) -->
 					<control type="button" id="700011">
 						<width>170</width>
-						<height>46</height>
+						<height>76</height>
 						<label>בחירת כתוביות</label>
 						<font>font12</font>
 						<align>center</align>
@@ -176,18 +176,18 @@
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=subtitle_picker)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Audio Track Switch (icon) -->
+					<!-- HebScout: Audio Track Switch (icon - volume speaker) -->
 					<control type="radiobutton" id="700012">
 						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/settings.png"/>
+							<param name="texture" value="dialogs/volume/volume.png"/>
 						</include>
-						<onclick>AudioNextLanguage</onclick>
+						<onclick>PlayerControl(AudioNextLanguage)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
 					<!-- HebScout: Switch Source (icon) -->
 					<control type="radiobutton" id="700013">
 						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/playlist.png"/>
+							<param name="texture" value="osd/fullscreen/buttons/home.png"/>
 						</include>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=switch_source)</onclick>
 						<visible>Player.HasVideo</visible>
@@ -223,19 +223,6 @@
 						<onclick>ActivateWindow(videoplaylist)</onclick>
 						<visible>Integer.IsGreater(Playlist.Length(video),1)</visible>
 					</control>
-					<control type="radiobutton" id="70043">
-						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/information.png"/>
-						</include>
-						<onclick>Info</onclick>
-					</control>
-					<control type="radiobutton" id="70044">
-						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/bookmarks.png"/>
-						</include>
-						<onclick>ActivateWindow(videobookmarks)</onclick>
-						<visible>!VideoPlayer.Content(livetv)</visible>
-					</control>
 					<control type="radiobutton" id="70045">
 						<include content="OSDButton">
 							<param name="texture" value="osd/fullscreen/buttons/teletext.png"/>
@@ -243,13 +230,6 @@
 						<onclick>Dialog.Close(VideoOSD)</onclick>
 						<onclick>ActivateWindow(Teletext)</onclick>
 						<visible>VideoPlayer.HasTeletext</visible>
-					</control>
-					<control type="radiobutton" id="70046">
-						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/settings-subtitle.png"/>
-						</include>
-						<onclick>ActivateWindow(osdsubtitlesettings)</onclick>
-						<visible>!VideoPlayer.Content(LiveTV) | VideoPlayer.HasSubtitles</visible>
 					</control>
 					<control type="radiobutton" id="70047">
 						<include content="OSDButton">

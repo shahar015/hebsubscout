@@ -94,11 +94,15 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     elif imdb:
         bm = get_bookmark(imdb)
         if bm and bm.get('progress', 0) > 1:
-            # setResumePoint tells Kodi to show a native progress bar
-            info_tag.setResumePoint(bm['progress'], 100.0)
+            # Both methods for maximum compatibility across Estuary views
+            info_tag.setResumePoint(float(bm['progress']), 100.0)
+            li.setProperty('percentplayed', str(int(bm['progress'])))
 
     # Context menu — inline items directly in Kodi's right-click menu
     cm = context_items or []
+    if imdb:
+        cm.append(('בדוק כתוביות', 'RunPlugin({})'.format(
+            url_for(action='check_subs', imdb_id=imdb, season=season, episode=episode, title=meta.get('title', '')))))
     if imdb and trakt.is_authorized():
         cm.append((t('trakt_watchlist_add'), 'RunPlugin({})'.format(
             url_for(action='trakt_watchlist_add', imdb_id=imdb, media_type=media_type))))
@@ -963,6 +967,32 @@ def router(params):
     elif action == 'trakt_watchlist_add':
         trakt.add_to_watchlist(media_type, imdb_id)
         notification(t('added_watchlist'))
+    elif action == 'check_subs':
+        if imdb_id:
+            try:
+                from hebsubscout import SubScout
+                scout = SubScout()
+                s = int(params.get('season', 0)) or None
+                e = int(params.get('episode', 0)) or None
+                subs = scout.fetch_subtitles(imdb_id, season=s, episode=e)
+                if subs:
+                    by_provider = {}
+                    for sub in subs:
+                        p = sub.get('provider', 'unknown')
+                        by_provider.setdefault(p, []).append(sub)
+                    lines = ['[COLOR lime]נמצאו {} כתוביות בעברית![/COLOR]\n'.format(len(subs))]
+                    for prov, prov_subs in sorted(by_provider.items()):
+                        lines.append('[COLOR cyan]{}[/COLOR]: {} כתוביות'.format(prov.upper(), len(prov_subs)))
+                        for sub in prov_subs[:3]:
+                            lines.append('  • {}'.format(sub.get('name', '')))
+                        if len(prov_subs) > 3:
+                            lines.append('  ... ועוד {}'.format(len(prov_subs) - 3))
+                    xbmcgui.Dialog().textviewer('HebSubScout - {}'.format(title), '\n'.join(lines))
+                else:
+                    notification(t('no_heb_subs'))
+            except Exception as ex:
+                log('Check subs error: {}'.format(ex), 'ERROR')
+                notification(t('no_heb_subs'))
     elif action == 'mark_watched':
         from resources.lib.modules.cache import mark_watched as local_mark_watched
         s = int(params.get('season', 0))
@@ -1049,10 +1079,6 @@ def router(params):
             if end_sec > 0 and player.isPlaying():
                 player.seekTime(end_sec)
                 log('Skip intro: seeked to {}s'.format(end_sec))
-            elif player.isPlaying():
-                # Fallback: skip to next chapter
-                xbmc.executebuiltin('PlayerControl(BigSkipForward)')
-                log('Skip intro: chapter skip (no IntroDB data)')
         except Exception:
             pass
 
@@ -1065,12 +1091,13 @@ def router(params):
                 imdb = tag.getIMDBNumber()
                 s = tag.getSeason() if tag.getMediaType() == 'episode' else None
                 e = tag.getEpisode() if tag.getMediaType() == 'episode' else None
-                # Get source name from playing file for match scoring
-                source_name = ''
-                try:
-                    source_name = player.getPlayingFile().split('/')[-1].split('?')[0]
-                except Exception:
-                    pass
+                # Get original source name from window property (set by player), fallback to file URL
+                source_name = xbmcgui.Window(10000).getProperty('hebscout.source_name')
+                if not source_name:
+                    try:
+                        source_name = player.getPlayingFile().split('/')[-1].split('?')[0]
+                    except Exception:
+                        pass
                 if imdb:
                     from hebsubscout import SubScout
                     scout = SubScout()

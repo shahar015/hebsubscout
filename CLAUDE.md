@@ -220,15 +220,19 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [x] Skip intro — TheIntroDB integration, window property for skin visibility
 - [x] TMDB recommendations — movie/show similar titles
 
-### v1.6.x — needs fixing (next session):
-- [ ] OSD text buttons ("בחירת כתוביות" + "דלג על הפתיח") not vertically centered
-- [ ] OSD audio icon should be speaker/audio, not gear (Estuary lacks this icon — may need custom texture)
-- [ ] OSD: remove Info, Bookmarks, built-in subtitle buttons from VideoOSD.xml
-- [ ] OSD skip intro: revert chapter fallback (doesn't work well), TheIntroDB only
-- [ ] Context menu "HebScout" still opens dialog — addContextMenuItems items not appearing, only the context addon entry shows. Need to debug why inline items aren't rendering
-- [ ] Progress bar not rendering with setResumePoint — investigate alternative approach
-- [ ] Subtitle picker match % mismatch: source card shows 60% but picker shows 7% — the RD stream URL filename differs from the original release name. Need to store original source name and pass it to picker
+### v1.6.3 — fixed:
+- [x] OSD text buttons vertically centered (height 46→76 to match icon buttons)
+- [x] OSD audio icon: changed gear to volume speaker icon (dialogs/volume/volume.png)
+- [x] OSD: removed Info, Bookmarks, built-in subtitle buttons from VideoOSD.xml
+- [x] OSD skip intro: reverted chapter fallback, TheIntroDB only
+- [x] Context menu: hidden context addon inside our addon (Container.PluginName check), inline addContextMenuItems now primary UX, added "בדוק כתוביות" inline
+- [x] Progress bar: added percentplayed property alongside setResumePoint for compatibility
+- [x] Subtitle picker: source name stored in window property `hebscout.source_name`, picker reads it for accurate match scoring
+- [x] OSD source switch icon: changed from playlist to home icon
+
+### Open issues:
 - [ ] MediaFusion always returns 403 — investigate auth requirements
+- [ ] Volume speaker icon (dialogs/volume/volume.png) may not render correctly as OSD button — test and potentially create custom texture
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
@@ -244,18 +248,7 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
 - Kodi plugin scripts are short-lived — don't block with waitForAbort loops (causes loading spinner)
 - Dual XML skins: changes to source_select must be made in BOTH _rtl.xml and _ltr.xml
-- Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
-- No icon.png or fanart.jpg assets yet for the addons
-- **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback. It captures focus and blocks play/pause/seek. Use built-in Kodi OSD or a custom skin instead.
-- Trakt requires >= 1.0% progress for scrobble calls — guard all scrobble calls
-- `getTime()` throws "Kodi is not playing any media file" after player is destroyed — always use `_last_known_progress` as fallback
-- Translation keys must be unique Hebrew strings — `up_next` and `continue_watching` both translated to "המשך צפייה" causing duplicate menu entries
-- Display labels with `[COLOR]` markup leak into URL params if passed as the title — always separate display label from data title
-- Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
-- 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
-- Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
-- Kodi plugin scripts are short-lived — don't block with waitForAbort loops (causes loading spinner)
-- Dual XML skins: changes to source_select must be made in BOTH _rtl.xml and _ltr.xml
+- Estuary OSD buttons lack an audio/speaker icon — using dialogs/volume/volume.png as workaround
 
 ## Key UI Architecture
 
@@ -384,3 +377,14 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.5.2: Fix skin directory structure (textures/fonts were nested)
 - v1.5.3: Fix stray character in VideoOSD.xml breaking custom buttons
 - v1.5.4: Text labels on OSD buttons, fix subtitle picker action
+
+### 2026-03-28 — Session 7: v1.6.3 — OSD fixes, context menu, progress bar, subtitle picker
+- v1.6.3: OSD text buttons (בחירת כתוביות, דלג על הפתיח) height 46→76 for vertical centering
+- v1.6.3: Audio icon changed from gear (settings.png) to speaker (dialogs/volume/volume.png)
+- v1.6.3: Removed Info, Bookmarks, built-in subtitle buttons from OSD
+- v1.6.3: Skip intro: reverted chapter fallback, visible only when TheIntroDB has data
+- v1.6.3: Context menu: hidden context addon dialog inside our addon via Container.PluginName visibility
+- v1.6.3: Added inline "בדוק כתוביות" context menu item + check_subs router action
+- v1.6.3: Progress bar: added li.setProperty('percentplayed') alongside setResumePoint
+- v1.6.3: Source name stored in Window(home) property for subtitle picker match accuracy
+- v1.6.3: Source switch icon changed to home.png
