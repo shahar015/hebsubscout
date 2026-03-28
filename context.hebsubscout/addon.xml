@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="context.hebsubscout"
        name="HebSubScout Context Menu"
-       version="1.6.7"
+       version="1.6.8"
        provider-name="HebSubScout Community">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.hebsubscout" version="1.6.7"/>
+        <import addon="script.module.hebsubscout" version="1.6.8"/>
     </requires>
     <extension point="kodi.context.item">
         <menu id="kodi.core.main">

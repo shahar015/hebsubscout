@@ -768,8 +768,18 @@ def search_new():
     if query:
         from resources.lib.modules.cache import add_search_history
         add_search_history(query)
-        xbmc.executebuiltin('Container.Update({}?{})'.format(
-            BASE_URL, urlencode({'action': 'search', 'query': query})))
+        # Search both movies and shows, display results directly
+        movies, _ = tmdb.movies_search(query=query)
+        shows, _ = tmdb.shows_search(query=query)
+        for item in movies[:10]:
+            item['title'] = '[COLOR lime][M][/COLOR] ' + item.get('title', '')
+            add_item(item, action='movie_sources', is_folder=True)
+        for item in shows[:10]:
+            item['title'] = '[COLOR cyan][TV][/COLOR] ' + item.get('title', '')
+            add_item(item, action='show_seasons', is_folder=True)
+        if not movies and not shows:
+            notification(t('no_results'))
+    end_dir(content='videos')
 
 
 # =========================================================================
@@ -929,9 +939,15 @@ def router(params):
         if query:
             from resources.lib.modules.cache import add_search_history
             add_search_history(query)
-            add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_movies')), 'movies_search_results', query=query)
-            add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_results_shows')), 'shows_search_results', query=query)
-            end_dir(content='')
+            movies, _ = tmdb.movies_search(query=query)
+            shows, _ = tmdb.shows_search(query=query)
+            for item in movies[:10]:
+                item['title'] = '[COLOR lime][M][/COLOR] ' + item.get('title', '')
+                add_item(item, action='movie_sources', is_folder=True)
+            for item in shows[:10]:
+                item['title'] = '[COLOR cyan][TV][/COLOR] ' + item.get('title', '')
+                add_item(item, action='show_seasons', is_folder=True)
+            end_dir(content='videos')
 
     # People
     elif action == 'people_popular':

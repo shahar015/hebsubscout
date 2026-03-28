@@ -13,9 +13,10 @@ BASE = 'https://api.themoviedb.org/3'
 
 
 def _url(path, **kwargs):
+    from urllib.parse import quote
     params = {'api_key': TMDB_KEY, 'language': TMDB_LANG}
     params.update(kwargs)
-    qs = '&'.join('{}={}'.format(k, v) for k, v in params.items() if v is not None)
+    qs = '&'.join('{}={}'.format(k, quote(str(v))) for k, v in params.items() if v is not None)
     return '{}/{}?{}'.format(BASE, path, qs)
 
 
