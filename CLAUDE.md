@@ -227,8 +227,17 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [ ] Only 1 sub shown (auto-downloaded) — need to show ALL available Hebrew subs from Wizdom/Ktuvit
 - [ ] Skin home screen background is black when no item highlighted — set default fanart
 - [ ] Source card feature tags (H.265, 4K, HDR10, DOLBY, etc.) — need own row + feature filter
-- [ ] Auto-play toggle may have been accidentally enabled during testing — users lose source picker. Default should be OFF.
-- [ ] Context menu addon not registering at all — "HebScout" entry doesn't appear in right-click menu for movies or episodes. May need Kodi restart, or the `kodi.context.item` extension point isn't being loaded. Investigate addon installation status.
+- [ ] OSD "בחירת כתוביות" truncated — widen buttons, rectangular style with border
+- [ ] OSD subtitle picker opens Kodi built-in instead of our custom picker with match %
+- [ ] OSD switch source button ("החלף מקור") — stop playback, reopen source picker
+- [ ] Skin home background is black when no item highlighted — set default fanart
+- [ ] Context menu addon not registering in right-click menu
+- [ ] Source card feature detection missing tags (ddp5.1, h.265 with dot, 5.1/7.1 channels)
+- [ ] Source card bottom padding broken (background 100px inside 116px card)
+- [ ] Source card rows too cramped — need more vertical spacing
+- [ ] Feature filter row (HDR, DV, DOLBY, Atmos, etc.) — filter sources by features
+- [ ] Watch progress bar on episode/movie list items (partially watched)
+- [ ] Watched tick not auto-refreshing after finishing an episode
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
