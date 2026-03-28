@@ -187,26 +187,6 @@
 						<animation effect="fade" time="150">VisibleChange</animation>
 						<visible>!Control.HasFocus($PARAM[list_id])</visible>
 					</control>
-					<control type="progress">
-						<left>0</left>
-						<top>71</top>
-						<right>0</right>
-						<height>2</height>
-						<texturebg></texturebg>
-						<midtexture colordiffuse="FFffffff" border="3">progress/texturebg_alt_white.png</midtexture>
-						<info>ListItem.PercentPlayed</info>
-						<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + Control.HasFocus($PARAM[list_id])</visible>
-					</control>
-					<control type="progress">
-						<left>0</left>
-						<top>71</top>
-						<right>0</right>
-						<height>2</height>
-						<texturebg></texturebg>
-						<midtexture colordiffuse="button_focus" border="3">progress/texturebg_alt_white.png</midtexture>
-						<info>ListItem.PercentPlayed</info>
-						<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + !Control.HasFocus($PARAM[list_id])</visible>
-					</control>
 				</focusedlayout>
 				<itemlayout height="list_item_height">
 					<control type="label">
@@ -237,26 +217,6 @@
 						<width>32</width>
 						<height>32</height>
 						<texture colordiffuse="grey">$VAR[ListWatchedIconVar]</texture>
-					</control>
-					<control type="progress">
-						<left>0</left>
-						<top>71</top>
-						<right>0</right>
-						<height>2</height>
-						<texturebg></texturebg>
-						<midtexture colordiffuse="FFffffff" border="3">progress/texturebg_alt_white.png</midtexture>
-						<info>ListItem.PercentPlayed</info>
-						<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + Control.HasFocus($PARAM[list_id])</visible>
-					</control>
-					<control type="progress">
-						<left>0</left>
-						<top>71</top>
-						<right>0</right>
-						<height>2</height>
-						<texturebg></texturebg>
-						<midtexture colordiffuse="button_focus" border="3">progress/texturebg_alt_white.png</midtexture>
-						<info>ListItem.PercentPlayed</info>
-						<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + !Control.HasFocus($PARAM[list_id])</visible>
 					</control>
 				</itemlayout>
 			</control>
