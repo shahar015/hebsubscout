@@ -144,15 +144,20 @@ def _scrape_stremio(base_url, provider_name, imdb_id, season=None, episode=None)
                         size_info = re.sub(r'\s+', ' ', line).strip()
                         break
 
+            # Use direct URL if available (MediaFusion provides playback URLs)
+            stream_url = stream.get('url', '')
+            source_type = 'torrent' if info_hash else ('direct' if stream_url else 'torrent')
+
             sources.append({
                 'name': release_name,
                 'quality': _detect_quality(release_name),
                 'info': _detect_info(release_name),
                 'size': size_info,
                 'hash': info_hash,
+                'url': stream_url,
                 'file_idx': file_idx,
                 'provider': provider_name,
-                'type': 'torrent',
+                'type': source_type,
             })
     except Exception as e:
         log('{} scrape error: {}'.format(provider_name, e), 'ERROR')

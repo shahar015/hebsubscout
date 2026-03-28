@@ -153,6 +153,10 @@ def resolve_source(source):
     
     source_type = source.get('type', '')
     
+    if source_type == 'direct':
+        # Direct playback URL (e.g. MediaFusion pre-resolved streams)
+        return source.get('url', '') or None
+
     if source_type == 'torrent':
         info_hash = source.get('hash', '')
         if not info_hash:
