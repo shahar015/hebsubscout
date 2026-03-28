@@ -143,34 +143,38 @@ def cache_clear():
 def _ensure_search_history_table():
     try:
         conn = _get_conn()
-        conn.execute("""CREATE TABLE IF NOT EXISTS search_history (
-            query TEXT PRIMARY KEY, created TEXT DEFAULT CURRENT_TIMESTAMP)""")
+        conn.execute("""CREATE TABLE IF NOT EXISTS search_history_v2 (
+            query TEXT, media_type TEXT DEFAULT 'movie',
+            created TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (query, media_type))""")
         conn.commit()
         conn.close()
     except Exception:
         pass
 
 
-def add_search_history(query):
-    """Save a search query to history (max 20, most recent first)."""
+def add_search_history(query, media_type='movie'):
+    """Save a search query to history (max 20 per type, most recent first)."""
     _ensure_search_history_table()
     try:
         conn = _get_conn()
-        conn.execute("INSERT OR REPLACE INTO search_history (query, created) VALUES (?, CURRENT_TIMESTAMP)", (query,))
-        # Keep only last 20
-        conn.execute("DELETE FROM search_history WHERE query NOT IN (SELECT query FROM search_history ORDER BY created DESC LIMIT 20)")
+        conn.execute("INSERT OR REPLACE INTO search_history_v2 (query, media_type, created) VALUES (?, ?, CURRENT_TIMESTAMP)", (query, media_type))
+        conn.execute("DELETE FROM search_history_v2 WHERE media_type=? AND query NOT IN "
+                     "(SELECT query FROM search_history_v2 WHERE media_type=? ORDER BY created DESC LIMIT 20)",
+                     (media_type, media_type))
         conn.commit()
         conn.close()
     except Exception:
         pass
 
 
-def get_search_history():
-    """Get search history, most recent first."""
+def get_search_history(media_type='movie'):
+    """Get search history for a media type, most recent first."""
     _ensure_search_history_table()
     try:
         conn = _get_conn()
-        rows = conn.execute("SELECT query FROM search_history ORDER BY created DESC LIMIT 20").fetchall()
+        rows = conn.execute("SELECT query FROM search_history_v2 WHERE media_type=? ORDER BY created DESC LIMIT 20",
+                            (media_type,)).fetchall()
         conn.close()
         return [r[0] for r in rows]
     except Exception:
@@ -181,6 +185,7 @@ def clear_search_history():
     """Clear all search history entries."""
     try:
         conn = _get_conn()
+        conn.execute("DROP TABLE IF EXISTS search_history_v2")
         conn.execute("DROP TABLE IF EXISTS search_history")
         conn.commit()
         conn.close()

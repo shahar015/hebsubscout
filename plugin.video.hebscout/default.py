@@ -754,32 +754,36 @@ def trakt_progress():
 # =========================================================================
 
 def search():
-    """Show search history + new search option."""
-    from resources.lib.modules.cache import get_search_history
-    history = get_search_history()
-    add_dir('[COLOR lime]{}[/COLOR]'.format(t('new_search')), 'search_new')
-    for q in history:
-        add_dir('[COLOR gray]{}[/COLOR]'.format(q), 'search_execute', query=q)
+    """Search menu: choose movies or TV shows."""
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_movies')), 'search_movies')
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('search_shows')), 'search_shows')
     end_dir(content='')
 
 
-def search_new():
-    query = input_dialog(t('search_prompt'))
+def search_type_menu(media_type):
+    """Show new search + history for a specific media type."""
+    from resources.lib.modules.cache import get_search_history
+    history = get_search_history(media_type)
+    add_dir('[COLOR lime]{}[/COLOR]'.format(t('new_search')), 'search_new', media_type=media_type)
+    for q in history:
+        action = 'movies_search_results' if media_type == 'movie' else 'shows_search_results'
+        add_dir('[COLOR gray]{}[/COLOR]'.format(q), action, query=q)
+    end_dir(content='')
+
+
+def search_new_typed(media_type):
+    """New search for a specific media type — input, save to history, show results."""
+    prompt = t('search_movies_prompt') if media_type == 'movie' else t('search_shows_prompt')
+    query = input_dialog(prompt)
     if query:
         from resources.lib.modules.cache import add_search_history
-        add_search_history(query)
-        # Search both movies and shows, display results directly
-        movies, _ = tmdb.movies_search(query=query)
-        shows, _ = tmdb.shows_search(query=query)
-        for item in movies[:10]:
-            item['title'] = '[COLOR lime][M][/COLOR] ' + item.get('title', '')
-            add_item(item, action='movie_sources', is_folder=True)
-        for item in shows[:10]:
-            item['title'] = '[COLOR cyan][TV][/COLOR] ' + item.get('title', '')
-            add_item(item, action='show_seasons', is_folder=True)
-        if not movies and not shows:
-            notification(t('no_results'))
-    end_dir(content='videos')
+        add_search_history(query, media_type)
+        if media_type == 'movie':
+            list_movies(tmdb.movies_search, query=query, list_action='movies_search_results')
+        else:
+            list_shows(tmdb.shows_search, query=query, list_action='shows_search_results')
+        return
+    end_dir(content='')
 
 
 # =========================================================================
@@ -894,7 +898,9 @@ def router(params):
     elif action == 'movies_search':
         query = input_dialog(t('search_movies_prompt'))
         if query:
-            list_movies(tmdb.movies_search, page, query=query, list_action='movies_search')
+            from resources.lib.modules.cache import add_search_history
+            add_search_history(query, 'movie')
+            list_movies(tmdb.movies_search, page, query=query, list_action='movies_search_results')
     elif action == 'movies_search_results':
         list_movies(tmdb.movies_search, page, query=query, list_action='movies_search_results')
     elif action == 'movie_sources':
@@ -918,7 +924,9 @@ def router(params):
     elif action == 'shows_search':
         query = input_dialog(t('search_shows_prompt'))
         if query:
-            list_shows(tmdb.shows_search, page, query=query, list_action='shows_search')
+            from resources.lib.modules.cache import add_search_history
+            add_search_history(query, 'tv')
+            list_shows(tmdb.shows_search, page, query=query, list_action='shows_search_results')
     elif action == 'shows_search_results':
         list_shows(tmdb.shows_search, page, query=query, list_action='shows_search_results')
     elif action == 'show_seasons':
@@ -932,22 +940,12 @@ def router(params):
     # Search
     elif action == 'search':
         search()
+    elif action == 'search_movies':
+        search_type_menu('movie')
+    elif action == 'search_shows':
+        search_type_menu('tv')
     elif action == 'search_new':
-        search_new()
-    elif action == 'search_execute':
-        query = params.get('query', '')
-        if query:
-            from resources.lib.modules.cache import add_search_history
-            add_search_history(query)
-            movies, _ = tmdb.movies_search(query=query)
-            shows, _ = tmdb.shows_search(query=query)
-            for item in movies[:10]:
-                item['title'] = '[COLOR lime][M][/COLOR] ' + item.get('title', '')
-                add_item(item, action='movie_sources', is_folder=True)
-            for item in shows[:10]:
-                item['title'] = '[COLOR cyan][TV][/COLOR] ' + item.get('title', '')
-                add_item(item, action='show_seasons', is_folder=True)
-            end_dir(content='videos')
+        search_new_typed(params.get('media_type', 'movie'))
 
     # People
     elif action == 'people_popular':
