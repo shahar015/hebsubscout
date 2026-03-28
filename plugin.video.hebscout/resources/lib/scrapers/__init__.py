@@ -150,7 +150,16 @@ def scrape_torrentio(imdb_id, season=None, episode=None):
 
 
 def scrape_mediafusion(imdb_id, season=None, episode=None):
-    return _scrape_stremio('https://mediafusion.elfhosted.com', 'mediafusion', imdb_id, season, episode)
+    from resources.lib.modules.utils import get_setting
+    url = get_setting('mediafusion_url') or ''
+    # Extract base URL with secret_str: user pastes full manifest URL or just the base
+    # e.g. "https://mediafusion.elfhosted.com/AbCdEf123/manifest.json" → "https://mediafusion.elfhosted.com/AbCdEf123"
+    if '/manifest.json' in url:
+        url = url.split('/manifest.json')[0]
+    url = url.rstrip('/')
+    if not url:
+        return []
+    return _scrape_stremio(url, 'mediafusion', imdb_id, season, episode)
 
 
 # =========================================================================

@@ -91,6 +91,9 @@ def _get_conn():
                 PRIMARY KEY (imdb_id, season, episode)
             )
         """)
+        # Drop old search_history table (replaced by search_history_v2)
+        conn.execute("DROP TABLE IF EXISTS search_history")
+        conn.commit()
         _initialized = True
     return conn
 

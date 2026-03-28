@@ -828,6 +828,13 @@ def tools_menu():
         ktuvit_label = 'Ktuvit: [COLOR red]{}[/COLOR]'.format(t('not_connected'))
     add_dir(ktuvit_label, 'ktuvit_setup')
 
+    mf_url = get_setting('mediafusion_url')
+    if mf_url:
+        mf_label = 'MediaFusion: [COLOR lime]{}[/COLOR]'.format(t('connected'))
+    else:
+        mf_label = 'MediaFusion: [COLOR red]{}[/COLOR]'.format(t('not_connected'))
+    add_dir(mf_label, 'mediafusion_setup')
+
     # ── Quick Settings ──
     add_dir('[COLOR orange]{}[/COLOR]'.format(t('toggles_header')), 'noop')
 
@@ -1074,6 +1081,20 @@ def router(params):
                 set_setting('ktuvit_email', email)
                 set_setting('ktuvit_password', hashlib.sha256(password.encode()).hexdigest())
                 notification(t('ktuvit_saved'))
+        xbmc.executebuiltin('Container.Refresh')
+    elif action == 'mediafusion_setup':
+        url = xbmcgui.Dialog().input(
+            'MediaFusion URL',
+            defaultt=get_setting('mediafusion_url') or '',
+            type=xbmcgui.INPUT_ALPHANUM)
+        if url:
+            # Clean up — accept manifest URL or base URL
+            if '/manifest.json' in url:
+                url = url.split('/manifest.json')[0]
+            url = url.rstrip('/')
+            set_setting('mediafusion_url', url)
+            set_setting('enable_mediafusion', 'true')
+            notification('MediaFusion configured!')
         xbmc.executebuiltin('Container.Refresh')
     elif action == 'noop':
         pass

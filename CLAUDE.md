@@ -107,7 +107,7 @@ hebsubscout/
 | Real Debrid | `api.real-debrid.com/rest/1.0` | Bearer token | Torrent cache check, link unrestrict, streaming. OAuth token endpoint requires form-encoded POST (not JSON). Device auth returns `direct_verification_url` for QR codes. |
 | Trakt | `api.trakt.tv` | Bearer token + Client ID | Scrobbling, watchlist, progress, history. Device auth URL supports `trakt.tv/activate/{code}` for QR pre-fill. **Scrobble requires >= 1.0% progress.** |
 | Torrentio | `torrentio.strem.fun` | None (public) | Source scraping (torrent search) |
-| MediaFusion | `mediafusion.elfhosted.com` | May need auth (returns 403 currently) | Source scraping (torrent search) |
+| MediaFusion | `mediafusion.elfhosted.com/{secret_str}` | Encrypted config URL (user-specific) | Source scraping (torrent search) |
 
 ## Trakt Scrobble Flow (CRITICAL — match POV/Twilight behavior)
 
@@ -220,34 +220,37 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [x] Skip intro — TheIntroDB integration, window property for skin visibility
 - [x] TMDB recommendations — movie/show similar titles
 
-### v1.6.3 — fixed:
-- [x] OSD text buttons vertically centered (height 46→76 to match icon buttons)
-- [x] OSD audio icon: changed gear to volume speaker icon (dialogs/volume/volume.png)
-- [x] OSD: removed Info, Bookmarks, built-in subtitle buttons from VideoOSD.xml
-- [x] OSD skip intro: reverted chapter fallback, TheIntroDB only
-- [x] Context menu: hidden context addon inside our addon (Container.PluginName check), inline addContextMenuItems now primary UX, added "בדוק כתוביות" inline
-- [x] Progress bar: added percentplayed property alongside setResumePoint for compatibility
-- [x] Subtitle picker: source name stored in window property `hebscout.source_name`, picker reads it for accurate match scoring
-- [x] OSD source switch icon: changed from playlist to home icon
+### v1.6.3–v1.6.9 — fixed (Session 8):
+- [x] OSD text buttons vertically centered (height 46→76)
+- [x] OSD audio icon: custom audio-switch.png (from user-provided audio-converting.png)
+- [x] OSD: removed Info, Bookmarks, built-in subtitle buttons
+- [x] OSD skip intro: TheIntroDB only (chapter fallback removed)
+- [x] **Skip intro fixed** — API uses `tmdb_id` not `imdb_id` (was 404 for everything)
+- [x] Context menu: inline addContextMenuItems, context addon hidden inside our plugin
+- [x] **Progress bar** — trakt_bookmarks migrated to composite PK `(imdb_id, season, episode)`
+- [x] In-progress icon: `percentplayed` property check in ListWatchedIconVar (resume icon)
+- [x] Subtitle picker: source name stored in window property for accurate match scoring
+- [x] **Subtitle match scoring** — removed learning DB boost (was forcing 100%), real scores only
+- [x] OSD buttons: בחירת כתוביות + סנכרון use `-` texture (rectangle, not ellipse)
+- [x] Source switch icon reverted to playlist.png
+- [x] **Search fixed** — URL-encode TMDB queries, separate movie/TV history, direct results
+- [x] MediaFusion: requires per-user encrypted config URL (not a public API)
 
 ### Open issues:
-- [ ] MediaFusion always returns 403 — investigate auth requirements
+- None critical
 
 ### Known issues:
-- MediaFusion returns HTTP 403 — may need auth token in URL
+- **MediaFusion** requires per-user config URL (`mediafusion.elfhosted.com/{secret_str}/...`). User must configure at `mediafusion.elfhosted.com/app/configure` and paste their URL in settings. Without it, 403.
 - RD `instantAvailability` was removed by RD in Nov 2024. Cache check disabled (addMagnet workaround too slow). Cached sources still play instantly when clicked.
 - Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
-- **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback. It captures focus and blocks play/pause/seek. Use built-in Kodi OSD or a custom skin instead.
+- **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback
 - Trakt requires >= 1.0% progress for scrobble calls — guard all scrobble calls
-- `getTime()` throws "Kodi is not playing any media file" after player is destroyed — always use `_last_known_progress` as fallback
-- Translation keys must be unique Hebrew strings — `up_next` and `continue_watching` both translated to "המשך צפייה" causing duplicate menu entries
-- Display labels with `[COLOR]` markup leak into URL params if passed as the title — always separate display label from data title
-- Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
+- `getTime()` throws after player is destroyed — always use `_last_known_progress` as fallback
+- Display labels with `[COLOR]` markup leak into URL params — always separate display label from data title
 - 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
-- Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
-- Kodi plugin scripts are short-lived — don't block with waitForAbort loops (causes loading spinner)
-- Dual XML skins: changes to source_select must be made in BOTH _rtl.xml and _ltr.xml
-- Estuary OSD buttons lack an audio/speaker icon — using dialogs/volume/volume.png as workaround
+- Kodi plugin scripts are short-lived — don't block with waitForAbort loops
+- Dual XML skins: source_select changes must be made in BOTH _rtl.xml and _ltr.xml
+- TheIntroDB coverage is incomplete (animated shows especially)
 
 ## Key UI Architecture
 
@@ -399,3 +402,19 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.6.4: OSD: audio icon changed to custom audio-switch.png (from user-provided audio-converting.png)
 - v1.6.4: OSD: source switch reverted to playlist.png
 - v1.6.4: Moved loose root PNGs to assets/ folder
+
+### 2026-03-28 — Session 8: v1.6.5–v1.6.9 — Progress bar, button fixes, search overhaul
+- v1.6.5: Added progress bar controls to View_50_List.xml and View_55_WideList.xml
+- v1.6.5: OSD buttons: `-` texture (rectangle) instead of button-fo.png (ellipse)
+- v1.6.5: Sync subs: text button "סנכרון" with SubtitleDelay action
+- v1.6.5: Subtitle scoring: removed learning DB boost entirely (real scores only)
+- v1.6.6: Progress bar moved from bottom:0 to top:71 (no overlap), white on hover
+- v1.6.6: In-progress icon: added percentplayed property check to ListWatchedIconVar
+- v1.6.6: OSD buttons: fixed sync subs visibility (always during playback)
+- v1.6.7: Removed progress bars from list views (user prefers in-progress icon only)
+- v1.6.8: TMDB search: URL-encode query params (spaces caused HTTP 400)
+- v1.6.8: Search shows results directly (no intermediate movies/shows folders)
+- v1.6.9: Separate movie/TV search with per-type history (search_history_v2 table)
+- v1.6.9: Search menu: choose Movies or TV → new search + history → direct results
+- v1.6.9: Movies/Shows menu search also saves to respective history
+- v1.6.10: MediaFusion: user config URL setting, dropped old search_history table
