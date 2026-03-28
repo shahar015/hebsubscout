@@ -161,7 +161,7 @@
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=skip_intro)</onclick>
 						<visible>!String.IsEmpty(Window(home).Property(hebscout.skip_intro))</visible>
 					</control>
-					<!-- HebScout: Subtitle Picker (text button, styled like OSD buttons) -->
+					<!-- HebScout: Subtitle Picker (text button, rectangular) -->
 					<control type="button" id="700011">
 						<width>170</width>
 						<height>76</height>
@@ -171,12 +171,12 @@
 						<aligny>center</aligny>
 						<textcolor>FFaaaaaa</textcolor>
 						<focusedcolor>FFffffff</focusedcolor>
-						<texturefocus colordiffuse="button_focus">osd/fullscreen/buttons/button-fo.png</texturefocus>
-						<texturenofocus colordiffuse="FF2a4a6a">osd/fullscreen/buttons/button-fo.png</texturenofocus>
+						<texturefocus colordiffuse="FF4488cc">-</texturefocus>
+						<texturenofocus colordiffuse="FF2a4a6a">-</texturenofocus>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=subtitle_picker)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Subtitle Sync (text button, opens delay dialog) -->
+					<!-- HebScout: Subtitle Sync (text button, opens subtitle settings OSD) -->
 					<control type="button" id="700014">
 						<width>110</width>
 						<height>76</height>
@@ -186,10 +186,10 @@
 						<aligny>center</aligny>
 						<textcolor>FFaaaaaa</textcolor>
 						<focusedcolor>FFffffff</focusedcolor>
-						<texturefocus colordiffuse="button_focus">osd/fullscreen/buttons/button-fo.png</texturefocus>
-						<texturenofocus colordiffuse="FF2a4a6a">osd/fullscreen/buttons/button-fo.png</texturenofocus>
-						<onclick>Action(SubtitleDelay)</onclick>
-						<visible>Player.HasVideo + Player.HasSubtitles</visible>
+						<texturefocus colordiffuse="FF4488cc">-</texturefocus>
+						<texturenofocus colordiffuse="FF2a4a6a">-</texturenofocus>
+						<onclick>ActivateWindow(osdsubtitlesettings)</onclick>
+						<visible>Player.HasVideo</visible>
 					</control>
 					<!-- HebScout: Audio Track Switch (icon - custom audio icon) -->
 					<control type="radiobutton" id="700012">

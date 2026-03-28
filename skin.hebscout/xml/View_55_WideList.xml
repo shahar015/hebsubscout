@@ -59,13 +59,23 @@
 						</control>
 						<control type="progress">
 							<left>0</left>
-							<bottom>0</bottom>
+							<top>71</top>
+							<right>0</right>
+							<height>2</height>
+							<texturebg></texturebg>
+							<midtexture colordiffuse="FFffffff" border="3">progress/texturebg_alt_white.png</midtexture>
+							<info>ListItem.PercentPlayed</info>
+							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + Control.HasFocus(55)</visible>
+						</control>
+						<control type="progress">
+							<left>0</left>
+							<top>71</top>
 							<right>0</right>
 							<height>2</height>
 							<texturebg></texturebg>
 							<midtexture colordiffuse="button_focus" border="3">progress/texturebg_alt_white.png</midtexture>
 							<info>ListItem.PercentPlayed</info>
-							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0)</visible>
+							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + !Control.HasFocus(55)</visible>
 						</control>
 					</focusedlayout>
 					<itemlayout height="list_item_height" condition="Container.Content(tvshows) | Container.Content(seasons) | Container.Content(episodes) | Container.Content(movies) | Container.Content(musicvideos) | Container.Content(videos) | Container.Content(games) | Window.IsActive(videoplaylist) | Window.IsActive(musicplaylist)">
@@ -97,13 +107,23 @@
 						</control>
 						<control type="progress">
 							<left>0</left>
-							<bottom>0</bottom>
+							<top>71</top>
+							<right>0</right>
+							<height>2</height>
+							<texturebg></texturebg>
+							<midtexture colordiffuse="FFffffff" border="3">progress/texturebg_alt_white.png</midtexture>
+							<info>ListItem.PercentPlayed</info>
+							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + Control.HasFocus(55)</visible>
+						</control>
+						<control type="progress">
+							<left>0</left>
+							<top>71</top>
 							<right>0</right>
 							<height>2</height>
 							<texturebg></texturebg>
 							<midtexture colordiffuse="button_focus" border="3">progress/texturebg_alt_white.png</midtexture>
 							<info>ListItem.PercentPlayed</info>
-							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0)</visible>
+							<visible>!Integer.IsEqual(ListItem.PercentPlayed,0) + !Control.HasFocus(55)</visible>
 						</control>
 					</itemlayout>
 					<focusedlayout height="list_item_height" condition="!Container.Content(songs) + !Container.Content(addons) + !Container.Content(playlists) + !Container.Content() + !Container.Content(tvshows) + !Container.Content(seasons) + !Container.Content(episodes) + !Container.Content(movies) + !Container.Content(musicvideos) + !Container.Content(videos)+ !Container.Content(favourites)">
