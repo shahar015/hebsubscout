@@ -212,13 +212,37 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [x] icon.png + fanart.jpg on all 5 addons
 - [x] Source card padding (116px height)
 
-### v1.5 (requires custom skin):
-- [ ] Player OSD buttons ("בחירת כתוביות", "החלף שמע") — needs custom VideoOSD.xml skin
-- [ ] Subtitle picker triggered from OSD during playback
+### v1.5 — done (partially working, needs fixes):
+- [x] Custom skin (`skin.hebscout`) — Estuary fork, OSD buttons render
+- [x] Settings/tools menu overhaul — account dashboard, quick toggles, version info
+- [x] Search history — SQLite, shown before search input
+- [x] Context menu — multi-action dialog (subs, watchlist, watched, similar)
+- [x] Skip intro — TheIntroDB integration, window property for skin visibility
+- [x] TMDB recommendations — movie/show similar titles
+
+### v1.5 — needs fixing:
+- [ ] OSD button "בחירת כתוביות" truncated — widen from 160px to 200px+
+- [ ] OSD button focus texture is stretched ellipse — need rectangular style with border
+- [ ] OSD subtitle picker opens Kodi's built-in dialog instead of our custom picker with match %
+- [ ] Only 1 sub shown (auto-downloaded) — need to show ALL available Hebrew subs from Wizdom/Ktuvit
+- [ ] Skin home screen background is black when no item highlighted — set default fanart
+- [ ] Source card feature tags (H.265, 4K, HDR10, DOLBY, etc.) — need own row + feature filter
+- [ ] Context menu visibility was fixed but needs testing
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
 - RD `instantAvailability` was removed by RD in Nov 2024. Cache check disabled (addMagnet workaround too slow). Cached sources still play instantly when clicked.
+- Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
+- **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback. It captures focus and blocks play/pause/seek. Use built-in Kodi OSD or a custom skin instead.
+- Trakt requires >= 1.0% progress for scrobble calls — guard all scrobble calls
+- `getTime()` throws "Kodi is not playing any media file" after player is destroyed — always use `_last_known_progress` as fallback
+- Translation keys must be unique Hebrew strings — `up_next` and `continue_watching` both translated to "המשך צפייה" causing duplicate menu entries
+- Display labels with `[COLOR]` markup leak into URL params if passed as the title — always separate display label from data title
+- Programmatic ControlButton in WindowXMLDialog looks ugly — always use XML-defined buttons instead
+- 1x1 white PNG doesn't work as fullscreen texture — use 16x16 minimum
+- Player callbacks (onAVStarted) may not fire if _player global gets garbage collected. Keeping the global ref is essential.
+- Kodi plugin scripts are short-lived — don't block with waitForAbort loops (causes loading spinner)
+- Dual XML skins: changes to source_select must be made in BOTH _rtl.xml and _ltr.xml
 - Ktuvit requires user credentials (email + hashed password in settings) — without them only Wizdom is used
 - No icon.png or fanart.jpg assets yet for the addons
 - **WindowDialog overlays STEAL ALL PLAYER INPUT** — never use WindowDialog.show() during video playback. It captures focus and blocks play/pause/seek. Use built-in Kodi OSD or a custom skin instead.
@@ -352,3 +376,10 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.2.5: Replaced dead `instantAvailability` with addMagnet workaround (3 API calls per source)
 - v1.2.6: Disabled RD cache check (addMagnet too slow — 30 API calls for 10 sources). Source card height 104→116px for padding
 - v1.2.7: Default all qualities selected on fresh install. Dim unselected filter buttons (FF333345) for clear on/off distinction
+
+### 2026-03-28 — Session 6: v1.5.0 — Custom skin, skip intro, settings overhaul, search history
+- v1.5.0: Major release: custom skin (skin.hebscout), skip intro (TheIntroDB), settings overhaul, search history, context menu, TMDB recommendations
+- v1.5.1: Fix skin font (revert to NotoSans), fix context menu visibility
+- v1.5.2: Fix skin directory structure (textures/fonts were nested)
+- v1.5.3: Fix stray character in VideoOSD.xml breaking custom buttons
+- v1.5.4: Text labels on OSD buttons, fix subtitle picker action
