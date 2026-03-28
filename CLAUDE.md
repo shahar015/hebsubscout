@@ -220,24 +220,15 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [x] Skip intro — TheIntroDB integration, window property for skin visibility
 - [x] TMDB recommendations — movie/show similar titles
 
-### v1.5 — needs fixing:
-- [ ] OSD button "בחירת כתוביות" truncated — widen from 160px to 200px+
-- [ ] OSD button focus texture is stretched ellipse — need rectangular style with border
-- [ ] OSD subtitle picker opens Kodi's built-in dialog instead of our custom picker with match %
-- [ ] Only 1 sub shown (auto-downloaded) — need to show ALL available Hebrew subs from Wizdom/Ktuvit
-- [ ] Skin home screen background is black when no item highlighted — set default fanart
-- [ ] Source card feature tags (H.265, 4K, HDR10, DOLBY, etc.) — need own row + feature filter
-- [ ] OSD "בחירת כתוביות" truncated — widen buttons, rectangular style with border
-- [ ] OSD subtitle picker opens Kodi built-in instead of our custom picker with match %
-- [ ] OSD switch source button ("החלף מקור") — stop playback, reopen source picker
-- [ ] Skin home background is black when no item highlighted — set default fanart
-- [ ] Context menu addon not registering in right-click menu
-- [ ] Source card feature detection missing tags (ddp5.1, h.265 with dot, 5.1/7.1 channels)
-- [ ] Source card bottom padding broken (background 100px inside 116px card)
-- [ ] Source card rows too cramped — need more vertical spacing
-- [ ] Feature filter row (HDR, DV, DOLBY, Atmos, etc.) — filter sources by features
-- [ ] Watch progress bar on episode/movie list items (partially watched)
-- [ ] Watched tick not auto-refreshing after finishing an episode
+### v1.6.x — needs fixing (next session):
+- [ ] OSD "בחירת כתוביות" not vertically centered
+- [ ] OSD audio icon should be speaker/audio, not gear (Estuary lacks this icon — may need custom texture)
+- [ ] OSD: remove Info, Bookmarks, built-in subtitle buttons from VideoOSD.xml
+- [ ] OSD skip intro: revert chapter fallback (doesn't work well), TheIntroDB only
+- [ ] Context menu "HebScout" still opens dialog — addContextMenuItems items not appearing, only the context addon entry shows. Need to debug why inline items aren't rendering
+- [ ] Progress bar not rendering with setResumePoint — investigate alternative approach
+- [ ] Subtitle picker match % mismatch: source card shows 60% but picker shows 7% — the RD stream URL filename differs from the original release name. Need to store original source name and pass it to picker
+- [ ] MediaFusion always returns 403 — investigate auth requirements
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
