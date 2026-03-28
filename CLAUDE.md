@@ -232,7 +232,6 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 
 ### Open issues:
 - [ ] MediaFusion always returns 403 — investigate auth requirements
-- [ ] Volume speaker icon (dialogs/volume/volume.png) may not render correctly as OSD button — test and potentially create custom texture
 
 ### Known issues:
 - MediaFusion returns HTTP 403 — may need auth token in URL
@@ -388,3 +387,15 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.6.3: Progress bar: added li.setProperty('percentplayed') alongside setResumePoint
 - v1.6.3: Source name stored in Window(home) property for subtitle picker match accuracy
 - v1.6.3: Source switch icon changed to home.png
+
+### 2026-03-28 — Session 7 (cont): v1.6.4 — Skip intro fix, progress bar, subtitle scoring
+- v1.6.4: **Skip intro fixed** — TheIntroDB API uses `tmdb_id` not `imdb_id` (was 404 for all shows)
+- v1.6.4: Handle null `start_ms` from API (intro starts at 0)
+- v1.6.4: **Progress bar fixed** — `trakt_bookmarks` table migrated to composite PK `(imdb_id, season, episode)` — was `imdb_id` only, all episodes overwriting each other
+- v1.6.4: `get_bookmark()` now accepts season/episode params, `add_item()` passes them
+- v1.6.4: **Subtitle match scoring fixed** — learning DB now boosts by +20 (capped 99) instead of forcing 100% and hiding all other subs
+- v1.6.4: OSD: בחירת כתוביות styled with light blue bg + white square border
+- v1.6.4: OSD: added sync subs button (settings-subtitle icon, opens osdsubtitlesettings)
+- v1.6.4: OSD: audio icon changed to custom audio-switch.png (from user-provided audio-converting.png)
+- v1.6.4: OSD: source switch reverted to playlist.png
+- v1.6.4: Moved loose root PNGs to assets/ folder

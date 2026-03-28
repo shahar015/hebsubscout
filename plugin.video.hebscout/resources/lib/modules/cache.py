@@ -41,9 +41,9 @@ def _get_conn():
         """)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS trakt_bookmarks (
-                imdb_id TEXT PRIMARY KEY,
-                season INTEGER,
-                episode INTEGER,
+                imdb_id TEXT,
+                season INTEGER DEFAULT 0,
+                episode INTEGER DEFAULT 0,
                 progress REAL,
                 paused_at TEXT,
                 updated REAL,
@@ -51,9 +51,30 @@ def _get_conn():
                 poster TEXT DEFAULT '',
                 fanart TEXT DEFAULT '',
                 media_type TEXT DEFAULT 'movie',
-                tmdb_id TEXT DEFAULT ''
+                tmdb_id TEXT DEFAULT '',
+                PRIMARY KEY (imdb_id, season, episode)
             )
         """)
+        # Migrate from old schema (imdb_id-only PRIMARY KEY) to composite key
+        try:
+            pk_info = conn.execute("PRAGMA table_info(trakt_bookmarks)").fetchall()
+            pk_cols = [r[1] for r in pk_info if r[5] > 0]  # r[5] = pk flag
+            if pk_cols == ['imdb_id']:
+                conn.execute("ALTER TABLE trakt_bookmarks RENAME TO _bookmarks_old")
+                conn.execute("""
+                    CREATE TABLE trakt_bookmarks (
+                        imdb_id TEXT, season INTEGER DEFAULT 0, episode INTEGER DEFAULT 0,
+                        progress REAL, paused_at TEXT, updated REAL,
+                        title TEXT DEFAULT '', poster TEXT DEFAULT '', fanart TEXT DEFAULT '',
+                        media_type TEXT DEFAULT 'movie', tmdb_id TEXT DEFAULT '',
+                        PRIMARY KEY (imdb_id, season, episode)
+                    )
+                """)
+                conn.execute("INSERT OR IGNORE INTO trakt_bookmarks SELECT * FROM _bookmarks_old")
+                conn.execute("DROP TABLE _bookmarks_old")
+                conn.commit()
+        except Exception:
+            pass
         # Add new columns if upgrading from older schema
         for col, coltype in [('title', 'TEXT'), ('poster', 'TEXT'), ('fanart', 'TEXT'),
                               ('media_type', 'TEXT'), ('tmdb_id', 'TEXT')]:
@@ -170,11 +191,14 @@ def clear_search_history():
 def set_bookmark(imdb_id, season, episode, progress, paused_at='',
                  title='', poster='', fanart='', media_type='', tmdb_id=''):
     try:
+        s = season or 0
+        e = episode or 0
         conn = _get_conn()
-        # Use UPSERT to preserve metadata from initial save when periodic saves omit it
+        # Preserve metadata from initial save when periodic saves omit it
         existing = conn.execute(
-            "SELECT title, poster, fanart, media_type, tmdb_id FROM trakt_bookmarks WHERE imdb_id=?",
-            (imdb_id,)
+            "SELECT title, poster, fanart, media_type, tmdb_id FROM trakt_bookmarks "
+            "WHERE imdb_id=? AND season=? AND episode=?",
+            (imdb_id, s, e)
         ).fetchone()
         if existing:
             title = title or existing[0] or ''
@@ -186,7 +210,7 @@ def set_bookmark(imdb_id, season, episode, progress, paused_at='',
             "INSERT OR REPLACE INTO trakt_bookmarks "
             "(imdb_id, season, episode, progress, paused_at, updated, title, poster, fanart, media_type, tmdb_id) "
             "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (imdb_id, season or 0, episode or 0, progress, paused_at, time.time(),
+            (imdb_id, s, e, progress, paused_at, time.time(),
              title, poster, fanart, media_type or 'movie', tmdb_id)
         )
         conn.commit()
@@ -195,13 +219,13 @@ def set_bookmark(imdb_id, season, episode, progress, paused_at='',
         pass
 
 
-def get_bookmark(imdb_id):
+def get_bookmark(imdb_id, season=0, episode=0):
     try:
         conn = _get_conn()
         row = conn.execute(
             "SELECT imdb_id, season, episode, progress, paused_at, title, poster, fanart, media_type, tmdb_id "
-            "FROM trakt_bookmarks WHERE imdb_id=?",
-            (imdb_id,)
+            "FROM trakt_bookmarks WHERE imdb_id=? AND season=? AND episode=?",
+            (imdb_id, season or 0, episode or 0)
         ).fetchone()
         conn.close()
         if row:

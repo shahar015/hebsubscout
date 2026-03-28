@@ -131,15 +131,18 @@ class PlayerActionMonitor(threading.Thread):
             self._stop_event.wait(0.5)
 
 
-def _fetch_intro_segments(imdb_id, season=None, episode=None):
+def _fetch_intro_segments(tmdb_id, season=None, episode=None):
     """
     Fetch intro/recap/credits timestamps from TheIntroDB.
+    Uses TMDB ID (not IMDB) as required by the API.
     Returns dict with keys: intro, recap, credits, preview.
     Each value is a list of {start: seconds, end: seconds}.
     Returns empty dict if no data.
     """
     try:
-        params = 'imdb_id={}'.format(imdb_id)
+        if not tmdb_id:
+            return {}
+        params = 'tmdb_id={}'.format(tmdb_id)
         if season is not None and episode is not None:
             params += '&season={}&episode={}'.format(season, episode)
         url = '{}/media?{}'.format(INTRODB_BASE, params)
@@ -150,10 +153,16 @@ def _fetch_intro_segments(imdb_id, season=None, episode=None):
         for key in ('intro', 'recap', 'credits', 'preview'):
             segments = data.get(key, [])
             if segments:
-                result[key] = [{'start': s['start_ms'] / 1000.0, 'end': s['end_ms'] / 1000.0}
-                               for s in segments if 'start_ms' in s and 'end_ms' in s]
+                parsed = []
+                for s in segments:
+                    start = (s.get('start_ms') or 0) / 1000.0
+                    end = (s.get('end_ms') or 0) / 1000.0
+                    if end > 0:  # Need at least an end time
+                        parsed.append({'start': start, 'end': end})
+                if parsed:
+                    result[key] = parsed
         if result:
-            log('IntroDB: found segments for {} — {}'.format(imdb_id, list(result.keys())))
+            log('IntroDB: found segments for tmdb={} — {}'.format(tmdb_id, list(result.keys())))
         return result
     except Exception as e:
         log('IntroDB fetch failed: {}'.format(e), 'ERROR')
@@ -291,7 +300,7 @@ class HebScoutPlayer(xbmc.Player):
             li.setArt({'fanart': metadata['fanart']})
 
         # Resume dialog
-        bm = get_bookmark(self.imdb_id)
+        bm = get_bookmark(self.imdb_id, self.season, self.episode)
         if bm and bm.get('progress', 0) > 5:
             if xbmcgui.Dialog().yesno(t('resume_title'),
                     t('resume_msg', bm['progress']),
@@ -328,10 +337,10 @@ class HebScoutPlayer(xbmc.Player):
         self._osd_monitor = PlayerActionMonitor(self)
         self._osd_monitor.start()
 
-        # === SKIP INTRO (TheIntroDB) — fetch in background ===
-        if self.imdb_id:
+        # === SKIP INTRO (TheIntroDB) — fetch in background, uses TMDB ID ===
+        if self.tmdb_id:
             def _fetch_intro():
-                segs = _fetch_intro_segments(self.imdb_id, self.season, self.episode)
+                segs = _fetch_intro_segments(self.tmdb_id, self.season, self.episode)
                 if segs and self._playing:
                     self._skip_intro_monitor = SkipIntroMonitor(self, segs)
                     self._skip_intro_monitor.start()

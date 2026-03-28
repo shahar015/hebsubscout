@@ -161,7 +161,7 @@
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=skip_intro)</onclick>
 						<visible>!String.IsEmpty(Window(home).Property(hebscout.skip_intro))</visible>
 					</control>
-					<!-- HebScout: Subtitle Picker (text button) -->
+					<!-- HebScout: Subtitle Picker (text button, light blue bg, white border) -->
 					<control type="button" id="700011">
 						<width>170</width>
 						<height>76</height>
@@ -169,25 +169,35 @@
 						<font>font12</font>
 						<align>center</align>
 						<aligny>center</aligny>
-						<textcolor>FFaaaaaa</textcolor>
+						<textcolor>FFffffff</textcolor>
 						<focusedcolor>FFffffff</focusedcolor>
-						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
-						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
+						<texturefocus colordiffuse="FF4488cc" border="2">-</texturefocus>
+						<texturenofocus colordiffuse="FF2a4a6a" border="2">-</texturenofocus>
+						<bordersize>2</bordersize>
+						<bordertexture colordiffuse="88FFFFFF">-</bordertexture>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=subtitle_picker)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Audio Track Switch (icon - volume speaker) -->
+					<!-- HebScout: Sync Subtitles (icon - subtitle settings) -->
+					<control type="radiobutton" id="700014">
+						<include content="OSDButton">
+							<param name="texture" value="osd/fullscreen/buttons/settings-subtitle.png"/>
+						</include>
+						<onclick>ActivateWindow(osdsubtitlesettings)</onclick>
+						<visible>Player.HasVideo</visible>
+					</control>
+					<!-- HebScout: Audio Track Switch (icon - custom audio icon) -->
 					<control type="radiobutton" id="700012">
 						<include content="OSDButton">
-							<param name="texture" value="dialogs/volume/volume.png"/>
+							<param name="texture" value="osd/fullscreen/buttons/audio-switch.png"/>
 						</include>
 						<onclick>PlayerControl(AudioNextLanguage)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Switch Source (icon) -->
+					<!-- HebScout: Switch Source (icon - playlist) -->
 					<control type="radiobutton" id="700013">
 						<include content="OSDButton">
-							<param name="texture" value="osd/fullscreen/buttons/home.png"/>
+							<param name="texture" value="osd/fullscreen/buttons/playlist.png"/>
 						</include>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=switch_source)</onclick>
 						<visible>Player.HasVideo</visible>

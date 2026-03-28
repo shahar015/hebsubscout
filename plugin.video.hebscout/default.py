@@ -92,7 +92,7 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     if imdb and is_watched(imdb, season, episode):
         info_tag.setPlaycount(1)
     elif imdb:
-        bm = get_bookmark(imdb)
+        bm = get_bookmark(imdb, season, episode)
         if bm and bm.get('progress', 0) > 1:
             # Both methods for maximum compatibility across Estuary views
             info_tag.setResumePoint(float(bm['progress']), 100.0)
