@@ -221,7 +221,7 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - [x] TMDB recommendations — movie/show similar titles
 
 ### v1.6.x — needs fixing (next session):
-- [ ] OSD "בחירת כתוביות" not vertically centered
+- [ ] OSD text buttons ("בחירת כתוביות" + "דלג על הפתיח") not vertically centered
 - [ ] OSD audio icon should be speaker/audio, not gear (Estuary lacks this icon — may need custom texture)
 - [ ] OSD: remove Info, Bookmarks, built-in subtitle buttons from VideoOSD.xml
 - [ ] OSD skip intro: revert chapter fallback (doesn't work well), TheIntroDB only
