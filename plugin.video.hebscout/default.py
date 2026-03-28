@@ -94,13 +94,22 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     elif imdb:
         bm = get_bookmark(imdb)
         if bm and bm.get('progress', 0) > 1:
-            li.setProperty('percentplayed', str(int(bm['progress'])))
-    
-    # Context menu
+            # setResumePoint tells Kodi to show a native progress bar
+            info_tag.setResumePoint(bm['progress'], 100.0)
+
+    # Context menu — inline items directly in Kodi's right-click menu
     cm = context_items or []
     if imdb and trakt.is_authorized():
         cm.append((t('trakt_watchlist_add'), 'RunPlugin({})'.format(
             url_for(action='trakt_watchlist_add', imdb_id=imdb, media_type=media_type))))
+    if imdb:
+        cm.append(('סמן כנצפה', 'RunPlugin({})'.format(
+            url_for(action='mark_watched', imdb_id=imdb, season=season, episode=episode, media_type=media_type))))
+    tmdb_id_val = meta.get('tmdb_id', '')
+    if tmdb_id_val:
+        sim_action = 'movie_similar' if media_type == 'movie' else 'show_similar'
+        cm.append(('כותרים דומים', 'Container.Update({})'.format(
+            url_for(action=sim_action, tmdb_id=tmdb_id_val))))
     li.addContextMenuItems(cm)
     
     params = {'action': action, 'tmdb_id': meta.get('tmdb_id', ''),
@@ -1035,10 +1044,15 @@ def router(params):
     # Skip intro (called from skin OSD button)
     elif action == 'skip_intro':
         try:
+            player = xbmc.Player()
             end_sec = int(xbmcgui.Window(10000).getProperty('hebscout.intro_end') or '0')
-            if end_sec > 0 and _player and _player._playing:
-                _player.seekTime(end_sec)
+            if end_sec > 0 and player.isPlaying():
+                player.seekTime(end_sec)
                 log('Skip intro: seeked to {}s'.format(end_sec))
+            elif player.isPlaying():
+                # Fallback: skip to next chapter
+                xbmc.executebuiltin('PlayerControl(BigSkipForward)')
+                log('Skip intro: chapter skip (no IntroDB data)')
         except Exception:
             pass
 
@@ -1051,20 +1065,39 @@ def router(params):
                 imdb = tag.getIMDBNumber()
                 s = tag.getSeason() if tag.getMediaType() == 'episode' else None
                 e = tag.getEpisode() if tag.getMediaType() == 'episode' else None
-                source_name = ''  # Can't get source name from tag
+                # Get source name from playing file for match scoring
+                source_name = ''
+                try:
+                    source_name = player.getPlayingFile().split('/')[-1].split('?')[0]
+                except Exception:
+                    pass
                 if imdb:
                     from hebsubscout import SubScout
                     scout = SubScout()
                     subs = scout.fetch_subtitles(imdb, season=s, episode=e)
+                    if subs and source_name:
+                        # Score subs against the source name
+                        try:
+                            from hebsubscout.matcher import ReleaseMatcher
+                            matcher = ReleaseMatcher(min_score=0)
+                            scored = matcher.match_source(source_name, subs)
+                            if scored:
+                                subs = scored
+                        except Exception:
+                            pass
                     if subs:
-                        # Build labels with match info
+                        # Build labels with match percentage
                         labels = []
-                        for sub in subs[:20]:
-                            name = sub.get('name', 'Unknown')
+                        for sub in subs[:25]:
+                            name = sub.get('name', sub.get('subtitle_name', 'Unknown'))
                             prov = sub.get('provider', '?')
-                            if len(name) > 50:
-                                name = name[:47] + '...'
-                            labels.append('{} [COLOR FF888888][{}][/COLOR]'.format(name, prov))
+                            score = sub.get('score', 0)
+                            if len(name) > 45:
+                                name = name[:42] + '...'
+                            if score > 0:
+                                labels.append('[COLOR FF00d4aa]{}%[/COLOR] {} [COLOR FF888888][{}][/COLOR]'.format(score, name, prov))
+                            else:
+                                labels.append('{} [COLOR FF888888][{}][/COLOR]'.format(name, prov))
                         choice = xbmcgui.Dialog().select(t('pick_heb_subs'), labels)
                         if choice >= 0:
                             selected = subs[choice]

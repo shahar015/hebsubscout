@@ -146,9 +146,9 @@
 					<ondown condition="Control.HasFocus(255)">13103</ondown>
 					<onleft>608</onleft>
 					<onright>600</onright>
-					<!-- HebScout: Skip Intro/Recap -->
+					<!-- HebScout: Skip Intro/Recap (text, teal, only visible during intro/chapter 1) -->
 					<control type="button" id="700010">
-						<width>190</width>
+						<width>170</width>
 						<height>46</height>
 						<label>דלג על הפתיח</label>
 						<font>font12</font>
@@ -159,11 +159,11 @@
 						<texturefocus colordiffuse="FF00d4aa" border="3">-</texturefocus>
 						<texturenofocus colordiffuse="44FFFFFF" border="1">-</texturenofocus>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=skip_intro)</onclick>
-						<visible>!String.IsEmpty(Window(home).Property(hebscout.skip_intro))</visible>
+						<visible>[!String.IsEmpty(Window(home).Property(hebscout.skip_intro))] | [Player.ChapterCount + Integer.IsEqual(Player.Chapter,1) + Integer.IsGreater(Player.ChapterCount,1)]</visible>
 					</control>
-					<!-- HebScout: Subtitle Picker -->
+					<!-- HebScout: Subtitle Picker (text button) -->
 					<control type="button" id="700011">
-						<width>190</width>
+						<width>170</width>
 						<height>46</height>
 						<label>בחירת כתוביות</label>
 						<font>font12</font>
@@ -176,33 +176,19 @@
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=subtitle_picker)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Audio Track Switch -->
-					<control type="button" id="700012">
-						<width>150</width>
-						<height>46</height>
-						<label>החלף שמע</label>
-						<font>font12</font>
-						<align>center</align>
-						<aligny>center</aligny>
-						<textcolor>FFaaaaaa</textcolor>
-						<focusedcolor>FFffffff</focusedcolor>
-						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
-						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
+					<!-- HebScout: Audio Track Switch (icon) -->
+					<control type="radiobutton" id="700012">
+						<include content="OSDButton">
+							<param name="texture" value="osd/fullscreen/buttons/settings.png"/>
+						</include>
 						<onclick>AudioNextLanguage</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
-					<!-- HebScout: Switch Source -->
-					<control type="button" id="700013">
-						<width>160</width>
-						<height>46</height>
-						<label>החלף מקור</label>
-						<font>font12</font>
-						<align>center</align>
-						<aligny>center</aligny>
-						<textcolor>FFaaaaaa</textcolor>
-						<focusedcolor>FFffffff</focusedcolor>
-						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
-						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
+					<!-- HebScout: Switch Source (icon) -->
+					<control type="radiobutton" id="700013">
+						<include content="OSDButton">
+							<param name="texture" value="osd/fullscreen/buttons/playlist.png"/>
+						</include>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=switch_source)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
