@@ -313,27 +313,17 @@ class ReleaseMatcher:
         if not source_name or not available_subtitles:
             return []
         
-        # Check learning DB for boost (but still show all results)
-        key = normalize_release_name(source_name)
-        learned_sub = None
-        if key in self._learning_db:
-            learned_sub = normalize_release_name(self._learning_db[key].get('subtitle', ''))
-
-        # Score all subtitles
+        # Score all subtitles (real scores only, no artificial boosting)
         matches = []
         for sub in available_subtitles:
             score = compute_match_score(source_name, sub.get('name', ''))
-            # Boost learned match by +20 (capped at 99) instead of forcing 100
-            is_learned = learned_sub and normalize_release_name(sub.get('name', '')) == learned_sub
-            if is_learned:
-                score = min(99, score + 20)
             if score >= self.min_score:
                 matches.append({
                     'score': score,
                     'subtitle_name': sub['name'],
                     'provider': sub.get('provider', ''),
                     'subtitle_id': sub.get('id', ''),
-                    'learned': bool(is_learned)
+                    'learned': False
                 })
 
         # Sort by score descending
