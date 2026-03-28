@@ -118,16 +118,31 @@ def _scrape_stremio(base_url, provider_name, imdb_id, season=None, episode=None)
             title = stream.get('title', '') or stream.get('name', '') or stream.get('description', '')
             info_hash = stream.get('infoHash', '')
             file_idx = stream.get('fileIdx')
+            # Prefer behaviorHints.filename for actual release name (MediaFusion uses this)
+            hints = stream.get('behaviorHints', {})
+            release_name = hints.get('filename', '')
 
-            lines = title.split('\n')
-            release_name = lines[0] if lines else title
+            # Clean Unicode emoji/symbols from title lines
+            clean_title = ''.join(c for c in title if ord(c) < 0x2600 or c in ' .')
+            clean_title = re.sub(r'\s+', ' ', clean_title).strip()
+
+            if not release_name:
+                lines = clean_title.split('\n')
+                release_name = lines[0] if lines else clean_title
+
             size_info = ''
-            for line in lines:
-                if 'gb' in line.lower() or 'mb' in line.lower():
-                    # Clean Unicode emoji/symbols that don't render in Kodi fonts
-                    clean = ''.join(c for c in line if ord(c) < 0x2600 or c in ' .')
-                    size_info = re.sub(r'\s+', ' ', clean).strip()
-                    break
+            # Check behaviorHints.videoSize first (bytes)
+            if hints.get('videoSize'):
+                try:
+                    gb = hints['videoSize'] / (1024 ** 3)
+                    size_info = '{:.1f} GB'.format(gb) if gb >= 1 else '{:.0f} MB'.format(gb * 1024)
+                except Exception:
+                    pass
+            if not size_info:
+                for line in clean_title.split('\n'):
+                    if 'gb' in line.lower() or 'mb' in line.lower():
+                        size_info = re.sub(r'\s+', ' ', line).strip()
+                        break
 
             sources.append({
                 'name': release_name,
