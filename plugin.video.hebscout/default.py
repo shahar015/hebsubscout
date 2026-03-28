@@ -21,7 +21,7 @@ sys.path.insert(0, xbmcaddon.Addon().getAddonInfo('path') + '/resources/lib')
 from resources.lib.modules import tmdb, realdebrid as rd, trakt_api as trakt
 from resources.lib.modules.sources import get_sources, resolve_source
 from resources.lib.modules.player import HebScoutPlayer
-from resources.lib.modules.cache import is_watched, cache_clear, get_continue_watching, get_watch_history
+from resources.lib.modules.cache import is_watched, cache_clear, get_continue_watching, get_watch_history, get_bookmark
 from resources.lib.modules.utils import (
     log, notification, ADDON, ADDON_NAME, ADDON_FANART,
     progress_dialog, input_dialog, select_dialog, yesno_dialog,
