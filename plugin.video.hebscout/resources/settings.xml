@@ -26,8 +26,8 @@
     </category>
     <category label="מקורות / Sources">
         <setting id="enable_torrentio" type="bool" label="Torrentio" default="true"/>
-        <setting id="enable_mediafusion" type="bool" label="MediaFusion" default="false"/>
-        <setting id="mediafusion_url" type="text" label="MediaFusion URL (from mediafusion.elfhosted.com/app/configure)" default=""/>
+        <setting id="enable_mediafusion" type="bool" label="MediaFusion" default="true"/>
+        <setting id="mediafusion_url" type="text" label="MediaFusion Config (auto)" default="" visible="false"/>
         <setting id="enable_external_scrapers" type="bool" label="External Scrapers (CocoScrapers)" default="true"/>
     </category>
     <category label="מסננים / Filters">

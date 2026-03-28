@@ -149,14 +149,36 @@ def scrape_torrentio(imdb_id, season=None, episode=None):
     return _scrape_stremio('https://torrentio.strem.fun/realdebrid=', 'torrentio', imdb_id, season, episode)
 
 
+def _get_mediafusion_url():
+    """Get or auto-generate MediaFusion config URL using existing RD token."""
+    from resources.lib.modules.utils import get_setting, set_setting, http_post, log
+    cached = get_setting('mediafusion_url') or ''
+    if cached:
+        return cached
+    # Auto-generate from RD token
+    rd_token = get_setting('rd_token') or ''
+    if not rd_token:
+        return ''
+    try:
+        import json
+        payload = {
+            'sps': [{'sv': 'realdebrid', 'tk': rd_token}],
+            'ap': 'changemeelfie'
+        }
+        resp = http_post('https://mediafusion.elfhosted.com/encrypt-user-data',
+                         payload, timeout=10)
+        if resp and resp.get('secret_str'):
+            url = 'https://mediafusion.elfhosted.com/{}'.format(resp['secret_str'])
+            set_setting('mediafusion_url', url)
+            log('MediaFusion: auto-configured from RD token')
+            return url
+    except Exception as e:
+        log('MediaFusion auto-config failed: {}'.format(e), 'ERROR')
+    return ''
+
+
 def scrape_mediafusion(imdb_id, season=None, episode=None):
-    from resources.lib.modules.utils import get_setting
-    url = get_setting('mediafusion_url') or ''
-    # Extract base URL with secret_str: user pastes full manifest URL or just the base
-    # e.g. "https://mediafusion.elfhosted.com/AbCdEf123/manifest.json" → "https://mediafusion.elfhosted.com/AbCdEf123"
-    if '/manifest.json' in url:
-        url = url.split('/manifest.json')[0]
-    url = url.rstrip('/')
+    url = _get_mediafusion_url()
     if not url:
         return []
     return _scrape_stremio(url, 'mediafusion', imdb_id, season, episode)
