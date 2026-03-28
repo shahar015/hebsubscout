@@ -15,7 +15,9 @@
       "Bash(ls -la skin.hebscout/fonts/Heebo*)",
       "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/heebo/Heebo%5Bwght%5D.ttf\" -o skin.hebscout/fonts/Heebo-Regular.ttf)",
       "Bash(ls repo/repository.hebsubscout/*.zip)",
-      "Bash(python -c \"import xml.etree.ElementTree as ET; ET.parse\\(''skin.hebscout/xml/VideoOSD.xml''\\); print\\(''XML valid''\\)\")"
+      "Bash(python -c \"import xml.etree.ElementTree as ET; ET.parse\\(''skin.hebscout/xml/VideoOSD.xml''\\); print\\(''XML valid''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''plugin.video.hebscout/default.py'',''r'',encoding=''utf-8''\\).read\\(\\)\\); print\\(''OK''\\)\")",
+      "Bash(python -c \"import xml.etree.ElementTree as ET; ET.parse\\(''skin.hebscout/xml/VideoOSD.xml''\\); print\\(''XML OK''\\)\")"
     ]
   }
 }

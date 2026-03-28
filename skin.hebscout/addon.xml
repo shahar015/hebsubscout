@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="skin.hebscout"
-       version="1.5.4"
+       version="1.6.0"
        name="HebScout Skin"
        provider-name="HebSubScout Community">
     <requires>

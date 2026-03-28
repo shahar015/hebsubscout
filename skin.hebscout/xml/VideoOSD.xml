@@ -148,41 +148,62 @@
 					<onright>600</onright>
 					<!-- HebScout: Skip Intro/Recap -->
 					<control type="button" id="700010">
-						<width>160</width>
-						<height>50</height>
-						<label>[COLOR FF00d4aa]דלג על הפתיח[/COLOR]</label>
+						<width>190</width>
+						<height>46</height>
+						<label>דלג על הפתיח</label>
 						<font>font12</font>
 						<align>center</align>
 						<aligny>center</aligny>
-						<texturefocus colordiffuse="CC00d4aa">osd/fullscreen/buttons/button-fo.png</texturefocus>
-						<texturenofocus colordiffuse="44FFFFFF" />
+						<textcolor>FF00d4aa</textcolor>
+						<focusedcolor>FFffffff</focusedcolor>
+						<texturefocus colordiffuse="FF00d4aa" border="3">-</texturefocus>
+						<texturenofocus colordiffuse="44FFFFFF" border="1">-</texturenofocus>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=skip_intro)</onclick>
 						<visible>!String.IsEmpty(Window(home).Property(hebscout.skip_intro))</visible>
 					</control>
 					<!-- HebScout: Subtitle Picker -->
 					<control type="button" id="700011">
-						<width>160</width>
-						<height>50</height>
-						<label>[COLOR FFcccccc]בחירת כתוביות[/COLOR]</label>
+						<width>190</width>
+						<height>46</height>
+						<label>בחירת כתוביות</label>
 						<font>font12</font>
 						<align>center</align>
 						<aligny>center</aligny>
-						<texturefocus colordiffuse="button_focus">osd/fullscreen/buttons/button-fo.png</texturefocus>
-						<texturenofocus colordiffuse="44FFFFFF" />
-						<onclick>ActivateWindow(SubtitleSearch)</onclick>
+						<textcolor>FFaaaaaa</textcolor>
+						<focusedcolor>FFffffff</focusedcolor>
+						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
+						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
+						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=subtitle_picker)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
 					<!-- HebScout: Audio Track Switch -->
 					<control type="button" id="700012">
-						<width>160</width>
-						<height>50</height>
-						<label>[COLOR FFcccccc]החלף שמע[/COLOR]</label>
+						<width>150</width>
+						<height>46</height>
+						<label>החלף שמע</label>
 						<font>font12</font>
 						<align>center</align>
 						<aligny>center</aligny>
-						<texturefocus colordiffuse="button_focus">osd/fullscreen/buttons/button-fo.png</texturefocus>
-						<texturenofocus colordiffuse="44FFFFFF" />
+						<textcolor>FFaaaaaa</textcolor>
+						<focusedcolor>FFffffff</focusedcolor>
+						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
+						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
 						<onclick>AudioNextLanguage</onclick>
+						<visible>Player.HasVideo</visible>
+					</control>
+					<!-- HebScout: Switch Source -->
+					<control type="button" id="700013">
+						<width>160</width>
+						<height>46</height>
+						<label>החלף מקור</label>
+						<font>font12</font>
+						<align>center</align>
+						<aligny>center</aligny>
+						<textcolor>FFaaaaaa</textcolor>
+						<focusedcolor>FFffffff</focusedcolor>
+						<texturefocus colordiffuse="FF3a3a5a" border="3">-</texturefocus>
+						<texturenofocus colordiffuse="22FFFFFF" border="1">-</texturenofocus>
+						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=switch_source)</onclick>
 						<visible>Player.HasVideo</visible>
 					</control>
 					<control type="radiobutton" id="804">

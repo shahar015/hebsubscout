@@ -18,6 +18,13 @@
 			<visible allowhiddenfocus="true">Control.HasFocus(20001)</visible>
 		</control>
 		<include>DefaultBackground</include>
+		<!-- HebScout: Default background when no fanart is showing -->
+		<control type="image">
+			<left>0</left><top>0</top><width>100%</width><height>100%</height>
+			<texture>fanart.jpg</texture>
+			<aspectratio>scale</aspectratio>
+			<colordiffuse>66FFFFFF</colordiffuse>
+		</control>
 		<control type="multiimage">
 			<depth>DepthBackground</depth>
 			<include>FullScreenDimensions</include>

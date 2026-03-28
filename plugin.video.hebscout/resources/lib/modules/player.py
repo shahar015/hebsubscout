@@ -548,6 +548,8 @@ class HebScoutPlayer(xbmc.Player):
                 trakt.scrobble_pause(self.media_type, self.imdb_id, p, self.season, self.episode)
         if _scout and self.source_name and self.subtitle_name:
             _scout.record_match(self.source_name, self.subtitle_name, 'auto')
+        # Refresh the container so watched/progress indicators update
+        xbmc.executebuiltin('Container.Refresh')
         if completed and self._next_episode_info and get_setting('auto_next_episode') != 'false':
             self._play_next_episode()
 

@@ -85,12 +85,16 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
         art['thumb'] = meta['still']
     li.setArt(art)
     
-    # Watched overlay
+    # Watched overlay + progress bar
     imdb = meta.get('imdb_id', '')
     season = meta.get('season_number', 0)
     episode = meta.get('episode_number', 0)
     if imdb and is_watched(imdb, season, episode):
         info_tag.setPlaycount(1)
+    elif imdb:
+        bm = get_bookmark(imdb)
+        if bm and bm.get('progress', 0) > 1:
+            li.setProperty('percentplayed', str(int(bm['progress'])))
     
     # Context menu
     cm = context_items or []
@@ -1038,10 +1042,77 @@ def router(params):
         except Exception:
             pass
 
-    # Subtitle picker (called during playback)
+    # Subtitle picker (called from skin OSD button during playback)
     elif action == 'subtitle_picker':
-        if _player and _player._playing:
-            _player.show_subtitle_picker()
+        player = xbmc.Player()
+        if player.isPlaying():
+            try:
+                tag = player.getVideoInfoTag()
+                imdb = tag.getIMDBNumber()
+                s = tag.getSeason() if tag.getMediaType() == 'episode' else None
+                e = tag.getEpisode() if tag.getMediaType() == 'episode' else None
+                source_name = ''  # Can't get source name from tag
+                if imdb:
+                    from hebsubscout import SubScout
+                    scout = SubScout()
+                    subs = scout.fetch_subtitles(imdb, season=s, episode=e)
+                    if subs:
+                        # Build labels with match info
+                        labels = []
+                        for sub in subs[:20]:
+                            name = sub.get('name', 'Unknown')
+                            prov = sub.get('provider', '?')
+                            if len(name) > 50:
+                                name = name[:47] + '...'
+                            labels.append('{} [COLOR FF888888][{}][/COLOR]'.format(name, prov))
+                        choice = xbmcgui.Dialog().select(t('pick_heb_subs'), labels)
+                        if choice >= 0:
+                            selected = subs[choice]
+                            download_sub = None
+                            try:
+                                subs_addon = xbmcaddon.Addon('service.subtitles.hebsubscout')
+                                subs_path = subs_addon.getAddonInfo('path')
+                                if subs_path not in sys.path:
+                                    sys.path.insert(0, subs_path)
+                                from downloader import download_subtitle
+                                download_sub = download_subtitle
+                            except Exception:
+                                pass
+                            if download_sub:
+                                path = download_sub(
+                                    provider=selected.get('provider', ''),
+                                    subtitle_id=selected.get('id', ''),
+                                )
+                                if path:
+                                    player.setSubtitles(path)
+                                    notification(t('sub_applied', 0), time=2000)
+                    else:
+                        notification(t('no_heb_subs'))
+                else:
+                    notification(t('imdb_not_found'))
+            except Exception as e:
+                log('Subtitle picker error: {}'.format(e), 'ERROR')
+                notification(t('no_heb_subs'))
+        else:
+            notification(t('not_playing'))
+
+    # Switch source (called from skin OSD button during playback)
+    elif action == 'switch_source':
+        player = xbmc.Player()
+        if player.isPlaying():
+            try:
+                tag = player.getVideoInfoTag()
+                imdb = tag.getIMDBNumber()
+                s = tag.getSeason() if tag.getMediaType() == 'episode' else None
+                e = tag.getEpisode() if tag.getMediaType() == 'episode' else None
+                mt = 'tv' if tag.getMediaType() == 'episode' else 'movie'
+                player.stop()
+                xbmc.sleep(500)
+                if imdb:
+                    source_selection(imdb, '', tag.getTitle() or '', '',
+                                     season=s, episode=e, media_type=mt)
+            except Exception as e:
+                log('Switch source error: {}'.format(e), 'ERROR')
         else:
             notification(t('not_playing'))
 

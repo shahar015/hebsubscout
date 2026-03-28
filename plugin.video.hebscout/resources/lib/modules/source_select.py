@@ -26,6 +26,7 @@ QUALITY_ORDER = {'4K': 0, '1080p': 1, '720p': 2, '480p': 3, 'SD': 4}
 QUALITY_BTNS = {3001: '4K', 3002: '1080p', 3003: '720p', 3004: '480p', 3005: 'SD'}
 SORT_BTNS = {3006: 'default', 3007: 'size', 3008: 'subs'}
 PROVIDER_BTNS = {3009: 'torrentio', 3010: 'mediafusion'}
+FEATURE_BTNS = {3020: 'DV', 3021: 'HDR', 3022: 'Atmos', 3023: 'REMUX', 3024: 'H.265'}
 
 
 def _parse_size_bytes(size_str):
@@ -63,6 +64,8 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         self._sort_by = get_setting('filter_sort') or 'default'
         saved_p = get_setting('filter_providers') or ''
         self._provider_filters = set(p for p in saved_p.split('|') if p) if saved_p else set()
+        saved_f = get_setting('filter_features') or ''
+        self._feature_filters = set(f for f in saved_f.split('|') if f) if saved_f else set()
 
     def onInit(self):
         self._sync_labels()
@@ -131,6 +134,23 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
             except Exception:
                 pass
 
+        # Feature filter row label
+        try:
+            self.getControl(4004).setLabel('{}:'.format('תכונות' if he else 'FEATURES'))
+        except Exception:
+            pass
+
+        # Feature buttons
+        for btn_id, feat in FEATURE_BTNS.items():
+            try:
+                ctrl = self.getControl(btn_id)
+                if feat in self._feature_filters:
+                    ctrl.setLabel('[COLOR FFe67e22]{}[/COLOR]'.format(feat))
+                else:
+                    ctrl.setLabel('[COLOR FF333345]{}[/COLOR]'.format(feat))
+            except Exception:
+                pass
+
     # ==================================================================
     # INFO PANEL
     # ==================================================================
@@ -184,6 +204,17 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
 
         if self._provider_filters:
             result = [s for s in result if s.get('provider', '') in self._provider_filters]
+
+        # Feature filter: source must have AT LEAST all selected features
+        if self._feature_filters:
+            def _has_features(src):
+                src_info = set(src.get('info', []))
+                # Also check for partial matches (e.g. 'HDR' matches 'HDR10', 'HDR10+')
+                for feat in self._feature_filters:
+                    if not any(feat in tag or tag in feat for tag in src_info):
+                        return False
+                return True
+            result = [s for s in result if _has_features(s)]
 
         if self._sort_by == 'size':
             result.sort(key=lambda s: (
@@ -295,6 +326,16 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
             self._apply_filters()
             return
 
+        if controlID in FEATURE_BTNS:
+            f = FEATURE_BTNS[controlID]
+            if f in self._feature_filters:
+                self._feature_filters.discard(f)
+            else:
+                self._feature_filters.add(f)
+            self._sync_labels()
+            self._apply_filters()
+            return
+
     def onAction(self, action):
         if action.getId() in (9, 10, 92, 216):
             self.selected_source = None
@@ -305,3 +346,4 @@ class SourceSelectDialog(xbmcgui.WindowXMLDialog):
         set_setting('filter_quality', '|'.join(sorted(self._quality_filters)))
         set_setting('filter_sort', self._sort_by)
         set_setting('filter_providers', '|'.join(sorted(self._provider_filters)))
+        set_setting('filter_features', '|'.join(sorted(self._feature_filters)))

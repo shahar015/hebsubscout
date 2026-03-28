@@ -34,10 +34,10 @@ def _detect_info(name):
     info = []
     name_lower = name.lower()
     # Codec
-    if 'hevc' in name_lower or 'x265' in name_lower or 'h265' in name_lower:
-        info.append('HEVC')
-    elif 'x264' in name_lower or 'h264' in name_lower:
-        info.append('x264')
+    if any(x in name_lower for x in ('hevc', 'x265', 'h265', 'h.265')):
+        info.append('H.265')
+    elif any(x in name_lower for x in ('x264', 'h264', 'h.264')):
+        info.append('H.264')
     elif 'av1' in name_lower:
         info.append('AV1')
     # HDR / Dolby Vision
@@ -58,19 +58,29 @@ def _detect_info(name):
         info.append('WEB-DL')
     elif 'webrip' in name_lower:
         info.append('WEBRip')
-    # Audio
+    # Audio format
     if 'atmos' in name_lower:
         info.append('Atmos')
     if 'truehd' in name_lower:
         info.append('TrueHD')
-    if 'dts-hd' in name_lower or 'dtshd' in name_lower:
+    if 'dts-hd' in name_lower or 'dtshd' in name_lower or 'dts.hd' in name_lower:
         info.append('DTS-HD')
     elif 'dts' in name_lower:
         info.append('DTS')
-    if 'dd5' in name_lower or 'ac3' in name_lower:
+    if any(x in name_lower for x in ('ddp5', 'dd+', 'ddplus', 'eac3', 'ddp')):
+        info.append('DD+')
+    elif any(x in name_lower for x in ('dd5', 'ac3', 'dolby.digital', 'dolbydigital')):
         info.append('DD5.1')
     elif 'aac' in name_lower:
         info.append('AAC')
+    # Audio channels
+    if '7.1' in name_lower:
+        info.append('7.1')
+    elif '5.1' in name_lower and 'DD5.1' not in info and 'DD+' not in info:
+        info.append('5.1')
+    # Multi audio
+    if any(x in name_lower for x in ('dual', 'multi', 'dual.audio', 'multi.audio')):
+        info.append('Multi')
     return info
 
 
