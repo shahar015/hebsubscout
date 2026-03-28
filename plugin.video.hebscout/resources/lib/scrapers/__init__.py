@@ -167,8 +167,8 @@ def _get_mediafusion_url():
         }
         resp = http_post('https://mediafusion.elfhosted.com/encrypt-user-data',
                          payload, timeout=10)
-        if resp and resp.get('secret_str'):
-            url = 'https://mediafusion.elfhosted.com/{}'.format(resp['secret_str'])
+        if resp and resp.get('encrypted_str'):
+            url = 'https://mediafusion.elfhosted.com/{}'.format(resp['encrypted_str'])
             set_setting('mediafusion_url', url)
             log('MediaFusion: auto-configured from RD token')
             return url

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.hebsubscout"
        name="HebSubScout Repository"
-       version="1.6.11"
+       version="1.6.12"
        provider-name="HebSubScout Community">
     <extension point="xbmc.addon.repository" name="HebSubScout Repository">
         <dir>
