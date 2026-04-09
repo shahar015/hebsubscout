@@ -106,28 +106,38 @@ class SubScout:
     
     def fetch_subtitles(self, imdb_id, season=None, episode=None):
         """
-        Fetch all available Hebrew subtitles from enabled providers.
-        
+        Fetch all available Hebrew subtitles from enabled providers in parallel.
+
         Args:
             imdb_id: IMDB ID string (e.g. "tt1234567")
             season: int or None for movies
             episode: int or None for movies
-        
+
         Returns:
             List of subtitle dicts from all providers combined.
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if not self.providers:
+            return []
+
+        def _query(name, provider):
+            start = time.time()
+            subs = provider.search(imdb_id, season=season, episode=episode)
+            elapsed = time.time() - start
+            log('{} returned {} results in {:.1f}s'.format(name, len(subs), elapsed))
+            return subs
+
         all_subs = []
-        
-        for name, provider in self.providers.items():
-            try:
-                start = time.time()
-                subs = provider.search(imdb_id, season=season, episode=episode)
-                elapsed = time.time() - start
-                log('{} returned {} results in {:.1f}s'.format(name, len(subs), elapsed))
-                all_subs.extend(subs)
-            except Exception as e:
-                log('Provider {} failed: {}'.format(name, str(e)), 'ERROR')
-        
+        with ThreadPoolExecutor(max_workers=len(self.providers)) as pool:
+            futures = {pool.submit(_query, n, p): n for n, p in self.providers.items()}
+            for future in as_completed(futures):
+                name = futures[future]
+                try:
+                    all_subs.extend(future.result())
+                except Exception as e:
+                    log('Provider {} failed: {}'.format(name, str(e)), 'ERROR')
+
         return all_subs
     
     def check_sources(self, imdb_id, sources, season=None, episode=None):

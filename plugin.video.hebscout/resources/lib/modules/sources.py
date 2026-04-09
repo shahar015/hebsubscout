@@ -24,23 +24,53 @@ except ImportError:
     log('HebSubScout module not found - subtitle indicators disabled', 'WARNING')
 
 
+def _get_scout():
+    """Get or create a cached SubScout instance."""
+    global _scout_instance
+    if _scout_instance is None:
+        _scout_instance = SubScout(settings={
+            'min_match_score': int(get_setting('min_match_score') or 40),
+            'providers': ['wizdom', 'ktuvit'],
+            'learning_db': True,
+            'ktuvit_email': get_setting('ktuvit_email'),
+            'ktuvit_password': get_setting('ktuvit_password'),
+        })
+    return _scout_instance
+
+_scout_instance = None
+
+
 def get_sources(imdb_id, tmdb_id=None, title='', year='',
                 season=None, episode=None, progress_callback=None):
     """
-    Full source pipeline:
-    1. Scrape all providers
-    2. Check RD cache
-    3. Enrich with Hebrew subtitle data
-    
+    Full source pipeline — scraping and subtitle fetching run in parallel:
+    1. Start subtitle fetch in background (if enabled)
+    2. Scrape all providers in parallel
+    3. Wait for subtitles, match against sources
+
     Returns list of fully enriched source dicts.
     """
+    from concurrent.futures import ThreadPoolExecutor
+
     def update(pct, msg):
         if progress_callback:
             progress_callback(pct, msg)
 
-    # --- Step 1: Scrape ---
+    # --- Start subtitle fetch in background (overlaps with scraping) ---
+    sub_future = None
+    use_subs = HEBSUBSCOUT_AVAILABLE and get_setting('enable_hebsubscout') != 'false'
+    if use_subs:
+        try:
+            scout = _get_scout()
+            sub_pool = ThreadPoolExecutor(max_workers=1)
+            sub_future = sub_pool.submit(scout.fetch_subtitles, imdb_id, season, episode)
+            log('Started subtitle fetch in background')
+        except Exception as e:
+            log('Failed to start subtitle fetch: {}'.format(e), 'ERROR')
+
+    # --- Scrape sources (parallel internally via Phase 1A) ---
     update(5, t('scraping_sources'))
-    
+
     sources = scrape_all(
         imdb_id=imdb_id,
         tmdb_id=tmdb_id,
@@ -51,40 +81,41 @@ def get_sources(imdb_id, tmdb_id=None, title='', year='',
         use_torrentio=get_setting('enable_torrentio') != 'false',
         use_mediafusion=get_setting('enable_mediafusion') != 'false',
         use_external=get_setting('enable_external_scrapers') != 'false',
-        progress_callback=lambda p, m: update(5 + int(p * 0.35), m)
+        progress_callback=lambda p, m: update(5 + int(p * 0.55), m)
     )
 
     if not sources:
+        # Cancel subtitle fetch if still running
+        if sub_future:
+            sub_future.cancel()
         update(100, t('no_sources'))
         return []
 
-    # --- Step 2: RD cache check ---
+    # --- RD cache check ---
     # DISABLED: RD removed instantAvailability in Nov 2024.
     # The addMagnet workaround (3 API calls per source) is too slow.
     # Cached sources play instantly anyway when the user clicks them.
     # TODO: Re-enable if RD adds a fast cache check endpoint.
-    
+
     update(65, t('found_sources', len(sources)))
 
-    # --- Step 3: HebSubScout enrichment ---
-    if HEBSUBSCOUT_AVAILABLE and get_setting('enable_hebsubscout') != 'false':
+    # --- Wait for subtitle results and match ---
+    if sub_future:
         update(70, t('checking_subs'))
-        
         try:
-            scout = SubScout(settings={
-                'min_match_score': int(get_setting('min_match_score') or 40),
-                'providers': ['wizdom', 'ktuvit'],
-                'learning_db': True,
-                'ktuvit_email': get_setting('ktuvit_email'),
-                'ktuvit_password': get_setting('ktuvit_password'),
-            })
-            sources = scout.check_sources(imdb_id, sources, season=season, episode=episode)
-            
-            subs_count = sum(1 for s in sources if s.get('has_hebrew_subs'))
-            log('HebSubScout: {}/{} sources have Hebrew sub matches'.format(subs_count, len(sources)))
+            available_subs = sub_future.result(timeout=15)
+            if available_subs:
+                scout = _get_scout()
+                log('Matching {} subs against {} sources'.format(len(available_subs), len(sources)))
+                sources = scout.matcher.match_sources_batch(sources, available_subs)
+                subs_count = sum(1 for s in sources if s.get('has_hebrew_subs'))
+                log('HebSubScout: {}/{} sources have Hebrew sub matches'.format(subs_count, len(sources)))
+            else:
+                log('No Hebrew subtitles found for {}'.format(imdb_id))
+                sources = scout.matcher.match_sources_batch(sources, [])
         except Exception as e:
             log('HebSubScout enrichment failed: {}'.format(e), 'ERROR')
-    
+
     update(95, t('ready_sources', len(sources)))
     return sources
 

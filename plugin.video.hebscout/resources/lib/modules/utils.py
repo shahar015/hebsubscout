@@ -6,9 +6,9 @@ import os
 import sys
 import json
 
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode, quote_plus, parse_qsl
-from urllib.error import HTTPError, URLError
+
+import requests as _requests
 
 import xbmc
 import xbmcgui
@@ -225,17 +225,18 @@ def notification(msg, heading=None, icon=None, time=3000):
     xbmcgui.Dialog().notification(heading, msg, icon, time)
 
 
+# Shared HTTP session — connection pooling, gzip, keep-alive
+_session = _requests.Session()
+_session.headers.update({'User-Agent': 'HebScout/1.0 Kodi'})
+
+
 def http_get(url, headers=None, timeout=12):
     try:
-        req = Request(url)
-        req.add_header('User-Agent', 'HebScout/1.0 Kodi')
-        if headers:
-            for k, v in headers.items():
-                req.add_header(k, v)
-        resp = urlopen(req, timeout=timeout)
-        return json.loads(resp.read().decode('utf-8'))
-    except HTTPError as e:
-        log('HTTP {} from {}'.format(e.code, url), 'ERROR')
+        resp = _session.get(url, headers=headers, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+    except _requests.HTTPError as e:
+        log('HTTP {} from {}'.format(e.response.status_code, url), 'ERROR')
         return None
     except Exception as e:
         log('HTTP GET failed: {} - {}'.format(url, e), 'ERROR')
@@ -244,21 +245,15 @@ def http_get(url, headers=None, timeout=12):
 
 def http_post(url, data, headers=None, timeout=12):
     try:
-        body = json.dumps(data).encode('utf-8')
-        req = Request(url, data=body)
-        req.add_header('User-Agent', 'HebScout/1.0 Kodi')
-        req.add_header('Content-Type', 'application/json')
-        if headers:
-            for k, v in headers.items():
-                req.add_header(k, v)
-        resp = urlopen(req, timeout=timeout)
-        return json.loads(resp.read().decode('utf-8'))
-    except HTTPError as e:
+        resp = _session.post(url, json=data, headers=headers, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+    except _requests.HTTPError as e:
         try:
-            err_body = e.read().decode('utf-8', errors='replace')[:500]
+            err_body = e.response.text[:500]
         except Exception:
             err_body = ''
-        log('HTTP POST {} from {} | {}'.format(e.code, url, err_body), 'ERROR')
+        log('HTTP POST {} from {} | {}'.format(e.response.status_code, url, err_body), 'ERROR')
         return None
     except Exception as e:
         log('HTTP POST failed: {} - {}'.format(url, e), 'ERROR')
@@ -268,13 +263,9 @@ def http_post(url, data, headers=None, timeout=12):
 def http_get_raw(url, headers=None, timeout=12):
     """Return raw text instead of parsed JSON."""
     try:
-        req = Request(url)
-        req.add_header('User-Agent', 'HebScout/1.0 Kodi')
-        if headers:
-            for k, v in headers.items():
-                req.add_header(k, v)
-        resp = urlopen(req, timeout=timeout)
-        return resp.read().decode('utf-8')
+        resp = _session.get(url, headers=headers, timeout=timeout)
+        resp.raise_for_status()
+        return resp.text
     except Exception as e:
         log('HTTP raw GET failed: {}'.format(e), 'ERROR')
         return None

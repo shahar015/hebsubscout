@@ -16,6 +16,7 @@ This is the "secret sauce" that makes the pre-source subtitle indicator useful.
 """
 
 import re
+import functools
 from difflib import SequenceMatcher
 
 
@@ -61,11 +62,9 @@ def normalize_release_name(name):
     return name.lower()
 
 
-def extract_components(name):
-    """
-    Extract structured components from a release name.
-    Returns a dict of identified components.
-    """
+@functools.lru_cache(maxsize=256)
+def _extract_components_cached(name):
+    """Cached version — called by extract_components()."""
     normalized = normalize_release_name(name)
     tokens = normalized.split('.')
     
@@ -119,6 +118,11 @@ def extract_components(name):
             components['group'] = group_match.group(1).lower()
     
     return components
+
+
+def extract_components(name):
+    """Extract structured components from a release name (cached)."""
+    return _extract_components_cached(name)
 
 
 def compute_match_score(source_name, subtitle_name):

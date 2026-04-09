@@ -13,8 +13,8 @@ from resources.lib.modules.utils import (
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key
 
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
+import requests as _requests
 
 BASE = 'https://api.real-debrid.com/rest/1.0'
 OAUTH_BASE = 'https://api.real-debrid.com/oauth/v2'
@@ -37,15 +37,12 @@ def _api_post(path, data):
     url = '{}/{}'.format(BASE, path)
     # Real Debrid uses form-encoded POST, not JSON
     try:
-        body = urlencode(data).encode('utf-8')
-        req = Request(url, data=body)
-        req.add_header('User-Agent', 'HebScout/1.0')
-        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
-        token = get_setting('rd_token')
-        if token:
-            req.add_header('Authorization', 'Bearer {}'.format(token))
-        resp = urlopen(req, timeout=15)
-        return json.loads(resp.read().decode('utf-8'))
+        resp = _requests.post(url, data=data, headers={
+            'User-Agent': 'HebScout/1.0',
+            **_headers()
+        }, timeout=15)
+        resp.raise_for_status()
+        return resp.json()
     except Exception as e:
         log('RD POST error: {}'.format(e), 'ERROR')
         return None
@@ -105,18 +102,14 @@ def authorize():
         cred = http_get(cred_url)
         if cred and cred.get('client_id'):
             # Got credentials, now get token (RD requires form-encoded POST)
-            token_form = urlencode({
-                'client_id': cred['client_id'],
-                'client_secret': cred['client_secret'],
-                'code': device_code,
-                'grant_type': 'http://oauth.net/grant_type/device/1.0'
-            }).encode('utf-8')
             try:
-                req = Request('{}/token'.format(OAUTH_BASE), data=token_form)
-                req.add_header('Content-Type', 'application/x-www-form-urlencoded')
-                req.add_header('User-Agent', 'HebScout/1.0')
-                resp = urlopen(req, timeout=15)
-                token_data = json.loads(resp.read().decode('utf-8'))
+                resp = _requests.post('{}/token'.format(OAUTH_BASE), data={
+                    'client_id': cred['client_id'],
+                    'client_secret': cred['client_secret'],
+                    'code': device_code,
+                    'grant_type': 'http://oauth.net/grant_type/device/1.0'
+                }, headers={'User-Agent': 'HebScout/1.0'}, timeout=15)
+                token_data = resp.json()
             except Exception as e:
                 log('RD token request failed: {}'.format(e), 'ERROR')
                 token_data = None
@@ -148,17 +141,13 @@ def refresh_token():
         return False
 
     try:
-        form = urlencode({
+        resp = _requests.post('{}/token'.format(OAUTH_BASE), data={
             'client_id': client_id,
             'client_secret': client_secret,
             'code': refresh,
             'grant_type': 'http://oauth.net/grant_type/device/1.0'
-        }).encode('utf-8')
-        req = Request('{}/token'.format(OAUTH_BASE), data=form)
-        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
-        req.add_header('User-Agent', 'HebScout/1.0')
-        resp = urlopen(req, timeout=15)
-        data = json.loads(resp.read().decode('utf-8'))
+        }, headers={'User-Agent': 'HebScout/1.0'}, timeout=15)
+        data = resp.json()
     except Exception:
         data = None
     if data and data.get('access_token'):
@@ -258,10 +247,8 @@ def delete_torrent(torrent_id):
     """Delete a torrent from RD."""
     refresh_token()
     try:
-        req = Request('{}/torrents/delete/{}'.format(BASE, torrent_id))
-        req.get_method = lambda: 'DELETE'
-        req.add_header('Authorization', 'Bearer {}'.format(get_setting('rd_token')))
-        urlopen(req, timeout=10)
+        _requests.delete('{}/torrents/delete/{}'.format(BASE, torrent_id),
+                         headers=_headers(), timeout=10)
     except Exception:
         pass
 

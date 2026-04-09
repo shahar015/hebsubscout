@@ -18,15 +18,56 @@ import xbmcaddon
 # Add our lib to path
 sys.path.insert(0, xbmcaddon.Addon().getAddonInfo('path') + '/resources/lib')
 
-from resources.lib.modules import tmdb, realdebrid as rd, trakt_api as trakt
-from resources.lib.modules.sources import get_sources, resolve_source
-from resources.lib.modules.player import HebScoutPlayer
-from resources.lib.modules.cache import is_watched, cache_clear, get_continue_watching, get_watch_history, get_bookmark
+# Lightweight imports only — heavy modules loaded lazily on first use
 from resources.lib.modules.utils import (
     log, notification, ADDON, ADDON_NAME, ADDON_FANART,
     progress_dialog, input_dialog, select_dialog, yesno_dialog,
     get_setting, set_setting, t, is_hebrew
 )
+from resources.lib.modules.cache import is_watched, cache_clear, get_continue_watching, get_watch_history, get_bookmark
+
+# Lazy module references — imported on first access
+_tmdb = _rd = _trakt = _sources = _player = None
+
+
+def _get_tmdb():
+    global _tmdb
+    if _tmdb is None:
+        from resources.lib.modules import tmdb
+        _tmdb = tmdb
+    return _tmdb
+
+
+def _get_rd():
+    global _rd
+    if _rd is None:
+        from resources.lib.modules import realdebrid
+        _rd = realdebrid
+    return _rd
+
+
+def _get_trakt():
+    global _trakt
+    if _trakt is None:
+        from resources.lib.modules import trakt_api
+        _trakt = trakt_api
+    return _trakt
+
+
+def _get_sources_module():
+    global _sources
+    if _sources is None:
+        from resources.lib.modules import sources
+        _sources = sources
+    return _sources
+
+
+def _get_player_class():
+    global _player
+    if _player is None:
+        from resources.lib.modules.player import HebScoutPlayer
+        _player = HebScoutPlayer
+    return _player
 
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
@@ -103,7 +144,7 @@ def add_item(meta, action='play', is_folder=False, context_items=None):
     if imdb:
         cm.append(('בדוק כתוביות', 'RunPlugin({})'.format(
             url_for(action='check_subs', imdb_id=imdb, season=season, episode=episode, title=meta.get('title', '')))))
-    if imdb and trakt.is_authorized():
+    if imdb and _get_trakt().is_authorized():
         cm.append((t('trakt_watchlist_add'), 'RunPlugin({})'.format(
             url_for(action='trakt_watchlist_add', imdb_id=imdb, media_type=media_type))))
     if imdb:
@@ -148,7 +189,7 @@ def main_menu():
     add_dir('[COLOR cyan]{}[/COLOR]'.format(t('continue_watching')), 'continue_watching')
     add_dir('[COLOR cyan]{}[/COLOR]'.format(t('watch_history')), 'watch_history')
 
-    if trakt.is_authorized():
+    if _get_trakt().is_authorized():
         add_dir('[COLOR cyan]{}[/COLOR]'.format(t('up_next')), 'trakt_next_up')
         add_dir('[COLOR cyan]{}[/COLOR]'.format(t('my_watchlist')), 'trakt_watchlist_menu')
 
@@ -191,7 +232,7 @@ def list_movies(func, page=1, **kwargs):
 
 
 def movies_genres():
-    genres = tmdb.movie_genres()
+    genres = _get_tmdb().movie_genres()
     for g in genres:
         add_dir(g['name'], 'movies_genre', genre_id=str(g['id']))
     end_dir(content='')
@@ -217,7 +258,7 @@ def list_shows(func, page=1, **kwargs):
 
 
 def show_seasons(tmdb_id):
-    details = tmdb.show_details(tmdb_id)
+    details = _get_tmdb().show_details(tmdb_id)
     if not details:
         notification(t('show_not_found'))
         return
@@ -231,8 +272,8 @@ def show_seasons(tmdb_id):
 
 
 def show_episodes(tmdb_id, season):
-    episodes = tmdb.season_episodes(tmdb_id, int(season))
-    details = tmdb.show_details(tmdb_id)
+    episodes = _get_tmdb().season_episodes(tmdb_id, int(season))
+    details = _get_tmdb().show_details(tmdb_id)
     imdb_id = details.get('imdb_id', '') if details else ''
     
     for ep in episodes:
@@ -254,7 +295,7 @@ def show_episodes(tmdb_id, season):
 
 
 def shows_genres():
-    genres = tmdb.tv_genres()
+    genres = _get_tmdb().tv_genres()
     for g in genres:
         add_dir(g['name'], 'shows_genre', genre_id=str(g['id']))
     end_dir(content='')
@@ -278,9 +319,9 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
     details = None
     if tmdb_id:
         if media_type == 'movie':
-            details = tmdb.movie_details(tmdb_id)
+            details = _get_tmdb().movie_details(tmdb_id)
         else:
-            details = tmdb.show_details(tmdb_id)
+            details = _get_tmdb().show_details(tmdb_id)
         if details and not imdb_id:
             imdb_id = details.get('imdb_id', '')
     elif imdb_id and not tmdb_id:
@@ -317,7 +358,7 @@ def source_selection(imdb_id, tmdb_id='', title='', year='',
         if not progress.iscanceled():
             progress.update(pct, msg)
 
-    sources = get_sources(
+    sources = _get_sources_module().get_sources(
         imdb_id=imdb_id, tmdb_id=tmdb_id, title=title, year=year,
         season=int(season) if season else None,
         episode=int(episode) if episode else None,
@@ -370,7 +411,7 @@ def _check_setup():
     If not, walk the user through first-time setup.
     TMDB and Trakt keys are built into the addon - users only authorize accounts.
     """
-    if rd.is_authorized():
+    if _get_rd().is_authorized():
         return True
     
     # First-run: need Real Debrid
@@ -381,12 +422,12 @@ def _check_setup():
         nolabel=t('later')
     )
     if result:
-        rd.authorize()
+        _get_rd().authorize()
     else:
         return False
 
     # Offer Trakt (optional)
-    if not trakt.is_authorized():
+    if not _get_trakt().is_authorized():
         result = xbmcgui.Dialog().yesno(
             t('trakt_optional_title'),
             t('trakt_optional_msg'),
@@ -394,7 +435,7 @@ def _check_setup():
             nolabel=t('skip')
         )
         if result:
-            trakt.authorize()
+            _get_trakt().authorize()
 
     # Offer Ktuvit (optional) — extra Hebrew subtitle source
     if not get_setting('ktuvit_email'):
@@ -418,7 +459,7 @@ def _check_setup():
                     set_setting('ktuvit_password', hashed)
                     notification(t('ktuvit_saved'))
 
-    return rd.is_authorized()
+    return _get_rd().is_authorized()
 
 
 def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
@@ -427,7 +468,7 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
     progress = progress_dialog('HebScout', t('connecting_source'))
     progress.update(30)
 
-    url = resolve_source(source)
+    url = _get_sources_module().resolve_source(source)
     progress.close()
 
     if not url:
@@ -447,7 +488,7 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
 
     # Play with subtitle matches from HebSubScout enrichment
     global _player
-    _player = HebScoutPlayer()
+    _player = _get_player_class()()
     _player.play_source(url, {
         'media_type': media_type,
         'imdb_id': imdb_id,
@@ -481,7 +522,7 @@ def _play_source(source, imdb_id, tmdb_id, title, year, season, episode,
 
 def _get_next_episode_info(tmdb_id, current_season, current_episode):
     """Figure out the next episode."""
-    episodes = tmdb.season_episodes(tmdb_id, current_season)
+    episodes = _get_tmdb().season_episodes(tmdb_id, current_season)
     next_ep = current_episode + 1
     for ep in episodes:
         if ep['episode_number'] == next_ep:
@@ -492,7 +533,7 @@ def _get_next_episode_info(tmdb_id, current_season, current_episode):
                 'has_next': True,
             }
     # Try next season
-    details = tmdb.show_details(tmdb_id)
+    details = _get_tmdb().show_details(tmdb_id)
     if details:
         for s in details.get('seasons_data', []):
             if s['season_number'] == current_season + 1 and s['episode_count'] > 0:
@@ -507,14 +548,14 @@ def _get_next_episode_info(tmdb_id, current_season, current_episode):
 
 def _resolve_next_episode(imdb_id, season, episode):
     """Quick resolve for auto-play next episode."""
-    sources = get_sources(imdb_id=imdb_id, season=season, episode=episode)
+    sources = _get_sources_module().get_sources(imdb_id=imdb_id, season=season, episode=episode)
     for s in sources:
         if s.get('rd_cached'):
-            url = resolve_source(s)
+            url = _get_sources_module().resolve_source(s)
             if url:
                 return url
     if sources:
-        return resolve_source(sources[0])
+        return _get_sources_module().resolve_source(sources[0])
     return None
 
 
@@ -524,7 +565,7 @@ def _resolve_next_episode(imdb_id, season, episode):
 
 def continue_watching():
     """Show in-progress items. Uses Trakt when connected, local SQLite otherwise."""
-    if trakt.is_authorized():
+    if _get_trakt().is_authorized():
         _continue_watching_trakt()
     else:
         _continue_watching_local()
@@ -532,7 +573,7 @@ def continue_watching():
 
 def _continue_watching_trakt():
     """Pull resume points from Trakt sync/playback."""
-    items = trakt.playback_progress()
+    items = _get_trakt().playback_progress()
     if not items:
         notification(t('no_sources'))
         end_dir()
@@ -600,7 +641,7 @@ def _continue_watching_local():
 
 def watch_history():
     """Show watched items. Uses Trakt when connected, local SQLite otherwise."""
-    if trakt.is_authorized():
+    if _get_trakt().is_authorized():
         _watch_history_trakt()
     else:
         _watch_history_local()
@@ -608,8 +649,8 @@ def watch_history():
 
 def _watch_history_trakt():
     """Pull watched history from Trakt."""
-    movies = trakt.watched_movies() or []
-    shows = trakt.watched_shows() or []
+    movies = _get_trakt().watched_movies() or []
+    shows = _get_trakt().watched_shows() or []
     if not movies and not shows:
         notification(t('no_sources'))
         end_dir()
@@ -670,7 +711,7 @@ def _watch_history_local():
 
 def trakt_next_up():
     """Show next unwatched episodes for shows in progress."""
-    next_eps = trakt.get_next_episodes()
+    next_eps = _get_trakt().get_next_episodes()
     for item in next_eps:
         show = item['show']
         meta = {
@@ -692,7 +733,7 @@ def trakt_watchlist_menu():
 
 
 def trakt_watchlist_movies():
-    items = trakt.watchlist_movies()
+    items = _get_trakt().watchlist_movies()
     for item in items:
         movie = item.get('movie', {})
         ids = movie.get('ids', {})
@@ -708,7 +749,7 @@ def trakt_watchlist_movies():
 
 
 def trakt_watchlist_shows():
-    items = trakt.watchlist_shows()
+    items = _get_trakt().watchlist_shows()
     for item in items:
         show = item.get('show', {})
         ids = show.get('ids', {})
@@ -725,7 +766,7 @@ def trakt_watchlist_shows():
 
 def trakt_progress():
     """Show in-progress items (resume points)."""
-    items = trakt.playback_progress()
+    items = _get_trakt().playback_progress()
     for item in items:
         media_type = item.get('type', '')
         progress_pct = item.get('progress', 0)
@@ -779,9 +820,9 @@ def search_new_typed(media_type):
         from resources.lib.modules.cache import add_search_history
         add_search_history(query, media_type)
         if media_type == 'movie':
-            list_movies(tmdb.movies_search, query=query, list_action='movies_search_results')
+            list_movies(_get_tmdb().movies_search, query=query, list_action='movies_search_results')
         else:
-            list_shows(tmdb.shows_search, query=query, list_action='shows_search_results')
+            list_shows(_get_tmdb().shows_search, query=query, list_action='shows_search_results')
         return
     end_dir(content='')
 
@@ -795,9 +836,9 @@ def tools_menu():
     add_dir('[COLOR orange]{}[/COLOR]'.format(t('accounts_header')), 'noop')
 
     # Real Debrid
-    if rd.is_authorized():
+    if _get_rd().is_authorized():
         try:
-            info = rd.user_info()
+            info = _get_rd().user_info()
             expiry = info.get('expiration', '')[:10] if info else ''
             rd_label = 'Real Debrid: [COLOR lime]{}[/COLOR]'.format(
                 t('premium_until', expiry) if expiry else t('connected'))
@@ -808,9 +849,9 @@ def tools_menu():
     add_dir(rd_label, 'rd_auth')
 
     # Trakt
-    if trakt.is_authorized():
+    if _get_trakt().is_authorized():
         try:
-            user = trakt.get_user_settings()
+            user = _get_trakt().get_user_settings()
             username = user.get('user', {}).get('username', '') if user else ''
             trakt_label = 'Trakt: [COLOR lime]{}[/COLOR]'.format(
                 t('user_label', username) if username else t('connected'))
@@ -882,27 +923,27 @@ def router(params):
     elif action == 'movies_menu':
         movies_menu()
     elif action == 'movies_trending':
-        list_movies(tmdb.movies_trending, page, list_action='movies_trending')
+        list_movies(_get_tmdb().movies_trending, page, list_action='movies_trending')
     elif action == 'movies_popular':
-        list_movies(tmdb.movies_popular, page, list_action='movies_popular')
+        list_movies(_get_tmdb().movies_popular, page, list_action='movies_popular')
     elif action == 'movies_top_rated':
-        list_movies(tmdb.movies_top_rated, page, list_action='movies_top_rated')
+        list_movies(_get_tmdb().movies_top_rated, page, list_action='movies_top_rated')
     elif action == 'movies_now_playing':
-        list_movies(tmdb.movies_now_playing, page, list_action='movies_now_playing')
+        list_movies(_get_tmdb().movies_now_playing, page, list_action='movies_now_playing')
     elif action == 'movies_upcoming':
-        list_movies(tmdb.movies_upcoming, page, list_action='movies_upcoming')
+        list_movies(_get_tmdb().movies_upcoming, page, list_action='movies_upcoming')
     elif action == 'movies_genres':
         movies_genres()
     elif action == 'movies_genre':
-        list_movies(tmdb.movies_genre, page, genre_id=int(genre_id), list_action='movies_genre')
+        list_movies(_get_tmdb().movies_genre, page, genre_id=int(genre_id), list_action='movies_genre')
     elif action == 'movies_search':
         query = input_dialog(t('search_movies_prompt'))
         if query:
             from resources.lib.modules.cache import add_search_history
             add_search_history(query, 'movie')
-            list_movies(tmdb.movies_search, page, query=query, list_action='movies_search_results')
+            list_movies(_get_tmdb().movies_search, page, query=query, list_action='movies_search_results')
     elif action == 'movies_search_results':
-        list_movies(tmdb.movies_search, page, query=query, list_action='movies_search_results')
+        list_movies(_get_tmdb().movies_search, page, query=query, list_action='movies_search_results')
     elif action == 'movie_sources':
         source_selection(imdb_id, tmdb_id, title, year, media_type='movie', poster=poster, fanart=fanart)
     
@@ -910,25 +951,25 @@ def router(params):
     elif action == 'shows_menu':
         shows_menu()
     elif action == 'shows_trending':
-        list_shows(tmdb.shows_trending, page, list_action='shows_trending')
+        list_shows(_get_tmdb().shows_trending, page, list_action='shows_trending')
     elif action == 'shows_popular':
-        list_shows(tmdb.shows_popular, page, list_action='shows_popular')
+        list_shows(_get_tmdb().shows_popular, page, list_action='shows_popular')
     elif action == 'shows_top_rated':
-        list_shows(tmdb.shows_top_rated, page, list_action='shows_top_rated')
+        list_shows(_get_tmdb().shows_top_rated, page, list_action='shows_top_rated')
     elif action == 'shows_airing_today':
-        list_shows(tmdb.shows_airing_today, page, list_action='shows_airing_today')
+        list_shows(_get_tmdb().shows_airing_today, page, list_action='shows_airing_today')
     elif action == 'shows_genres':
         shows_genres()
     elif action == 'shows_genre':
-        list_shows(tmdb.shows_genre, page, genre_id=int(genre_id), list_action='shows_genre')
+        list_shows(_get_tmdb().shows_genre, page, genre_id=int(genre_id), list_action='shows_genre')
     elif action == 'shows_search':
         query = input_dialog(t('search_shows_prompt'))
         if query:
             from resources.lib.modules.cache import add_search_history
             add_search_history(query, 'tv')
-            list_shows(tmdb.shows_search, page, query=query, list_action='shows_search_results')
+            list_shows(_get_tmdb().shows_search, page, query=query, list_action='shows_search_results')
     elif action == 'shows_search_results':
-        list_shows(tmdb.shows_search, page, query=query, list_action='shows_search_results')
+        list_shows(_get_tmdb().shows_search, page, query=query, list_action='shows_search_results')
     elif action == 'show_seasons':
         show_seasons(tmdb_id)
     elif action == 'show_episodes':
@@ -949,13 +990,13 @@ def router(params):
 
     # People
     elif action == 'people_popular':
-        people, _ = tmdb.people_popular(page)
+        people, _ = _get_tmdb().people_popular(page)
         for p in people:
             add_dir(p['name'], 'person_credits', poster=p.get('photo', ''),
                     tmdb_id=str(p['id']))
         end_dir(content='artists')
     elif action == 'person_credits':
-        movies, shows = tmdb.person_credits(tmdb_id)
+        movies, shows = _get_tmdb().person_credits(tmdb_id)
         for m in movies[:20]:
             add_item(m, action='movie_sources', is_folder=True)
         for s in shows[:20]:
@@ -979,7 +1020,7 @@ def router(params):
         trakt_watchlist_shows()
     # trakt_progress removed — merged into continue_watching
     elif action == 'trakt_watchlist_add':
-        trakt.add_to_watchlist(media_type, imdb_id)
+        _get_trakt().add_to_watchlist(media_type, imdb_id)
         notification(t('added_watchlist'))
     elif action == 'check_subs':
         if imdb_id:
@@ -1012,19 +1053,19 @@ def router(params):
         s = int(params.get('season', 0))
         e = int(params.get('episode', 0))
         local_mark_watched(imdb_id, s, e)
-        if trakt.is_authorized():
+        if _get_trakt().is_authorized():
             if media_type == 'movie' or (s == 0 and e == 0):
-                trakt.mark_movie_watched(imdb_id)
+                _get_trakt().mark_movie_watched(imdb_id)
             else:
-                trakt.mark_episode_watched(imdb_id, s, e)
+                _get_trakt().mark_episode_watched(imdb_id, s, e)
     elif action == 'movie_similar':
-        results = tmdb.movie_recommendations(tmdb_id)
+        results = _get_tmdb().movie_recommendations(tmdb_id)
         if results:
             for m in results:
                 add_item(m, action='movie_sources', is_folder=True)
         end_dir(content='movies')
     elif action == 'show_similar':
-        results = tmdb.show_recommendations(tmdb_id)
+        results = _get_tmdb().show_recommendations(tmdb_id)
         if results:
             for s in results:
                 add_item(s, action='show_seasons', is_folder=True)
@@ -1034,17 +1075,17 @@ def router(params):
     elif action == 'tools_menu':
         tools_menu()
     elif action == 'rd_auth':
-        if rd.is_authorized():
+        if _get_rd().is_authorized():
             if yesno_dialog('Real Debrid', t('disconnect_rd')):
-                rd.revoke()
+                _get_rd().revoke()
         else:
-            rd.authorize()
+            _get_rd().authorize()
     elif action == 'trakt_auth':
-        if trakt.is_authorized():
+        if _get_trakt().is_authorized():
             if yesno_dialog('Trakt', t('disconnect_trakt')):
-                trakt.revoke()
+                _get_trakt().revoke()
         else:
-            trakt.authorize()
+            _get_trakt().authorize()
     elif action == 'clear_cache':
         cache_clear()
         notification(t('cache_cleared'))

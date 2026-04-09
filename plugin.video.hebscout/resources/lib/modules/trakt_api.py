@@ -14,13 +14,13 @@ from resources.lib.modules.utils import (
 )
 from resources.lib.modules.cache import cache_get, cache_set, make_key, mark_watched as local_mark_watched
 
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
 BASE = 'https://api.trakt.tv'
 CLIENT_ID = 'a04728bb8144a61adca51b59ca76f2feff0d8f7467e7747676bfa4ccf4e4bedd'
 CLIENT_SECRET = '982ef7cd073011fae61d3a8087dc96fda775ee1d8eda1042c0b4a65ab6cc0872'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+_last_refresh_check = 0
 
 
 def _headers(auth=True):
@@ -128,8 +128,14 @@ def authorize():
 
 
 def refresh_token():
+    global _last_refresh_check
+    now = time.time()
+    # Skip redundant checks — token expiry only changes every ~90 days
+    if now - _last_refresh_check < 300:
+        return True
+    _last_refresh_check = now
     expiry = float(get_setting('trakt_expiry') or 0)
-    if time.time() < expiry - 86400:
+    if now < expiry - 86400:
         return True
 
     refresh = get_setting('trakt_refresh')
@@ -193,7 +199,7 @@ def scrobble_stop(media_type, imdb_id, progress_pct, season=None, episode=None):
 def _build_scrobble_payload(media_type, imdb_id, progress_pct, season, episode):
     payload = {
         'progress': round(progress_pct, 1),
-        'app_version': '1.6.14',
+        'app_version': '2.0.0',
         'app_date': '2026-03-27',
     }
     if media_type == 'movie':
@@ -246,11 +252,9 @@ def playback_progress():
 def remove_playback(playback_id):
     """Remove a playback progress entry."""
     try:
-        req = Request('{}/sync/playback/{}'.format(BASE, playback_id))
-        req.get_method = lambda: 'DELETE'
-        for k, v in _headers().items():
-            req.add_header(k, v)
-        urlopen(req, timeout=10)
+        import requests as _requests
+        _requests.delete('{}/sync/playback/{}'.format(BASE, playback_id),
+                         headers=_headers(), timeout=10)
     except Exception:
         pass
 
@@ -298,26 +302,44 @@ def collection_shows():
 def get_next_episodes():
     """
     Get "next up" episodes - the next unwatched episode for each show
-    the user is currently watching.
+    the user is currently watching. Runs progress queries in parallel.
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     shows = watched_shows()
-    next_eps = []
-    for item in shows[:20]:  # Limit to avoid too many API calls
+    if not shows:
+        return []
+
+    def _fetch_progress(item):
         show = item.get('show', {})
         imdb = show.get('ids', {}).get('imdb', '')
         slug = show.get('ids', {}).get('slug', '')
         if not slug:
-            continue
-        prog = _api_get('shows/{}/progress/watched?hidden=false&specials=false'.format(slug))
+            return None
+        prog = _api_get('shows/{}/progress/watched?hidden=false&specials=false'.format(slug),
+                        cache_hours=0.5)
         if prog and prog.get('next_episode'):
             ne = prog['next_episode']
-            next_eps.append({
+            return {
                 'show': show,
                 'imdb_id': imdb,
                 'season': ne.get('season'),
                 'episode': ne.get('number'),
                 'title': ne.get('title', ''),
-            })
+            }
+        return None
+
+    next_eps = []
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(_fetch_progress, item): item for item in shows[:10]}
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                if result:
+                    next_eps.append(result)
+            except Exception:
+                pass
+
     return next_eps
 
 

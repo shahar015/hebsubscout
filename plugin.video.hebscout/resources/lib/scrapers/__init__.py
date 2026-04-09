@@ -254,40 +254,53 @@ def scrape_all(imdb_id, tmdb_id=None, title='', year='', season=None, episode=No
                use_torrentio=True, use_mediafusion=True, use_external=True,
                progress_callback=None):
     """
-    Master scraping function. Runs all enabled scrapers and combines results.
-    
+    Master scraping function. Runs all enabled scrapers in parallel and combines results.
+
     Args:
         progress_callback: Optional callable(percent, message) for UI updates
-    
+
     Returns:
         List of source dicts, sorted by quality then provider
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     all_sources = []
 
     def update(pct, msg):
         if progress_callback:
             progress_callback(pct, msg)
 
-    # Torrentio
+    # Build list of scrapers to run
+    tasks = []
     if use_torrentio:
-        update(10, 'Scanning Torrentio...')
-        sources = scrape_torrentio(imdb_id, season, episode)
-        log('Torrentio: {} sources'.format(len(sources)))
-        all_sources.extend(sources)
-
-    # MediaFusion
+        tasks.append(('Torrentio', scrape_torrentio, (imdb_id, season, episode)))
     if use_mediafusion:
-        update(30, 'Scanning MediaFusion...')
-        sources = scrape_mediafusion(imdb_id, season, episode)
-        log('MediaFusion: {} sources'.format(len(sources)))
-        all_sources.extend(sources)
-
-    # External scrapers
+        tasks.append(('MediaFusion', scrape_mediafusion, (imdb_id, season, episode)))
     if use_external:
-        update(50, 'Scanning external scrapers...')
-        sources = scrape_external(imdb_id, tmdb_id, title, year, season, episode)
-        log('External: {} sources'.format(len(sources)))
-        all_sources.extend(sources)
+        tasks.append(('External', scrape_external, (imdb_id, tmdb_id, title, year, season, episode)))
+
+    if not tasks:
+        update(70, 'No scrapers enabled')
+        return []
+
+    update(10, 'Scanning {} sources...'.format(len(tasks)))
+
+    # Run all scrapers in parallel
+    with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+        futures = {}
+        for name, func, args in tasks:
+            futures[pool.submit(func, *args)] = name
+
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                sources = future.result()
+                log('{}: {} sources'.format(name, len(sources)))
+                all_sources.extend(sources)
+            except Exception as e:
+                log('{} scraper failed: {}'.format(name, e), 'ERROR')
+
+    update(50, 'Processing {} sources...'.format(len(all_sources)))
 
     # Deduplicate by hash
     seen_hashes = set()

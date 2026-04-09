@@ -18,6 +18,7 @@ except Exception:
 
 DB_PATH = os.path.join(_profile, 'cache.db')
 _initialized = False
+_conn = None
 
 
 def _ensure_dir():
@@ -27,19 +28,22 @@ def _ensure_dir():
 
 
 def _get_conn():
-    global _initialized
+    """Get persistent SQLite connection (reused across operations)."""
+    global _initialized, _conn
+    if _conn is not None:
+        return _conn
     _ensure_dir()
-    conn = sqlite3.connect(DB_PATH, timeout=10)
+    _conn = sqlite3.connect(DB_PATH, timeout=10)
     if not _initialized:
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("""
+        _conn.execute("PRAGMA journal_mode=WAL")
+        _conn.execute("""
             CREATE TABLE IF NOT EXISTS cache (
                 key TEXT PRIMARY KEY,
                 value TEXT,
                 expires REAL
             )
         """)
-        conn.execute("""
+        _conn.execute("""
             CREATE TABLE IF NOT EXISTS trakt_bookmarks (
                 imdb_id TEXT,
                 season INTEGER DEFAULT 0,
@@ -57,11 +61,11 @@ def _get_conn():
         """)
         # Migrate from old schema (imdb_id-only PRIMARY KEY) to composite key
         try:
-            pk_info = conn.execute("PRAGMA table_info(trakt_bookmarks)").fetchall()
+            pk_info = _conn.execute("PRAGMA table_info(trakt_bookmarks)").fetchall()
             pk_cols = [r[1] for r in pk_info if r[5] > 0]  # r[5] = pk flag
             if pk_cols == ['imdb_id']:
-                conn.execute("ALTER TABLE trakt_bookmarks RENAME TO _bookmarks_old")
-                conn.execute("""
+                _conn.execute("ALTER TABLE trakt_bookmarks RENAME TO _bookmarks_old")
+                _conn.execute("""
                     CREATE TABLE trakt_bookmarks (
                         imdb_id TEXT, season INTEGER DEFAULT 0, episode INTEGER DEFAULT 0,
                         progress REAL, paused_at TEXT, updated REAL,
@@ -70,19 +74,19 @@ def _get_conn():
                         PRIMARY KEY (imdb_id, season, episode)
                     )
                 """)
-                conn.execute("INSERT OR IGNORE INTO trakt_bookmarks SELECT * FROM _bookmarks_old")
-                conn.execute("DROP TABLE _bookmarks_old")
-                conn.commit()
+                _conn.execute("INSERT OR IGNORE INTO trakt_bookmarks SELECT * FROM _bookmarks_old")
+                _conn.execute("DROP TABLE _bookmarks_old")
+                _conn.commit()
         except Exception:
             pass
         # Add new columns if upgrading from older schema
         for col, coltype in [('title', 'TEXT'), ('poster', 'TEXT'), ('fanart', 'TEXT'),
                               ('media_type', 'TEXT'), ('tmdb_id', 'TEXT')]:
             try:
-                conn.execute("ALTER TABLE trakt_bookmarks ADD COLUMN {} {} DEFAULT ''".format(col, coltype))
+                _conn.execute("ALTER TABLE trakt_bookmarks ADD COLUMN {} {} DEFAULT ''".format(col, coltype))
             except Exception:
                 pass  # Column already exists
-        conn.execute("""
+        _conn.execute("""
             CREATE TABLE IF NOT EXISTS watched (
                 imdb_id TEXT,
                 season INTEGER DEFAULT 0,
@@ -92,17 +96,19 @@ def _get_conn():
             )
         """)
         # Drop old search_history table (replaced by search_history_v2)
-        conn.execute("DROP TABLE IF EXISTS search_history")
-        conn.commit()
+        _conn.execute("DROP TABLE IF EXISTS search_history")
+        # Clean up expired cache entries
+        _conn.execute("DELETE FROM cache WHERE expires < ?", (time.time(),))
+        _conn.commit()
         _initialized = True
-    return conn
+    return _conn
 
 
 def cache_get(key, default=None):
     try:
         conn = _get_conn()
         row = conn.execute("SELECT value, expires FROM cache WHERE key=?", (key,)).fetchone()
-        conn.close()
+
         if row and row[1] > time.time():
             return json.loads(row[0])
     except Exception:
@@ -118,7 +124,7 @@ def cache_set(key, value, ttl=3600):
             (key, json.dumps(value, ensure_ascii=False), time.time() + ttl)
         )
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -128,7 +134,7 @@ def cache_delete(key):
         conn = _get_conn()
         conn.execute("DELETE FROM cache WHERE key=?", (key,))
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -138,7 +144,7 @@ def cache_clear():
         conn = _get_conn()
         conn.execute("DELETE FROM cache")
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -151,7 +157,7 @@ def _ensure_search_history_table():
             created TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (query, media_type))""")
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -162,11 +168,11 @@ def add_search_history(query, media_type='movie'):
     try:
         conn = _get_conn()
         conn.execute("INSERT OR REPLACE INTO search_history_v2 (query, media_type, created) VALUES (?, ?, CURRENT_TIMESTAMP)", (query, media_type))
-        conn.execute("DELETE FROM search_history_v2 WHERE media_type=? AND query NOT IN "
-                     "(SELECT query FROM search_history_v2 WHERE media_type=? ORDER BY created DESC LIMIT 20)",
+        conn.execute("DELETE FROM search_history_v2 WHERE media_type=? AND rowid NOT IN "
+                     "(SELECT rowid FROM search_history_v2 WHERE media_type=? ORDER BY created DESC LIMIT 20)",
                      (media_type, media_type))
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -178,7 +184,7 @@ def get_search_history(media_type='movie'):
         conn = _get_conn()
         rows = conn.execute("SELECT query FROM search_history_v2 WHERE media_type=? ORDER BY created DESC LIMIT 20",
                             (media_type,)).fetchall()
-        conn.close()
+
         return [r[0] for r in rows]
     except Exception:
         return []
@@ -191,7 +197,7 @@ def clear_search_history():
         conn.execute("DROP TABLE IF EXISTS search_history_v2")
         conn.execute("DROP TABLE IF EXISTS search_history")
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -222,7 +228,7 @@ def set_bookmark(imdb_id, season, episode, progress, paused_at='',
              title, poster, fanart, media_type or 'movie', tmdb_id)
         )
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -235,7 +241,7 @@ def get_bookmark(imdb_id, season=0, episode=0):
             "FROM trakt_bookmarks WHERE imdb_id=? AND season=? AND episode=?",
             (imdb_id, season or 0, episode or 0)
         ).fetchone()
-        conn.close()
+
         if row:
             return {'imdb_id': row[0], 'season': row[1], 'episode': row[2],
                     'progress': row[3], 'paused_at': row[4], 'title': row[5] or '',
@@ -255,7 +261,7 @@ def get_continue_watching():
             "FROM trakt_bookmarks WHERE progress > 1 AND progress < 90 "
             "ORDER BY updated DESC LIMIT 50"
         ).fetchall()
-        conn.close()
+
         return [{'imdb_id': r[0], 'season': r[1], 'episode': r[2], 'progress': r[3],
                  'title': r[4] or '', 'poster': r[5] or '', 'fanart': r[6] or '',
                  'media_type': r[7] or 'movie', 'tmdb_id': r[8] or ''} for r in rows]
@@ -270,10 +276,11 @@ def get_watch_history():
         rows = conn.execute(
             "SELECT w.imdb_id, w.season, w.episode, w.watched_at, "
             "b.title, b.poster, b.fanart, b.media_type, b.tmdb_id "
-            "FROM watched w LEFT JOIN trakt_bookmarks b ON w.imdb_id = b.imdb_id "
+            "FROM watched w LEFT JOIN trakt_bookmarks b "
+            "ON w.imdb_id = b.imdb_id AND w.season = b.season AND w.episode = b.episode "
             "ORDER BY w.watched_at DESC LIMIT 50"
         ).fetchall()
-        conn.close()
+
         return [{'imdb_id': r[0], 'season': r[1], 'episode': r[2], 'watched_at': r[3],
                  'title': r[4] or '', 'poster': r[5] or '', 'fanart': r[6] or '',
                  'media_type': r[7] or 'movie', 'tmdb_id': r[8] or ''} for r in rows]
@@ -289,7 +296,7 @@ def mark_watched(imdb_id, season=0, episode=0):
             (imdb_id, season, episode, time.time())
         )
         conn.commit()
-        conn.close()
+
     except Exception:
         pass
 
@@ -301,7 +308,7 @@ def is_watched(imdb_id, season=0, episode=0):
             "SELECT 1 FROM watched WHERE imdb_id=? AND season=? AND episode=?",
             (imdb_id, season, episode)
         ).fetchone()
-        conn.close()
+
         return row is not None
     except Exception:
         return False

@@ -42,53 +42,72 @@ def _import_subtitle_downloader():
     except Exception:
         return None
 
-PROGRESS_SAVE_INTERVAL = 5  # seconds
+PROGRESS_SAVE_INTERVAL = 15  # seconds between SQLite bookmark saves
 
 
 class ProgressTracker(threading.Thread):
     """
-    Background thread that saves watch progress every 5 seconds.
+    Unified background thread: saves progress + monitors skip intro segments.
 
-    This is the Netflix approach: if Kodi crashes, power goes out,
-    or anything unexpected happens, the user loses at most 5 seconds
-    of progress. Also keeps the Trakt scrobble session alive.
+    Checks playback position every 1s (needed for skip-intro accuracy).
+    Saves bookmarks every PROGRESS_SAVE_INTERVAL seconds (reduces disk I/O).
+    Also handles Trakt scrobble start and auto-mark watched.
     """
-    
-    def __init__(self, player):
+
+    def __init__(self, player, skip_segments=None):
         super().__init__(daemon=True)
         self.player = player
         self._stop_event = threading.Event()
-    
+        self._skip_segments = skip_segments or []
+        self._window = xbmcgui.Window(10000)
+        self._last_save = 0
+
+    def set_skip_segments(self, segments):
+        """Called when intro segments arrive from background fetch."""
+        self._skip_segments = segments
+
     def stop(self):
         self._stop_event.set()
-    
+        self._clear_skip_properties()
+
+    def _clear_skip_properties(self):
+        try:
+            self._window.clearProperty('hebscout.skip_intro')
+            self._window.clearProperty('hebscout.intro_end')
+        except Exception:
+            pass
+
     def run(self):
-        log('ProgressTracker started (saves every {}s)'.format(PROGRESS_SAVE_INTERVAL))
+        log('ProgressTracker started (saves every {}s, skip-intro active)'.format(PROGRESS_SAVE_INTERVAL))
         while not self._stop_event.is_set():
-            # Sleep in 1s increments so stop() is responsive
-            for _ in range(PROGRESS_SAVE_INTERVAL):
-                if self._stop_event.is_set():
-                    return
-                time.sleep(1)
-            
+            self._stop_event.wait(1.0)
+            if self._stop_event.is_set():
+                return
+
             if not self.player._playing or self.player._paused:
                 continue
-            
+
             try:
                 progress = self.player._get_progress()
                 if progress <= 0:
                     continue
-                
-                # Track last known progress for when player is destroyed on stop
+
                 self.player._last_known_progress = progress
 
-                # Save to local SQLite (crash-proof)
-                set_bookmark(
-                    self.player.imdb_id, self.player.season,
-                    self.player.episode, progress
-                )
+                # --- Skip intro check (every 1s) ---
+                self._check_skip_intro()
 
-                # Send delayed scrobble/start ONCE (Trakt session stays alive, no repeated starts)
+                # --- Bookmark save (every PROGRESS_SAVE_INTERVAL seconds) ---
+                now = time.time()
+                if now - self._last_save >= PROGRESS_SAVE_INTERVAL:
+                    self._last_save = now
+                    set_bookmark(
+                        self.player.imdb_id, self.player.season,
+                        self.player.episode, progress
+                    )
+                    log('Auto-saved: {:.1f}% ({})'.format(progress, self.player.title))
+
+                # --- Trakt scrobble/start ONCE ---
                 if not self.player._scrobble_sent and progress >= 1.0:
                     if trakt.is_authorized() and self.player.imdb_id:
                         trakt.scrobble_start(
@@ -97,38 +116,33 @@ class ProgressTracker(threading.Thread):
                         )
                         self.player._scrobble_sent = True
 
-                log('Auto-saved: {:.1f}% ({})'.format(progress, self.player.title))
-                
-                # Auto-mark watched at 90%
+                # --- Auto-mark watched at 90% ---
                 if progress >= 90 and not self.player._marked_watched:
                     self.player._mark_as_watched()
             except Exception:
                 pass  # Player may have been destroyed
 
-
-class PlayerActionMonitor(threading.Thread):
-    """
-    Monitors for 'T' key press during fullscreen video playback.
-    Opens subtitle picker when T is pressed. Audio track switching
-    uses Kodi's native OSD audio button (no custom overlay needed).
-
-    NOTE: WindowDialog overlays CANNOT be used during playback — they
-    steal all input and block play/pause/seek controls. This monitor
-    uses executebuiltin('Action(...)') which is non-intrusive.
-    """
-
-    def __init__(self, player):
-        super().__init__(daemon=True)
-        self._player = player
-        self._stop_event = threading.Event()
-
-    def stop(self):
-        self._stop_event.set()
-
-    def run(self):
-        log('Player action monitor started')
-        while not self._stop_event.is_set():
-            self._stop_event.wait(0.5)
+    def _check_skip_intro(self):
+        if not self._skip_segments:
+            return
+        try:
+            pos = self.player.getTime()
+            in_segment = False
+            for seg in self._skip_segments:
+                if seg['start'] <= pos <= seg['end']:
+                    self._window.setProperty('hebscout.skip_intro', 'true')
+                    self._window.setProperty('hebscout.intro_end', str(int(seg['end'])))
+                    in_segment = True
+                    break
+            if not in_segment:
+                self._clear_skip_properties()
+            # Stop monitoring after all segments have passed
+            max_end = max(s['end'] for s in self._skip_segments)
+            if pos > max_end + 5:
+                self._clear_skip_properties()
+                self._skip_segments = []  # No more checking needed
+        except Exception:
+            pass
 
 
 def _fetch_intro_segments(tmdb_id, season=None, episode=None):
@@ -169,63 +183,6 @@ def _fetch_intro_segments(tmdb_id, season=None, episode=None):
         return {}
 
 
-class SkipIntroMonitor(threading.Thread):
-    """
-    Monitors playback position and sets Kodi window properties when the player
-    is inside an intro/recap segment. The skin uses these properties for button visibility.
-
-    Properties set on Window(home):
-    - hebscout.skip_intro = "true" when inside intro segment
-    - hebscout.intro_end = seconds to seek to when skip is pressed
-    """
-
-    def __init__(self, player, segments):
-        super().__init__(daemon=True)
-        self._player = player
-        self._segments = segments  # {intro: [{start, end}], recap: [...]}
-        self._stop_event = threading.Event()
-        self._window = xbmcgui.Window(10000)  # Home window for properties
-
-    def stop(self):
-        self._stop_event.set()
-        self._clear_properties()
-
-    def _clear_properties(self):
-        try:
-            self._window.clearProperty('hebscout.skip_intro')
-            self._window.clearProperty('hebscout.intro_end')
-        except Exception:
-            pass
-
-    def run(self):
-        log('SkipIntroMonitor started')
-        # Combine intro + recap segments
-        skip_segments = self._segments.get('intro', []) + self._segments.get('recap', [])
-        if not skip_segments:
-            return
-
-        while not self._stop_event.is_set():
-            try:
-                pos = self._player.getTime()
-                in_segment = False
-                for seg in skip_segments:
-                    if seg['start'] <= pos <= seg['end']:
-                        self._window.setProperty('hebscout.skip_intro', 'true')
-                        self._window.setProperty('hebscout.intro_end', str(int(seg['end'])))
-                        in_segment = True
-                        break
-                if not in_segment:
-                    self._clear_properties()
-                # Stop monitoring after all segments have passed
-                max_end = max(s['end'] for s in skip_segments)
-                if pos > max_end + 5:
-                    self._clear_properties()
-                    return
-            except Exception:
-                pass  # Player may be destroyed
-            self._stop_event.wait(1.0)
-
-
 class HebScoutPlayer(xbmc.Player):
     """
     Custom player with Netflix-style progress saving.
@@ -248,12 +205,10 @@ class HebScoutPlayer(xbmc.Player):
         self._marked_watched = False
         self._total_time = 0
         self._last_known_progress = 0.0  # Survives player destruction
-        self._skip_intro_monitor = None
         self._next_episode_info = self._resolve_func = None
         self._progress_tracker = None
         self._sub_matches = []      # All subtitle matches from HebSubScout
         self._auto_sub_applied = False
-        self._osd_monitor = None
 
     def play_source(self, url, metadata, next_episode_info=None, resolve_func=None):
         self.media_type = metadata.get('media_type', 'movie')
@@ -274,12 +229,6 @@ class HebScoutPlayer(xbmc.Player):
         self._marked_watched = False
         self._auto_sub_applied = False
         self._last_known_progress = 0.0
-        if self._skip_intro_monitor:
-            self._skip_intro_monitor.stop()
-            self._skip_intro_monitor = None
-        if self._osd_monitor:
-            self._osd_monitor.stop()
-            self._osd_monitor = None
         if self._progress_tracker:
             self._progress_tracker.stop()
             self._progress_tracker = None
@@ -320,7 +269,7 @@ class HebScoutPlayer(xbmc.Player):
         # (Trakt API requires at least 1.0% progress)
         if trakt.is_authorized() and self.imdb_id:
             self._scrobbled_start = True
-        # Start background saver
+        # Start unified background tracker (progress saving + skip intro monitoring)
         self._progress_tracker = ProgressTracker(self)
         self._progress_tracker.start()
         # Immediate first save (with full metadata so continue watching can display it)
@@ -328,22 +277,19 @@ class HebScoutPlayer(xbmc.Player):
                      title=self.title or '', poster=self._poster or '',
                      fanart=self._fanart or '', media_type=self.media_type or 'movie',
                      tmdb_id=self.tmdb_id or '')
-        
+
         # Store source name as window property so subtitle picker (RunPlugin) can read it
         if self.source_name:
             xbmcgui.Window(10000).setProperty('hebscout.source_name', self.source_name)
 
-        # Start action monitor (lightweight, no WindowDialog overlay)
-        self._osd_monitor = PlayerActionMonitor(self)
-        self._osd_monitor.start()
-
-        # === SKIP INTRO (TheIntroDB) — fetch in background, uses TMDB ID ===
+        # === SKIP INTRO (TheIntroDB) — fetch in background, feed to tracker ===
         if self.tmdb_id:
             def _fetch_intro():
                 segs = _fetch_intro_segments(self.tmdb_id, self.season, self.episode)
-                if segs and self._playing:
-                    self._skip_intro_monitor = SkipIntroMonitor(self, segs)
-                    self._skip_intro_monitor.start()
+                if segs and self._playing and self._progress_tracker:
+                    skip_segs = segs.get('intro', []) + segs.get('recap', [])
+                    if skip_segs:
+                        self._progress_tracker.set_skip_segments(skip_segs)
             threading.Thread(target=_fetch_intro, daemon=True).start()
 
         # === AUTO-DOWNLOAD BEST MATCHING SUBTITLE ===
@@ -531,13 +477,7 @@ class HebScoutPlayer(xbmc.Player):
         if not self._playing:
             return
         self._playing = False
-        # Stop monitors
-        if self._skip_intro_monitor:
-            self._skip_intro_monitor.stop()
-            self._skip_intro_monitor = None
-        if self._osd_monitor:
-            self._osd_monitor.stop()
-            self._osd_monitor = None
+        # Stop background tracker
         if self._progress_tracker:
             self._progress_tracker.stop()
             self._progress_tracker = None

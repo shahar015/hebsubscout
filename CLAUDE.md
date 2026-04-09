@@ -252,6 +252,98 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - Dual XML skins: source_select changes must be made in BOTH _rtl.xml and _ltr.xml
 - TheIntroDB coverage is incomplete (animated shows especially)
 
+## Product Vision & Long-Term Roadmap
+
+### The Vision
+HebSubScout aims to be the **Stremio/Nuvio of Israel** — a beautiful, lightweight, Netflix-like streaming experience built specifically for the Israeli community, with features that can't exist in Stremio (deep Hebrew subtitle integration, RTL-first UI, Israeli provider support). The goal is that a non-technical Israeli user can install it, authenticate Real Debrid, and have a premium streaming experience that "just works" — no Kodi knowledge required.
+
+The key differentiators vs Stremio/Nuvio:
+- **Hebrew subtitle matching BEFORE source selection** — users see match % on every source card
+- **RTL-first UI** — not an afterthought, designed for Hebrew speakers
+- **Wizdom + Ktuvit integration** — Israeli subtitle providers, not just OpenSubtitles
+- **Netflix-like UX** — continue watching, auto-next episode, skip intro, progress tracking
+- **Trakt integration** — sync watch history, scrobble, watchlist across devices
+
+### v2.0 — Performance & Efficiency ("Potato System Ready")
+**Goal:** Make HebSubScout fast and lightweight enough to run smoothly on cheap Android TV boxes, Amazon Fire Sticks, and Raspberry Pi — the devices Israeli consumers actually use.
+
+**Phase 1 (v1.7.0): Parallel I/O — the biggest UX win**
+- Parallelize scrapers (Torrentio + MediaFusion + External run simultaneously via ThreadPoolExecutor)
+- Parallelize subtitle provider queries (Wizdom + Ktuvit + OpenSubs simultaneously)
+- Overlap scraping with subtitle fetching (run both at same time, merge results)
+- **Target: Source selection screen loads in 5-8s instead of 20-40s**
+
+**Phase 2 (v1.7.1): Caching & Connection Efficiency**
+- Persistent SQLite connection (stop opening/closing per operation)
+- Fix watch history JOIN bug (wrong results for TV shows)
+- HTTP connection pooling via `requests.Session` (connection reuse, gzip, keep-alive)
+- Cache Trakt token refresh decision (skip redundant checks)
+- Expired cache cleanup on startup
+
+**Phase 3 (v1.7.2): Trakt N+1 Query Fix**
+- "Up Next" currently makes 20 sequential API calls (one per show)
+- Parallelize + cache progress results for 30 minutes
+- **Target: "Up Next" loads in 1-2s instead of 10-20s**
+
+**Phase 4 (v1.8.0): Lazy Loading & Asset Optimization**
+- Lazy imports in default.py (only load modules when their route is hit)
+- Dispatch table router (replace 100+ elif chain)
+- Compress icon.png from 4.6MB to ~200KB per addon (saves ~20MB total)
+- LRU cache on subtitle matcher's `extract_components()`
+- Merge RTL/LTR source select XMLs (95% duplicated)
+
+**Phase 5 (v1.8.1): Player Thread Consolidation**
+- Remove dead PlayerActionMonitor thread
+- Merge SkipIntroMonitor into ProgressTracker (4 threads → 2)
+- Increase progress save interval from 5s to 15s (3x fewer SQLite writes)
+- SubScout singleton (stop re-initializing per source selection)
+
+### v2.5 — Beautiful Netflix-Like Skin & Full UX Polish
+**Goal:** Transform the UI from "Kodi addon" into "premium Israeli streaming app." Every screen should feel as polished and intuitive as Netflix/Stremio. A non-technical user should never feel lost.
+
+**Planned work:**
+- Custom home screen with hero banners, "Continue Watching" carousel, trending rows
+- Smooth animations and transitions between screens
+- Beautiful movie/show detail pages with backdrop, trailer integration
+- Redesigned settings as a clean preferences screen (not Kodi's raw settings XML)
+- Guided first-run experience (RD setup, Trakt optional, language pick — all in a polished wizard)
+- Auto-next episode with countdown overlay (Netflix "next episode in 5...")
+- One-click "play" that auto-selects best cached source + auto-applies Hebrew subs
+- Full RTL polish on every screen — not just labels but layout flow
+- Light and dark theme options
+- Minimalist, consumer-friendly design language throughout
+
+### v3.0 — Standalone Installer (kodi7rd-style)
+**Goal:** Eliminate the "install Kodi, add source, install repo" friction entirely. Provide a single installer (APK for Android/Android TV, EXE for Windows) that bundles everything needed — similar to what [kodi7rd/repository](https://github.com/kodi7rd/repository) does.
+
+**Planned work:**
+- Pre-configured Kodi build with HebSubScout repo, skin, and all addons pre-installed
+- Android APK that installs Kodi + configures everything automatically
+- Windows installer (EXE/MSI) that does the same
+- Custom Kodi splash screen and branding
+- Auto-update mechanism for the build itself
+- Remove all unnecessary Kodi menus/settings that confuse non-technical users
+- Lock down the UI to only show HebSubScout features (no raw Kodi menus)
+- Pre-configured optimal settings for low-end devices (hw acceleration, cache sizes, etc.)
+
+### v3.5 — Community & Ecosystem
+**Goal:** Build a community around the project and enable other Israeli developers to contribute.
+
+**Planned work:**
+- Public scraper plugin API (let others add Israeli sources)
+- User feedback/rating system for subtitle quality
+- Community subtitle corrections/uploads
+- Telegram/Discord bot for new release notifications
+- Auto-update notifications inside the app
+- Analytics dashboard (opt-in) to understand which features users actually use
+- Documentation site in Hebrew for end users
+
+### Why This Order Matters
+1. **v2.0 (Performance)** comes first because nothing else matters if the app is slow on the devices people actually own. A beautiful UI that takes 40 seconds to show sources is unusable.
+2. **v2.5 (UI Polish)** comes next because the Netflix-like experience is the core value proposition — it's what makes this better than just "another Kodi addon."
+3. **v3.0 (Installer)** comes after the product is polished — there's no point making it easy to install if the experience isn't great yet.
+4. **v3.5 (Community)** comes last because you need a solid, polished product before building community around it.
+
 ## Key UI Architecture
 
 ### CRITICAL: Kodi Coordinate Systems
@@ -422,3 +514,37 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.6.12: MediaFusion: fix response key (`encrypted_str` not `secret_str`)
 - v1.6.13: MediaFusion: use `behaviorHints.filename` for release names, `videoSize` for size
 - v1.6.14: MediaFusion: handle direct playback URLs (type `direct`, skip RD magnet resolve)
+
+### 2026-04-10 — Session 9: v2.0.0 — Performance & Efficiency Overhaul ("Potato System Ready")
+- **v2.0.0: MAJOR — full performance overhaul for low-end devices (Fire Stick, Android boxes, RPi)**
+- Phase 1 — Parallel I/O:
+  - Scrapers (Torrentio + MediaFusion + External) now run in parallel via ThreadPoolExecutor
+  - Subtitle providers (Wizdom + Ktuvit + OpenSubs) now query in parallel
+  - Subtitle fetch starts in background during scraping (overlapping I/O)
+  - SubScout singleton in sources.py (no re-initialization per call)
+- Phase 2 — Caching & Connections:
+  - Persistent SQLite connection (no more open/close per operation)
+  - Fixed watch history JOIN bug (was cross-joining all episodes for TV shows)
+  - Expired cache entries cleaned up on startup
+  - Search history cleanup query optimized (rowid-based)
+  - HTTP connection pooling via `requests.Session` (replaced raw urllib everywhere)
+  - Added `script.module.requests` dependency to addon.xml
+  - Migrated realdebrid.py form-encoded POSTs from urllib to requests
+  - Trakt token refresh check cached for 5 minutes (skips redundant checks)
+- Phase 3 — Trakt N+1 Fix:
+  - `get_next_episodes()` reduced from 20→10 shows, parallelized with ThreadPoolExecutor
+  - Progress results cached for 30 minutes
+- Phase 4 — Lazy Loading & Assets:
+  - Heavy modules (tmdb, trakt, rd, sources, player) lazy-loaded in default.py
+  - `extract_components()` in matcher.py cached with `@functools.lru_cache(maxsize=256)`
+  - icon.png compressed: 2048x2048 (4.7MB) → 512x512 (199KB) — 96% reduction across 7 copies
+  - fanart.jpg compressed: 3168x1158 (879KB) → 1920x701 (199KB) — 77% reduction across 8 copies
+  - audio-switch.png compressed: 512x512 → 256x256
+  - Total image savings: ~36MB across the repo
+- Phase 5 — Player Thread Consolidation:
+  - Removed dead `PlayerActionMonitor` thread (was just sleeping in a loop)
+  - Removed `SkipIntroMonitor` class — merged into `ProgressTracker`
+  - Unified `ProgressTracker` handles: bookmark saves (every 15s), skip-intro detection (every 1s), Trakt scrobble, auto-mark watched
+  - Playback threads reduced from 4 → 2 (unified tracker + one-shot subtitle download)
+  - Progress save interval increased from 5s → 15s (3x fewer SQLite writes)
+- Added Product Vision & Long-Term Roadmap to CLAUDE.md (v2.0→v2.5→v3.0→v3.5)
