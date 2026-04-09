@@ -170,17 +170,21 @@ def scrape_torrentio(imdb_id, season=None, episode=None):
 
 
 def _get_mediafusion_url():
-    """Get or auto-generate MediaFusion config URL using existing RD token."""
+    """Get or auto-generate MediaFusion config URL using existing RD token.
+    Regenerates when the RD token changes (e.g. after refresh)."""
     from resources.lib.modules.utils import get_setting, set_setting, http_post, log
-    cached = get_setting('mediafusion_url') or ''
-    if cached:
-        return cached
-    # Auto-generate from RD token
     rd_token = get_setting('rd_token') or ''
     if not rd_token:
         return ''
+    # Check if cached URL was generated with current token
+    cached = get_setting('mediafusion_url') or ''
+    cached_token = get_setting('mediafusion_rd_token') or ''
+    if cached and cached_token == rd_token:
+        return cached
+    # Token changed or no cached URL — regenerate
+    if cached and cached_token != rd_token:
+        log('MediaFusion: RD token changed, regenerating config URL')
     try:
-        import json
         payload = {
             'sps': [{'sv': 'realdebrid', 'tk': rd_token}],
             'ap': 'changemeelfie'
@@ -190,6 +194,7 @@ def _get_mediafusion_url():
         if resp and resp.get('encrypted_str'):
             url = 'https://mediafusion.elfhosted.com/{}'.format(resp['encrypted_str'])
             set_setting('mediafusion_url', url)
+            set_setting('mediafusion_rd_token', rd_token)
             log('MediaFusion: auto-configured from RD token')
             return url
     except Exception as e:
