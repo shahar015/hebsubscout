@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol always="true">1000</defaultcontrol>
+    <backgroundcolor>FF080810</backgroundcolor>
+    <coordinates>
+        <system>1</system>
+    </coordinates>
+    <controls>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- HERO AREA (top half — fanart + gradient + info)     -->
+        <!-- ════════════════════════════════════════════════════ -->
+
+        <!-- Hero fanart backdrop -->
+        <control type="image" id="100">
+            <left>0</left><top>0</top><width>1920</width><height>540</height>
+            <texture fallback="DefaultFanart.png">$INFO[Window.Property(hero_fanart)]</texture>
+            <aspectratio>scale</aspectratio>
+            <animation effect="fade" start="0" end="100" time="400">VisibleChange</animation>
+        </control>
+
+        <!-- Gradient overlay (transparent top → black bottom) -->
+        <control type="image" id="101">
+            <left>0</left><top>0</top><width>1920</width><height>540</height>
+            <texture>gradient_hero.png</texture>
+        </control>
+
+        <!-- Hero title -->
+        <control type="label" id="102">
+            <left>80</left><top>360</top><width>900</width><height>45</height>
+            <label>$INFO[Window.Property(hero_title)]</label>
+            <font>font37</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <shadowcolor>CC000000</shadowcolor>
+        </control>
+
+        <!-- Hero metadata (year • genres • rating) -->
+        <control type="label" id="103">
+            <left>80</left><top>410</top><width>900</width><height>28</height>
+            <label>$INFO[Window.Property(hero_meta)]</label>
+            <font>font13</font>
+            <textcolor>FFaaaacc</textcolor>
+            <shadowcolor>CC000000</shadowcolor>
+        </control>
+
+        <!-- Hero "Play" button -->
+        <control type="button" id="200">
+            <left>80</left><top>455</top><width>160</width><height>44</height>
+            <texturefocus colordiffuse="FF2ecc71">white.png</texturefocus>
+            <texturenofocus colordiffuse="88228B22">white.png</texturenofocus>
+            <label>$INFO[Window.Property(hero_play_label)]</label>
+            <font>font13_title</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FF000000</focusedcolor>
+            <align>center</align>
+            <aligny>center</aligny>
+            <onright>201</onright>
+            <ondown>1000</ondown>
+        </control>
+
+        <!-- Hero "Watchlist" button -->
+        <control type="button" id="201">
+            <left>260</left><top>455</top><width>200</width><height>44</height>
+            <texturefocus colordiffuse="FF3498db">white.png</texturefocus>
+            <texturenofocus colordiffuse="88333355">white.png</texturenofocus>
+            <label>$INFO[Window.Property(hero_watchlist_label)]</label>
+            <font>font13_title</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <align>center</align>
+            <aligny>center</aligny>
+            <onleft>200</onleft>
+            <ondown>1000</ondown>
+        </control>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- CONTENT ROWS (bottom half — scrollable poster rows) -->
+        <!-- ════════════════════════════════════════════════════ -->
+
+        <!-- Row container: vertical grouplist that holds all rows -->
+        <control type="grouplist" id="9000">
+            <left>0</left><top>530</top><width>1920</width><height>520</height>
+            <orientation>vertical</orientation>
+            <itemgap>0</itemgap>
+            <pagecontrol>0</pagecontrol>
+            <scrolltime tween="sine">300</scrolltime>
+            <onup>200</onup>
+
+            <!-- ── ROW 1: Continue Watching ── -->
+            <control type="group" id="1100">
+                <width>1920</width><height>104</height>
+                <visible>!String.IsEmpty(Window.Property(row0_visible))</visible>
+                <!-- Row label -->
+                <control type="label" id="1001">
+                    <left>80</left><top>0</top><width>600</width><height>30</height>
+                    <label>$INFO[Window.Property(row0_label)]</label>
+                    <font>font13_title</font>
+                    <textcolor>FFccccdd</textcolor>
+                </control>
+            </control>
+            <control type="fixedlist" id="1000">
+                <left>72</left><width>1848</width><height>210</height>
+                <visible>!String.IsEmpty(Window.Property(row0_visible))</visible>
+                <orientation>horizontal</orientation>
+                <movement>1</movement>
+                <focusposition>0</focusposition>
+                <scrolltime tween="sine">200</scrolltime>
+                <onup>200</onup>
+                <ondown>1010</ondown>
+                <itemlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                        <colordiffuse>CC999999</colordiffuse>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                    </control>
+                    <!-- Focus border -->
+                    <control type="image">
+                        <left>3</left><top>-2</top><width>189</width><height>282</height>
+                        <texture border="3" colordiffuse="FF2ecc71">white.png</texture>
+                    </control>
+                    <animation effect="zoom" center="auto" start="100" end="105" time="150" tween="sine">Focus</animation>
+                </focusedlayout>
+            </control>
+
+            <!-- ── ROW 2: Trending Movies ── -->
+            <control type="group" id="1110">
+                <width>1920</width><height>30</height>
+                <visible>!String.IsEmpty(Window.Property(row1_visible))</visible>
+                <control type="label" id="1011">
+                    <left>80</left><top>0</top><width>600</width><height>30</height>
+                    <label>$INFO[Window.Property(row1_label)]</label>
+                    <font>font13_title</font>
+                    <textcolor>FFccccdd</textcolor>
+                </control>
+            </control>
+            <control type="fixedlist" id="1010">
+                <left>72</left><width>1848</width><height>210</height>
+                <visible>!String.IsEmpty(Window.Property(row1_visible))</visible>
+                <orientation>horizontal</orientation>
+                <movement>1</movement>
+                <focusposition>0</focusposition>
+                <scrolltime tween="sine">200</scrolltime>
+                <onup>1000</onup>
+                <ondown>1020</ondown>
+                <itemlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                        <colordiffuse>CC999999</colordiffuse>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                    </control>
+                    <control type="image">
+                        <left>3</left><top>-2</top><width>189</width><height>282</height>
+                        <texture border="3" colordiffuse="FF2ecc71">white.png</texture>
+                    </control>
+                    <animation effect="zoom" center="auto" start="100" end="105" time="150" tween="sine">Focus</animation>
+                </focusedlayout>
+            </control>
+
+            <!-- ── ROW 3: Popular Shows ── -->
+            <control type="group" id="1120">
+                <width>1920</width><height>30</height>
+                <visible>!String.IsEmpty(Window.Property(row2_visible))</visible>
+                <control type="label" id="1021">
+                    <left>80</left><top>0</top><width>600</width><height>30</height>
+                    <label>$INFO[Window.Property(row2_label)]</label>
+                    <font>font13_title</font>
+                    <textcolor>FFccccdd</textcolor>
+                </control>
+            </control>
+            <control type="fixedlist" id="1020">
+                <left>72</left><width>1848</width><height>210</height>
+                <visible>!String.IsEmpty(Window.Property(row2_visible))</visible>
+                <orientation>horizontal</orientation>
+                <movement>1</movement>
+                <focusposition>0</focusposition>
+                <scrolltime tween="sine">200</scrolltime>
+                <onup>1010</onup>
+                <ondown>1030</ondown>
+                <itemlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                        <colordiffuse>CC999999</colordiffuse>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                    </control>
+                    <control type="image">
+                        <left>3</left><top>-2</top><width>189</width><height>282</height>
+                        <texture border="3" colordiffuse="FF2ecc71">white.png</texture>
+                    </control>
+                    <animation effect="zoom" center="auto" start="100" end="105" time="150" tween="sine">Focus</animation>
+                </focusedlayout>
+            </control>
+
+            <!-- ── ROW 4: Up Next ── -->
+            <control type="group" id="1130">
+                <width>1920</width><height>30</height>
+                <visible>!String.IsEmpty(Window.Property(row3_visible))</visible>
+                <control type="label" id="1031">
+                    <left>80</left><top>0</top><width>600</width><height>30</height>
+                    <label>$INFO[Window.Property(row3_label)]</label>
+                    <font>font13_title</font>
+                    <textcolor>FFccccdd</textcolor>
+                </control>
+            </control>
+            <control type="fixedlist" id="1030">
+                <left>72</left><width>1848</width><height>210</height>
+                <visible>!String.IsEmpty(Window.Property(row3_visible))</visible>
+                <orientation>horizontal</orientation>
+                <movement>1</movement>
+                <focusposition>0</focusposition>
+                <scrolltime tween="sine">200</scrolltime>
+                <onup>1020</onup>
+                <ondown>1040</ondown>
+                <itemlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                        <colordiffuse>CC999999</colordiffuse>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                    </control>
+                    <control type="image">
+                        <left>3</left><top>-2</top><width>189</width><height>282</height>
+                        <texture border="3" colordiffuse="FF2ecc71">white.png</texture>
+                    </control>
+                    <animation effect="zoom" center="auto" start="100" end="105" time="150" tween="sine">Focus</animation>
+                </focusedlayout>
+            </control>
+
+            <!-- ── ROW 5: My Watchlist ── -->
+            <control type="group" id="1140">
+                <width>1920</width><height>30</height>
+                <visible>!String.IsEmpty(Window.Property(row4_visible))</visible>
+                <control type="label" id="1041">
+                    <left>80</left><top>0</top><width>600</width><height>30</height>
+                    <label>$INFO[Window.Property(row4_label)]</label>
+                    <font>font13_title</font>
+                    <textcolor>FFccccdd</textcolor>
+                </control>
+            </control>
+            <control type="fixedlist" id="1040">
+                <left>72</left><width>1848</width><height>210</height>
+                <visible>!String.IsEmpty(Window.Property(row4_visible))</visible>
+                <orientation>horizontal</orientation>
+                <movement>1</movement>
+                <focusposition>0</focusposition>
+                <scrolltime tween="sine">200</scrolltime>
+                <onup>1030</onup>
+                <ondown>300</ondown>
+                <itemlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                        <colordiffuse>CC999999</colordiffuse>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="195" height="200">
+                    <control type="image">
+                        <left>5</left><top>0</top><width>185</width><height>278</height>
+                        <texture fallback="DefaultVideo.png">$INFO[ListItem.Art(poster)]</texture>
+                        <aspectratio>scale</aspectratio>
+                    </control>
+                    <control type="image">
+                        <left>3</left><top>-2</top><width>189</width><height>282</height>
+                        <texture border="3" colordiffuse="FF2ecc71">white.png</texture>
+                    </control>
+                    <animation effect="zoom" center="auto" start="100" end="105" time="150" tween="sine">Focus</animation>
+                </focusedlayout>
+            </control>
+        </control>
+
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- BOTTOM BAR (Search + Tools)                         -->
+        <!-- ════════════════════════════════════════════════════ -->
+
+        <control type="button" id="300">
+            <left>80</left><top>1030</top><width>140</width><height>36</height>
+            <texturefocus colordiffuse="FF3498db">white.png</texturefocus>
+            <texturenofocus colordiffuse="88222233">white.png</texturenofocus>
+            <label>$INFO[Window.Property(search_label)]</label>
+            <font>font12</font>
+            <textcolor>FFaaaacc</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <align>center</align>
+            <aligny>center</aligny>
+            <onup>1040</onup>
+            <onright>301</onright>
+        </control>
+
+        <control type="button" id="301">
+            <left>240</left><top>1030</top><width>120</width><height>36</height>
+            <texturefocus colordiffuse="FFe67e22">white.png</texturefocus>
+            <texturenofocus colordiffuse="88222233">white.png</texturenofocus>
+            <label>$INFO[Window.Property(tools_label)]</label>
+            <font>font12</font>
+            <textcolor>FFaaaacc</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <align>center</align>
+            <aligny>center</aligny>
+            <onup>1040</onup>
+            <onleft>300</onleft>
+        </control>
+
+        <!-- Version label (bottom right) -->
+        <control type="label">
+            <left>1700</left><top>1038</top><width>200</width><height>22</height>
+            <label>$INFO[Window.Property(version_label)]</label>
+            <font>font10</font>
+            <textcolor>FF444466</textcolor>
+            <align>right</align>
+        </control>
+
+    </controls>
+</window>

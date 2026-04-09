@@ -897,6 +897,65 @@ def tools_menu():
 
 
 # =========================================================================
+# NETFLIX HOME
+# =========================================================================
+
+def _show_netflix_home():
+    """Show the Netflix-style home screen and handle its result."""
+    from resources.lib.modules.netflix_home import show_netflix_home
+
+    while True:
+        action, item = show_netflix_home()
+
+        if not action:
+            break  # User pressed Back — exit addon
+
+        if action == 'select' and item:
+            # Poster clicked — go to source selection
+            mt = item.get('media_type', 'movie')
+            if mt == 'movie':
+                source_selection(
+                    item.get('imdb_id', ''), item.get('tmdb_id', ''),
+                    item.get('title', ''), item.get('year', ''),
+                    media_type='movie',
+                    poster=item.get('poster', ''), fanart=item.get('fanart', ''))
+            else:
+                source_selection(
+                    item.get('imdb_id', ''), item.get('tmdb_id', ''),
+                    item.get('title', ''), item.get('year', ''),
+                    season=item.get('season'), episode=item.get('episode'),
+                    media_type='tv',
+                    poster=item.get('poster', ''), fanart=item.get('fanart', ''))
+
+        elif action == 'play' and item:
+            # Hero Play button — auto-play
+            mt = item.get('media_type', 'movie')
+            source_selection(
+                item.get('imdb_id', ''), item.get('tmdb_id', ''),
+                item.get('title', ''), item.get('year', ''),
+                season=item.get('season'), episode=item.get('episode'),
+                media_type=mt,
+                poster=item.get('poster', ''), fanart=item.get('fanart', ''),
+                auto_play=True)
+
+        elif action == 'watchlist' and item:
+            _get_trakt().add_to_watchlist(item.get('media_type', 'movie'), item.get('imdb_id', ''))
+            notification(t('added_watchlist'))
+            continue  # Re-show home
+
+        elif action == 'search':
+            search()
+            continue  # Re-show home after search
+
+        elif action == 'tools':
+            tools_menu()
+            break  # Tools uses Kodi directory — don't re-show home
+
+        # After playing or selecting, re-show the home screen
+        continue
+
+
+# =========================================================================
 # ROUTER
 # =========================================================================
 
@@ -915,9 +974,9 @@ def router(params):
     query = params.get('query', '')
     genre_id = params.get('genre_id', '')
 
-    # Main
+    # Main — Netflix Home screen
     if not action:
-        main_menu()
+        _show_netflix_home()
     
     # Movies
     elif action == 'movies_menu':

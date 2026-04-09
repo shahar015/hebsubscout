@@ -46,6 +46,10 @@ _STRINGS = {
     'search': {'he': 'חיפוש', 'en': 'Search'},
     'popular_people': {'he': 'שחקנים', 'en': 'Popular People'},
     'tools': {'he': 'כלים', 'en': 'Tools'},
+    # Netflix home
+    'play': {'he': 'הפעל', 'en': 'Play'},
+    'trending_movies': {'he': 'סרטים טרנדינג', 'en': 'Trending Movies'},
+    'popular_shows': {'he': 'סדרות פופולריות', 'en': 'Popular Shows'},
     # Movie/Show submenus
     'trending': {'he': 'טרנדינג', 'en': 'Trending'},
     'popular': {'he': 'פופולרי', 'en': 'Popular'},
