@@ -974,9 +974,9 @@ def router(params):
     query = params.get('query', '')
     genre_id = params.get('genre_id', '')
 
-    # Main — Netflix Home screen
+    # Main — skin handles home screen, this is fallback directory listing
     if not action:
-        _show_netflix_home()
+        main_menu()
     
     # Movies
     elif action == 'movies_menu':
