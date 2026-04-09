@@ -418,3 +418,7 @@ Edit `script.module.hebsubscout/lib/hebsubscout/matcher.py`. The scoring weights
 - v1.6.9: Search menu: choose Movies or TV → new search + history → direct results
 - v1.6.9: Movies/Shows menu search also saves to respective history
 - v1.6.10: MediaFusion: user config URL setting, dropped old search_history table
+- v1.6.11: MediaFusion: auto-configure from existing RD token via /encrypt-user-data API
+- v1.6.12: MediaFusion: fix response key (`encrypted_str` not `secret_str`)
+- v1.6.13: MediaFusion: use `behaviorHints.filename` for release names, `videoSize` for size
+- v1.6.14: MediaFusion: handle direct playback URLs (type `direct`, skip RD magnet resolve)
