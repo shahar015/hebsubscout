@@ -819,6 +819,8 @@
 		<value condition="Control.HasFocus(7200)">$INFO[Container(7200).ListItem.Art(fanart)]</value>
 		<value condition="Control.HasFocus(7300)">$INFO[Container(7300).ListItem.Art(fanart)]</value>
 		<value condition="Control.HasFocus(7400)">$INFO[Container(7400).ListItem.Art(fanart)]</value>
+		<value condition="Control.HasFocus(8200)">$INFO[Container(8200).ListItem.Art(fanart)]</value>
+		<value condition="Control.HasFocus(8300)">$INFO[Container(8300).ListItem.Art(fanart)]</value>
 		<value>$ADDON[plugin.video.hebscout,fanart]</value>
 	</variable>
 	<variable name="HeroTitleVar">
@@ -836,6 +838,8 @@
 		<value condition="Control.HasFocus(7200)">$INFO[Container(7200).ListItem.Label]</value>
 		<value condition="Control.HasFocus(7300)">$INFO[Container(7300).ListItem.Label]</value>
 		<value condition="Control.HasFocus(7400)">$INFO[Container(7400).ListItem.Label]</value>
+		<value condition="Control.HasFocus(8200)">$INFO[Container(8200).ListItem.Label]</value>
+		<value condition="Control.HasFocus(8300)">$INFO[Container(8300).ListItem.Label]</value>
 		<value>HebSubScout</value>
 	</variable>
 	<variable name="HeroMetaVar">
@@ -853,6 +857,8 @@
 		<value condition="Control.HasFocus(7200)">$INFO[Container(7200).ListItem.Year]  |  $INFO[Container(7200).ListItem.Rating]</value>
 		<value condition="Control.HasFocus(7300)">$INFO[Container(7300).ListItem.Year]  |  $INFO[Container(7300).ListItem.Rating]</value>
 		<value condition="Control.HasFocus(7400)">$INFO[Container(7400).ListItem.Year]  |  $INFO[Container(7400).ListItem.Rating]</value>
+		<value condition="Control.HasFocus(8200)">$INFO[Container(8200).ListItem.Year]  |  $INFO[Container(8200).ListItem.Rating]</value>
+		<value condition="Control.HasFocus(8300)">$INFO[Container(8300).ListItem.Year]  |  $INFO[Container(8300).ListItem.Rating]</value>
 		<value />
 	</variable>
 </includes>

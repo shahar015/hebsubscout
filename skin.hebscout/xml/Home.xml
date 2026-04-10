@@ -310,33 +310,37 @@
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),search)</visible>
 				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="8001">
-					<orientation>vertical</orientation>
-					<left>60</left><top>30</top><width>1340</width><height>500</height>
+					<include>WidgetGroupListCommon</include>
+					<pagecontrol>8010</pagecontrol>
 					<onright>9000</onright>
+					<!-- Search button — opens input dialog -->
 					<control type="button" id="8100">
+						<left>55</left>
 						<width>400</width><height>60</height>
 						<texturefocus colordiffuse="FF2ecc71">white.png</texturefocus>
 						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
-						<label>חיפוש סרטים</label>
+						<label>חיפוש...</label>
 						<font>font14</font>
 						<textcolor>FFFFFFFF</textcolor>
 						<focusedcolor>FF000000</focusedcolor>
 						<align>center</align>
 						<aligny>center</aligny>
-						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=search_movies)</onclick>
+						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=home_search)</onclick>
 					</control>
-					<control type="button" id="8200">
-						<width>400</width><height>60</height>
-						<texturefocus colordiffuse="FF3498db">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
-						<label>חיפוש סדרות</label>
-						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
-						<focusedcolor>FFFFFFFF</focusedcolor>
-						<align>center</align>
-						<aligny>center</aligny>
-						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=search_shows)</onclick>
-					</control>
+					<!-- Movie search results row -->
+					<include content="WidgetListPoster">
+						<param name="content_path" value="plugin://plugin.video.hebscout/?action=search_widget_movies"/>
+						<param name="widget_header" value="סרטים"/>
+						<param name="widget_target" value="videos"/>
+						<param name="list_id" value="8200"/>
+					</include>
+					<!-- Show search results row -->
+					<include content="WidgetListPoster">
+						<param name="content_path" value="plugin://plugin.video.hebscout/?action=search_widget_shows"/>
+						<param name="widget_header" value="סדרות"/>
+						<param name="widget_target" value="videos"/>
+						<param name="list_id" value="8300"/>
+					</include>
 				</control>
 			</control>
 

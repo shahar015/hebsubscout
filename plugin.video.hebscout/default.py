@@ -856,6 +856,33 @@ def search_new_typed(media_type):
     end_dir(content='')
 
 
+def _home_search_prompt():
+    """Open search input from the skin home search tab, save query, refresh home."""
+    query = input_dialog(t('search'))
+    if query:
+        from resources.lib.modules.cache import add_search_history
+        add_search_history(query, 'movie')
+        add_search_history(query, 'tv')
+        # Store the query so widget rows can read it
+        xbmcgui.Window(10000).setProperty('hebscout.search_query', query)
+        # Force Kodi to refresh the home widgets
+        xbmc.executebuiltin('Container.Refresh')
+    end_dir(content='')
+
+
+def _search_widget_results(media_type):
+    """Return search results for the last home search query (used as widget content)."""
+    query = xbmcgui.Window(10000).getProperty('hebscout.search_query')
+    if not query:
+        # No search yet — show nothing
+        end_dir(content='videos')
+        return
+    if media_type == 'movie':
+        list_movies(_get_tmdb().movies_search, query=query, list_action='movies_search_results')
+    else:
+        list_shows(_get_tmdb().shows_search, query=query, list_action='shows_search_results')
+
+
 # =========================================================================
 # TOOLS
 # =========================================================================
@@ -1075,6 +1102,15 @@ def router(params):
         search_type_menu('tv')
     elif action == 'search_new':
         search_new_typed(params.get('media_type', 'movie'))
+    elif action == 'home_search':
+        # Triggered from skin home search tab — opens input, saves query, refreshes widgets
+        _home_search_prompt()
+    elif action == 'search_widget_movies':
+        # Widget content source — returns movie results for the last home search query
+        _search_widget_results('movie')
+    elif action == 'search_widget_shows':
+        # Widget content source — returns show results for the last home search query
+        _search_widget_results('tv')
 
     # People
     elif action == 'people_popular':
