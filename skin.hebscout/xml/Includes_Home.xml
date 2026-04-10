@@ -19,7 +19,9 @@
 				<right>55</right>
 				<height>90</height>
 				<label>$PARAM[label]</label>
-				<shadowcolor>text_shadow</shadowcolor>
+				<font>font25_title</font>
+				<textcolor>FF8888aa</textcolor>
+				<shadowcolor>88000000</shadowcolor>
 				<align>right</align>
 				<visible>$PARAM[visible]</visible>
 				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,$PARAM[item_treshold]) | [Container($PARAM[list_id]).IsUpdating + Integer.IsEqual(Container($PARAM[list_id]).NumItems,0)]</visible>

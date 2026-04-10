@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- HebSubScout Netflix Home — RTL-First Layout -->
+<!-- HebSubScout Netflix Home — RTL Cinema Dark Theme -->
 <window>
 	<defaultcontrol>9000</defaultcontrol>
-	<backgroundcolor>FF060610</backgroundcolor>
+	<backgroundcolor>FF0a0a12</backgroundcolor>
 	<controls>
 
-		<!-- Hidden navigation buttons (focus traps → bounce back to content) -->
+		<!-- Hidden navigation buttons (focus traps) -->
 		<control type="button" id="20000">
 			<include>HiddenObject</include>
 			<onfocus>SetFocus(9000)</onfocus>
@@ -19,117 +19,116 @@
 			<visible allowhiddenfocus="true">Control.HasFocus(20001)</visible>
 		</control>
 
-		<!-- ══════════════════════════════════════════════════════════ -->
-		<!-- HERO AREA (top — dynamic fanart from focused widget item) -->
-		<!-- ══════════════════════════════════════════════════════════ -->
+		<!-- ══════════════════════════════════════════════════════ -->
+		<!-- HERO AREA                                              -->
+		<!-- ══════════════════════════════════════════════════════ -->
 
 		<!-- Hero fanart backdrop -->
 		<control type="image" id="100">
-			<left>0</left><top>0</top><width>1460</width><height>540</height>
+			<left>0</left><top>0</top><width>1540</width><height>580</height>
 			<texture background="true" fallback="fanart.jpg">$VAR[HeroFanartVar]</texture>
 			<aspectratio>scale</aspectratio>
-			<animation effect="fade" time="400" start="0" end="100">VisibleChange</animation>
+			<animation effect="fade" time="500" start="0" end="100">VisibleChange</animation>
 		</control>
 
-		<!-- Gradient overlay (transparent top → black bottom) -->
+		<!-- Gradient overlay -->
 		<control type="image">
-			<left>0</left><top>0</top><width>1460</width><height>540</height>
+			<left>0</left><top>0</top><width>1540</width><height>580</height>
 			<texture>gradient_hero.png</texture>
 		</control>
 
-		<!-- Dark edge blending into sidebar -->
-		<control type="image">
-			<left>1360</left><top>0</top><width>100</width><height>540</height>
-			<texture colordiffuse="FF060610">white.png</texture>
-		</control>
-
-		<!-- Hero title (RTL — right-aligned) -->
+		<!-- Hero title -->
 		<control type="label" id="102">
-			<left>60</left><top>370</top><width>1340</width><height>55</height>
+			<left>60</left><top>400</top><width>1420</width><height>55</height>
 			<label>$VAR[HeroTitleVar]</label>
 			<font>font45_title</font>
 			<textcolor>FFFFFFFF</textcolor>
-			<shadowcolor>CC000000</shadowcolor>
+			<shadowcolor>44e11d48</shadowcolor>
 			<align>right</align>
 		</control>
 
-		<!-- Hero metadata line (year | rating) -->
+		<!-- Hero metadata -->
 		<control type="label" id="103">
-			<left>60</left><top>430</top><width>1340</width><height>30</height>
+			<left>60</left><top>460</top><width>1420</width><height>30</height>
 			<label>$VAR[HeroMetaVar]</label>
-			<font>font13</font>
-			<textcolor>FFaaaacc</textcolor>
-			<shadowcolor>CC000000</shadowcolor>
+			<font>font14</font>
+			<textcolor>FF9999bb</textcolor>
+			<shadowcolor>EE000000</shadowcolor>
 			<align>right</align>
 		</control>
 
-		<!-- ══════════════════════════════════════════════════════════ -->
-		<!-- SIDEBAR (RIGHT — RTL, 5 tabs)                             -->
-		<!-- ══════════════════════════════════════════════════════════ -->
-
-		<!-- Sidebar background panel -->
+		<!-- Hero section separator -->
 		<control type="image">
-			<left>1460</left><top>0</top><width>460</width><height>1080</height>
-			<texture colordiffuse="FF0a0a16">white.png</texture>
+			<left>40</left><top>510</top><width>1460</width><height>1</height>
+			<texture colordiffuse="FF1a1a35">white.png</texture>
+		</control>
+
+		<!-- ══════════════════════════════════════════════════════ -->
+		<!-- SIDEBAR (RIGHT — RTL, cinema dark)                    -->
+		<!-- ══════════════════════════════════════════════════════ -->
+
+		<!-- Sidebar background -->
+		<control type="image">
+			<left>1540</left><top>0</top><width>380</width><height>1080</height>
+			<texture colordiffuse="FF0f0f1a">white.png</texture>
 		</control>
 
 		<!-- Sidebar accent line -->
 		<control type="image">
-			<left>1458</left><top>0</top><width>2</width><height>1080</height>
-			<texture colordiffuse="FF1a1a2e">white.png</texture>
+			<left>1538</left><top>0</top><width>2</width><height>1080</height>
+			<texture colordiffuse="FF1a1a35">white.png</texture>
 		</control>
 
-		<!-- Brand label at top of sidebar -->
+		<!-- Brand label -->
 		<control type="label">
-			<left>1480</left><top>40</top><width>420</width><height>40</height>
+			<left>1550</left><top>40</top><width>360</width><height>40</height>
 			<label>HebSubScout</label>
-			<font>font30_title</font>
-			<textcolor>FF2ecc71</textcolor>
+			<font>font25_title</font>
+			<textcolor>FFe11d48</textcolor>
 			<align>center</align>
 		</control>
 
 		<!-- Sidebar tab list -->
 		<control type="fixedlist" id="9000">
-			<left>1470</left><top>120</top><width>440</width><height>700</height>
+			<left>1550</left><top>110</top><width>360</width><height>600</height>
 			<orientation>vertical</orientation>
 			<movement>1</movement>
 			<focusposition>0</focusposition>
-			<scrolltime tween="sine">300</scrolltime>
+			<scrolltime tween="sine">200</scrolltime>
 			<onleft>SetFocus($INFO[Container(9000).ListItem.Property(focus_id)])</onleft>
 			<onup>20000</onup>
 			<ondown>20001</ondown>
-			<itemlayout height="95" width="440">
+			<itemlayout height="80" width="360">
 				<control type="image">
-					<left>10</left><top>10</top><width>420</width><height>75</height>
+					<left>8</left><top>8</top><width>344</width><height>64</height>
 					<texture colordiffuse="00000000">white.png</texture>
 				</control>
 				<control type="label">
-					<left>10</left><top>10</top><width>420</width><height>75</height>
+					<left>8</left><top>8</top><width>344</width><height>64</height>
 					<label>$INFO[ListItem.Label]</label>
-					<font>font37</font>
-					<textcolor>FF888899</textcolor>
+					<font>font30_title</font>
+					<textcolor>FF6b6b80</textcolor>
 					<align>center</align>
 					<aligny>center</aligny>
 				</control>
 			</itemlayout>
-			<focusedlayout height="95" width="440">
+			<focusedlayout height="80" width="360">
 				<control type="image">
-					<left>10</left><top>10</top><width>420</width><height>75</height>
-					<texture colordiffuse="FF1a1a30">white.png</texture>
-					<bordertexture border="2" colordiffuse="FF2ecc71">white.png</bordertexture>
+					<left>8</left><top>8</top><width>344</width><height>64</height>
+					<texture colordiffuse="FF141428">white.png</texture>
+					<bordertexture border="2" colordiffuse="FFe11d48">white.png</bordertexture>
 				</control>
 				<control type="label">
-					<left>10</left><top>10</top><width>420</width><height>75</height>
+					<left>8</left><top>8</top><width>344</width><height>64</height>
 					<label>$INFO[ListItem.Label]</label>
-					<font>font37</font>
+					<font>font30_title</font>
 					<textcolor>FFFFFFFF</textcolor>
 					<align>center</align>
 					<aligny>center</aligny>
 				</control>
-				<animation effect="zoom" center="auto" start="100" end="103" time="150" tween="sine">Focus</animation>
+				<animation effect="fade" start="80" end="100" time="200" tween="sine">Focus</animation>
 			</focusedlayout>
 			<content>
-				<!-- Tab 1: Home -->
 				<item>
 					<label>בית</label>
 					<property name="id">home</property>
@@ -137,7 +136,6 @@
 					<property name="focus_id">5100</property>
 					<onclick>SetFocus(5100)</onclick>
 				</item>
-				<!-- Tab 2: Movies -->
 				<item>
 					<label>סרטים</label>
 					<property name="id">movies</property>
@@ -145,7 +143,6 @@
 					<property name="focus_id">6100</property>
 					<onclick>SetFocus(6100)</onclick>
 				</item>
-				<!-- Tab 3: TV Shows -->
 				<item>
 					<label>סדרות</label>
 					<property name="id">tvshows</property>
@@ -153,7 +150,6 @@
 					<property name="focus_id">7100</property>
 					<onclick>SetFocus(7100)</onclick>
 				</item>
-				<!-- Tab 4: Search -->
 				<item>
 					<label>חיפוש</label>
 					<property name="id">search</property>
@@ -161,7 +157,6 @@
 					<property name="focus_id">8100</property>
 					<onclick>SetFocus(8100)</onclick>
 				</item>
-				<!-- Tab 5: Tools -->
 				<item>
 					<label>כלים</label>
 					<property name="id">tools</property>
@@ -172,26 +167,26 @@
 			</content>
 		</control>
 
-		<!-- Version label at bottom of sidebar -->
+		<!-- Version label -->
 		<control type="label">
-			<left>1480</left><top>1030</top><width>420</width><height>25</height>
+			<left>1550</left><top>1040</top><width>360</width><height>20</height>
 			<label>v$INFO[System.AddonVersion(plugin.video.hebscout)]</label>
 			<font>font10</font>
-			<textcolor>FF333344</textcolor>
+			<textcolor>FF2a2a3a</textcolor>
 			<align>center</align>
 		</control>
 
-		<!-- ══════════════════════════════════════════════════════════ -->
-		<!-- CONTENT AREA (LEFT — widget rows, changes per tab)        -->
-		<!-- ══════════════════════════════════════════════════════════ -->
+		<!-- ══════════════════════════════════════════════════════ -->
+		<!-- CONTENT AREA                                           -->
+		<!-- ══════════════════════════════════════════════════════ -->
 
 		<control type="group" id="2000">
-			<left>0</left><top>480</top><width>1460</width><height>600</height>
+			<left>0</left><top>530</top><width>1540</width><height>550</height>
 
-			<!-- ── בית (Home) — Group 5000 ── -->
+			<!-- ── בית (Home) ── -->
 			<control type="group" id="5000">
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),home)</visible>
-				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
+				<animation effect="fade" time="250" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="5001">
 					<include>WidgetGroupListCommon</include>
 					<pagecontrol>5010</pagecontrol>
@@ -229,10 +224,10 @@
 				</control>
 			</control>
 
-			<!-- ── סרטים (Movies) — Group 6000 ── -->
+			<!-- ── סרטים (Movies) ── -->
 			<control type="group" id="6000">
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),movies)</visible>
-				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
+				<animation effect="fade" time="250" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="6001">
 					<include>WidgetGroupListCommon</include>
 					<pagecontrol>6010</pagecontrol>
@@ -270,10 +265,10 @@
 				</control>
 			</control>
 
-			<!-- ── סדרות (TV Shows) — Group 7000 ── -->
+			<!-- ── סדרות (Shows) ── -->
 			<control type="group" id="7000">
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),tvshows)</visible>
-				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
+				<animation effect="fade" time="250" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="7001">
 					<include>WidgetGroupListCommon</include>
 					<pagecontrol>7010</pagecontrol>
@@ -305,36 +300,33 @@
 				</control>
 			</control>
 
-			<!-- ── חיפוש (Search) — Group 8000 ── -->
+			<!-- ── חיפוש (Search) ── -->
 			<control type="group" id="8000">
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),search)</visible>
-				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
+				<animation effect="fade" time="250" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="8001">
 					<include>WidgetGroupListCommon</include>
 					<pagecontrol>8010</pagecontrol>
 					<onright>9000</onright>
-					<!-- Search button — opens input dialog -->
 					<control type="button" id="8100">
 						<left>55</left>
-						<width>400</width><height>60</height>
-						<texturefocus colordiffuse="FF2ecc71">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
+						<width>400</width><height>55</height>
+						<texturefocus colordiffuse="FFe11d48">white.png</texturefocus>
+						<texturenofocus colordiffuse="FF141428">white.png</texturenofocus>
 						<label>חיפוש...</label>
 						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
-						<focusedcolor>FF000000</focusedcolor>
+						<textcolor>FF9999bb</textcolor>
+						<focusedcolor>FFFFFFFF</focusedcolor>
 						<align>center</align>
 						<aligny>center</aligny>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=home_search)</onclick>
 					</control>
-					<!-- Movie search results row -->
 					<include content="WidgetListPoster">
 						<param name="content_path" value="plugin://plugin.video.hebscout/?action=search_widget_movies"/>
 						<param name="widget_header" value="סרטים"/>
 						<param name="widget_target" value="videos"/>
 						<param name="list_id" value="8200"/>
 					</include>
-					<!-- Show search results row -->
 					<include content="WidgetListPoster">
 						<param name="content_path" value="plugin://plugin.video.hebscout/?action=search_widget_shows"/>
 						<param name="widget_header" value="סדרות"/>
@@ -344,55 +336,55 @@
 				</control>
 			</control>
 
-			<!-- ── כלים (Tools) — Group 9500 ── -->
+			<!-- ── כלים (Tools) ── -->
 			<control type="group" id="9500">
 				<visible>String.IsEqual(Container(9000).ListItem.Property(id),tools)</visible>
-				<animation effect="fade" time="300" start="0" end="100">VisibleChange</animation>
+				<animation effect="fade" time="250" start="0" end="100">VisibleChange</animation>
 				<control type="grouplist" id="9501">
 					<orientation>vertical</orientation>
-					<left>60</left><top>30</top><width>1340</width><height>500</height>
-					<itemgap>10</itemgap>
+					<left>60</left><top>30</top><width>1420</width><height>480</height>
+					<itemgap>12</itemgap>
 					<onright>9000</onright>
 					<control type="button" id="9510">
-						<width>400</width><height>50</height>
-						<texturefocus colordiffuse="FF2ecc71">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
+						<width>360</width><height>48</height>
+						<texturefocus colordiffuse="FFe11d48">white.png</texturefocus>
+						<texturenofocus colordiffuse="FF141428">white.png</texturenofocus>
 						<label>Real Debrid</label>
 						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
-						<focusedcolor>FF000000</focusedcolor>
+						<textcolor>FF9999bb</textcolor>
+						<focusedcolor>FFFFFFFF</focusedcolor>
 						<align>center</align><aligny>center</aligny>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=rd_auth)</onclick>
 					</control>
 					<control type="button" id="9520">
-						<width>400</width><height>50</height>
+						<width>360</width><height>48</height>
 						<texturefocus colordiffuse="FF3498db">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
+						<texturenofocus colordiffuse="FF141428">white.png</texturenofocus>
 						<label>Trakt</label>
 						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
+						<textcolor>FF9999bb</textcolor>
 						<focusedcolor>FFFFFFFF</focusedcolor>
 						<align>center</align><aligny>center</aligny>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=trakt_auth)</onclick>
 					</control>
 					<control type="button" id="9530">
-						<width>400</width><height>50</height>
+						<width>360</width><height>48</height>
 						<texturefocus colordiffuse="FFe67e22">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
+						<texturenofocus colordiffuse="FF141428">white.png</texturenofocus>
 						<label>הגדרות</label>
 						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
+						<textcolor>FF9999bb</textcolor>
 						<focusedcolor>FFFFFFFF</focusedcolor>
 						<align>center</align><aligny>center</aligny>
 						<onclick>ActivateWindow(settings)</onclick>
 					</control>
 					<control type="button" id="9540">
-						<width>400</width><height>50</height>
-						<texturefocus colordiffuse="FFe74c3c">white.png</texturefocus>
-						<texturenofocus colordiffuse="FF1a1a30">white.png</texturenofocus>
+						<width>360</width><height>48</height>
+						<texturefocus colordiffuse="FF666680">white.png</texturefocus>
+						<texturenofocus colordiffuse="FF141428">white.png</texturenofocus>
 						<label>נקה מטמון</label>
 						<font>font14</font>
-						<textcolor>FFFFFFFF</textcolor>
+						<textcolor>FF9999bb</textcolor>
 						<focusedcolor>FFFFFFFF</focusedcolor>
 						<align>center</align><aligny>center</aligny>
 						<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=clear_cache)</onclick>
