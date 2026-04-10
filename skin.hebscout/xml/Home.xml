@@ -95,7 +95,7 @@
 			<movement>1</movement>
 			<focusposition>0</focusposition>
 			<scrolltime tween="sine">300</scrolltime>
-			<onleft>SetFocus($INFO[Container(9000).ListItem.Property(menu_id)])</onleft>
+			<onleft>SetFocus($INFO[Container(9000).ListItem.Property(focus_id)])</onleft>
 			<onup>20000</onup>
 			<ondown>20001</ondown>
 			<itemlayout height="95" width="440">
@@ -134,35 +134,40 @@
 					<label>בית</label>
 					<property name="id">home</property>
 					<property name="menu_id">5000</property>
-					<onclick>SetFocus(5000)</onclick>
+					<property name="focus_id">5100</property>
+					<onclick>SetFocus(5100)</onclick>
 				</item>
 				<!-- Tab 2: Movies -->
 				<item>
 					<label>סרטים</label>
 					<property name="id">movies</property>
 					<property name="menu_id">6000</property>
-					<onclick>SetFocus(6000)</onclick>
+					<property name="focus_id">6100</property>
+					<onclick>SetFocus(6100)</onclick>
 				</item>
 				<!-- Tab 3: TV Shows -->
 				<item>
 					<label>סדרות</label>
 					<property name="id">tvshows</property>
 					<property name="menu_id">7000</property>
-					<onclick>SetFocus(7000)</onclick>
+					<property name="focus_id">7100</property>
+					<onclick>SetFocus(7100)</onclick>
 				</item>
 				<!-- Tab 4: Search -->
 				<item>
 					<label>חיפוש</label>
 					<property name="id">search</property>
 					<property name="menu_id">8000</property>
-					<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=search)</onclick>
+					<property name="focus_id">8100</property>
+					<onclick>SetFocus(8100)</onclick>
 				</item>
 				<!-- Tab 5: Tools -->
 				<item>
 					<label>כלים</label>
 					<property name="id">tools</property>
 					<property name="menu_id">9500</property>
-					<onclick>RunPlugin(plugin://plugin.video.hebscout/?action=tools_menu)</onclick>
+					<property name="focus_id">9510</property>
+					<onclick>SetFocus(9510)</onclick>
 				</item>
 			</content>
 		</control>

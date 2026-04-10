@@ -572,12 +572,13 @@ def continue_watching():
 
 
 def _continue_watching_trakt():
-    """Pull resume points from Trakt sync/playback."""
+    """Pull resume points from Trakt sync/playback, enriched with TMDB art."""
     items = _get_trakt().playback_progress()
     if not items:
         notification(t('no_sources'))
         end_dir()
         return
+    tmdb = _get_tmdb()
     for item in items:
         media_type = item.get('type', '')
         progress_pct = item.get('progress', 0)
@@ -587,8 +588,22 @@ def _continue_watching_trakt():
             title = movie.get('title', '')
             label = '{} [COLOR cyan]({:.0f}%)[/COLOR]'.format(title, progress_pct)
             li = xbmcgui.ListItem(label=label)
+            # Enrich with TMDB poster/fanart
+            tmdb_id = str(ids.get('tmdb', ''))
+            if tmdb_id:
+                try:
+                    details = tmdb.movie_details(tmdb_id)
+                    if details:
+                        art = {}
+                        if details.get('poster'):
+                            art['poster'] = art['thumb'] = details['poster']
+                        if details.get('fanart'):
+                            art['fanart'] = details['fanart']
+                        li.setArt(art)
+                except Exception:
+                    pass
             params = {'action': 'movie_sources', 'imdb_id': ids.get('imdb', ''),
-                      'tmdb_id': str(ids.get('tmdb', '')), 'title': title, 'media_type': 'movie'}
+                      'tmdb_id': tmdb_id, 'title': title, 'media_type': 'movie'}
             xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, True)
         elif media_type == 'episode':
             show = item.get('show', {})
@@ -598,8 +613,22 @@ def _continue_watching_trakt():
             label = '{} S{:02d}E{:02d} [COLOR cyan]({:.0f}%)[/COLOR]'.format(
                 title, ep.get('season', 0), ep.get('number', 0), progress_pct)
             li = xbmcgui.ListItem(label=label)
+            # Enrich with TMDB poster/fanart
+            tmdb_id = str(ids.get('tmdb', ''))
+            if tmdb_id:
+                try:
+                    details = tmdb.show_details(tmdb_id)
+                    if details:
+                        art = {}
+                        if details.get('poster'):
+                            art['poster'] = art['thumb'] = details['poster']
+                        if details.get('fanart'):
+                            art['fanart'] = details['fanart']
+                        li.setArt(art)
+                except Exception:
+                    pass
             params = {'action': 'episode_sources', 'imdb_id': ids.get('imdb', ''),
-                      'tmdb_id': str(ids.get('tmdb', '')), 'title': title, 'media_type': 'tv',
+                      'tmdb_id': tmdb_id, 'title': title, 'media_type': 'tv',
                       'season': ep.get('season', 0), 'episode': ep.get('number', 0)}
             xbmcplugin.addDirectoryItem(HANDLE, url_for(**params), li, True)
     end_dir(content='videos')
